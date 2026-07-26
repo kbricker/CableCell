@@ -107,14 +107,33 @@ or the arm can sweep into station tooling on power-up.
 
 ### R₀ — bolt circle radius
 
-Pivot axis to the station work point. Constrained from below by the press: the
-arm must reach the applicator's anvil, which sits some distance inside the press
-frame, so R₀ ≥ (pivot-to-press-face) + (press throat depth). Constrained from
-above by bench footprint and by arm deflection under insertion load.
+Pivot axis to the station work point. Constrained from below by *angular fit* —
+seven stops must share a 270° working arc, and the press is 210 mm wide against
+a normal station's ~80 mm. Constrained from above by bench footprint and by arm
+deflection under insertion load.
 
-Working figure in `cell-design.md` is a ~300 mm bolt circle (R₀ ≈ 150 mm).
-**Treat that as a placeholder** — written before the press was understood as a
-30–50 kg standalone machine.
+**Computed 2026-07-26 by `sim/studies/fit_check.py`:**
+
+| R₀ | Press | Station | Needed | Spare | |
+|---|---|---|---|---|---|
+| 125 mm | 114.3° | 37.3° | 338.2° | −68.2° | ✗ |
+| **150 mm** | 88.9° | 30.9° | **274.4°** | **−4.4°** | ✗ |
+| 175 mm | 73.7° | 26.4° | 232.3° | +37.7° | ✓ |
+| **200 mm** | 63.3° | 23.1° | **201.8°** | **+68.2°** | ✓ |
+| 250 mm | 49.7° | 18.4° | 160.2° | +109.8° | ✓ |
+
+🔴 **The ~300 mm bolt circle in `cell-design.md` does not close.** At R₀ = 150 mm
+the seven stops need 274.4° of a 270° arc — short by 4.4°. That figure predates
+understanding the press as a standalone 210 mm-wide machine, and it was never
+checked against seven stops.
+
+**Working value: R₀ = 200 mm** (400 mm bolt circle). Minimum viable is ~175 mm;
+200 mm buys 68° of spare arc to absorb the station widths firming up, and keeps
+the deck at a sane ~280 mm radius.
+
+Still to confirm: that the arm can physically reach the anvil once
+`PRESS_RAM_FROM_FRONT` is measured. Angular fit and radial reach are separate
+constraints, and only the first is settled.
 
 ### θ₁…θ₇ — station angles
 
@@ -134,6 +153,54 @@ Spacing is **not** uniform. Constraints: the arm sweeps a ~270° working arc (no
 a full turn, so the trailing ribbon never wraps the pivot — no slip ring, no
 rotary air union); the press occupies far more angular width than any other
 station; and the press anchors θ₄ because it is placed first (see below).
+
+---
+
+## Press envelope (researched 2026-07-26)
+
+Class: **1.5 T / 15 kN taped-terminal crimping press for mini applicators**, the
+machine class BOM line 11 belongs to.
+
+| Spec | Value | Source |
+|---|---|---|
+| Footprint | **210 × 210 mm** | vendor spec |
+| Height | **580 mm** | vendor spec |
+| Weight | **35 kg** | vendor spec |
+| Stroke | **30 mm** (40 mm variants exist) | vendor spec |
+| Motor | 0.55 kW | vendor spec |
+| Supply | **AC 110/220 V, 50/60 Hz** | vendor spec |
+| Applicators accepted | JST, Molex, TE mini applicators | vendor spec |
+| Shut height | **not stated** | — |
+| Throat depth | **not stated** | — |
+| Base plate height above bench | **not stated** | — |
+
+**Correction to an earlier estimate.** This document previously described the
+press as "~300 × 250 × 500 mm and 30–50 kg." The mass was right; the footprint
+was not. The real machine is a **narrow tall column press** — 210 mm square and
+580 mm high. Footprint is roughly 40% smaller than assumed, which makes it
+considerably more compatible with a ~300 mm bolt circle than feared. The
+obstruction to design around is the **column**, not a wide base.
+
+**110 V variants exist.** The voltage worry recorded on 2026-07-25 (step-up
+transformers, 50 Hz motors running 20% fast on 60 Hz mains) is softened
+substantially — this class is built in a 110 V/60 Hz configuration. Specify it at
+purchase rather than solving it afterwards.
+
+### Still needed, and where each comes from
+
+| Number | Needed for | How we get it |
+|---|---|---|
+| Shut height (which standard) | Applicator compatibility, Z₄ | **Ask the seller** — question 5 on the 657.2 message |
+| Throat depth (ram axis to column) | R₀, and whether the arm can reach the anvil | Ask seller, or measure on arrival |
+| Base plate height above bench | Press mounting, deck relationship | Measure on arrival |
+| Wire height above applicator base | **Z₄** | Measure on arrival — checklist item on 657.5 |
+
+**Working assumption until measured:** the wire/anvil line sits low in the
+applicator body, well under the 165 mm overall height of the OTP unit. Treat Z₄
+as a **free parameter in `layout.py`** rather than a committed value. This is
+exactly the case the Z axis was added to absorb — a wrong guess costs a config
+edit, not a re-machined deck. Do not let a placeholder here harden into a
+number anyone believes.
 
 ---
 
@@ -184,11 +251,19 @@ scheme. With Z it determines Z₄ and press mounting height only.
 | Symbol | Meaning | Value | Confidence |
 |---|---|---|---|
 | Z₁…Z₇ | Per-station engagement heights | config, calibrated | resolved by design |
-| Z\_clear | Rotation-safe height | unknown | derived from station tooling heights |
-| Z\_travel | Z stage stroke | **unknown — spec me** | wanted: shortest that works |
-| R₀ | Bolt circle radius | ~150 mm | placeholder — predates press-as-datum |
+| Z\_clear | Rotation-safe height | ~95 mm above deck | derived; moves with station tooling |
+| Z\_travel | Z stage stroke | **55 mm needed → 100 mm stock stage** | computed 2026-07-26 |
+| R₀ | Bolt circle radius | **200 mm** (min viable 175) | computed 2026-07-26 |
+| Deck height above bench | Chosen to minimise Z travel | ~170 mm | derived from placeholder crimp height |
 | θ₁ | S1 angle | 0° | assigned by definition |
-| θ₂…θ₇ | Remaining station angles | unknown | blocked on R₀ + press angular width |
+| θ₂…θ₇ | Remaining station angles | unknown | arc now known to fit; spacing not assigned |
+
+**The Z travel result is worth reading twice.** Only **55 mm** of stroke is
+required, covered by the smallest useful stock ballscrew stage (100 mm). That is
+a direct consequence of raising the deck ~170 mm above the bench to pull the six
+short stations up near the press's fixed crimp height — at bench level the stage
+would have had to span the whole difference. Short stroke means a stiff stage,
+which lands straight in the comb deflection budget.
 
 **Known independently, safe to model now:** comb 3 channels at 8 mm pitch ·
 cross-slide stroke 20 mm · split 25 mm · strip 2.75 mm · insert depth 6 mm ·
@@ -205,11 +280,16 @@ length envelope 90–1000 mm · wrist 180°, two positions.
    number. Blocked on press crimp height and station tooling heights.
 2. **Ballscrew + brake, or self-locking leadscrew?** Decides whether an E-stop
    drops the arm.
-3. **Is ~300 mm enough bolt circle** once a press of that footprint and a payout
-   trough for a 1 m cable are both in the picture?
+3. ~~Is ~300 mm enough bolt circle?~~ **ANSWERED 2026-07-26: no.** R₀ = 200 mm
+   (400 mm circle). See the fit table above.
 4. **Where does the payout trough live?** It must control a dangling 1 m cable —
    larger than the entire dial. Probably off-deck, below or beside.
-5. **Does 270° of arc fit seven stops** given the press's angular width?
+5. ~~Does 270° of arc fit seven stops?~~ **ANSWERED 2026-07-26: yes, at
+   R₀ ≥ 175 mm**, not at 150 mm. 201.8° needed of 270° at the working R₀.
+7. **Can the arm physically reach the anvil?** Angular fit is settled; radial
+   reach is not. Blocked on measuring the press's ram-axis-from-front distance.
+8. **Station angular spacing.** The arc fits, but θ₂…θ₇ are still an even spread
+   rather than an assignment that respects the press's real angular footprint.
 6. **Arm deflection budget.** Total compliance from Z carriage → rotary bearing →
    arm → radial slide → comb, under insertion load, versus the funnel capture
    window. Needs a number for the funnel first.

@@ -48,7 +48,9 @@ A rotary indexing cell. Six stations sit on a bolt circle. One **arm** pivots be
                                   nest, pusher)
 ```
 
-**Why rotary:** repeatability comes from mechanical detents at each sector rather than a long rail staying square; each station is a bolt-on module in its own sector (which is precisely how "other connectors later" arrives — a new insert sector plus a new cassette); and a ~300 mm circle fits five working stations in less bench space than a 900 mm rail. The reject bin costs nothing — it is simply another angular position.
+**Why rotary:** repeatability comes from mechanical detents at each sector rather than a long rail staying square; each station is a bolt-on module in its own sector (which is precisely how "other connectors later" arrives — a new insert sector plus a new cassette); and the circle fits the working stations in less bench space than a 900 mm rail. The reject bin costs nothing — it is simply another angular position.
+
+> **Bolt circle corrected 2026-07-26.** This section previously claimed a ~300 mm circle. It does not close: seven stops (six stations plus reject) with a 210 mm-wide press need **274.4° of a 270° arc** at R₀ = 150 mm. The working value is **R₀ = 200 mm** — a 400 mm circle — which needs 201.8° and leaves 68° spare. Minimum viable is ~175 mm. Computed by `sim/studies/fit_check.py`; table in `docs/datums.md`. The original figure was written for *five* stations, before the press was understood as a standalone machine.
 
 **Working arc, not a full turn.** The arm sweeps ~270° and returns. The trailing ribbon sweeps with it but never wraps the pivot, so no slip ring and no rotary air union are needed — a service loop and drag chain carry power and air to the arm.
 
