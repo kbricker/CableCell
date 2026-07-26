@@ -1,0 +1,154 @@
+<mujoco model="cablecell_roughin">
+  <!--
+    GENERATED FILE - do not edit. Produced by sim/build_scene.py from sim/layout.py.
+    Every dimension here traces to a named value in layout.py; 17 of 45 of those
+    are placeholders. Run `uv run python -m sim.layout` for provenance.
+
+    z = 0 is the bench top. x = y = 0 is the pivot axis.
+    Deck at 170 mm, bolt circle R0 = 200 mm, Z stroke 100 mm.
+  -->
+  <compiler angle="radian" autolimits="true"/>
+  <option integrator="implicitfast" timestep="0.002"/>
+
+  <visual>
+    <headlight ambient="0.45 0.45 0.45" diffuse="0.55 0.55 0.55"/>
+    <global azimuth="130" elevation="-22" offwidth="1600" offheight="1000"/>
+    <scale forcewidth="0.02" contactwidth="0.04" contactheight="0.02"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.30 0.38 0.48" rgb2="0.06 0.08 0.11"
+      width="32" height="512"/>
+    <texture name="bench_tex" type="2d" builtin="checker" rgb1="0.24 0.22 0.20"
+      rgb2="0.30 0.28 0.25" width="300" height="300"/>
+    <material name="bench_mat" texture="bench_tex" texrepeat="8 8" reflectance="0.03"/>
+    <material name="frame_mat" rgba="0.42 0.45 0.50 1"/>
+    <material name="deck_mat" rgba="0.62 0.65 0.70 1"/>
+    <material name="press_mat" rgba="0.30 0.33 0.38 1"/>
+    <material name="press_plate_mat" rgba="0.55 0.58 0.62 1"/>
+    <material name="applicator_mat" rgba="0.80 0.55 0.15 1"/>
+    <material name="station_mat" rgba="0.25 0.42 0.60 1"/>
+    <material name="reject_mat" rgba="0.60 0.30 0.30 1"/>
+    <material name="zstage_mat" rgba="0.35 0.55 0.42 1"/>
+    <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
+    <material name="arm_mat" rgba="0.72 0.74 0.78 1"/>
+    <material name="comb_mat" rgba="0.90 0.85 0.30 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0.4 -0.5 1.6" dir="-0.2 0.25 -1" diffuse="0.6 0.6 0.6"/>
+    <light pos="-0.5 0.4 1.2" dir="0.3 -0.25 -1" diffuse="0.35 0.35 0.35"/>
+
+    <geom name="bench" type="plane" size="1.2 1.2 0.05" material="bench_mat"/>
+
+    <!-- S4 CRIMP: the press. Placed first; everything else is derived from it. -->
+    <geom name="press_base" type="box"
+      pos="-0.16617 0.16617 0.03"
+      size="0.105 0.105 0.03"
+      euler="0 0 2.35619" material="press_mat" contype="0" conaffinity="0"/>
+    <geom name="press_column" type="box"
+      pos="-0.207006 0.207006 0.29"
+      size="0.04725 0.105 0.29"
+      euler="0 0 2.35619" material="press_mat" contype="0" conaffinity="0"/>
+    <geom name="press_baseplate" type="box"
+      pos="-0.16617 0.16617 0.2"
+      size="0.105 0.105 0.008"
+      euler="0 0 2.35619" material="press_plate_mat" contype="0" conaffinity="0"/>
+    <geom name="applicator" type="box"
+      pos="-0.192687 0.192687 0.2825"
+      size="0.1125 0.04 0.0825"
+      euler="0 0 2.35619" material="applicator_mat" contype="0" conaffinity="0"/>
+    <site name="crimp_point" pos="-0.141421 0.141421 0.23"
+      size="0.006" rgba="1 0.25 0.2 1"/>
+
+    <!-- Frame and deck. Deck raised deliberately to collapse Z travel. -->
+    <geom name="deck" type="cylinder"
+      pos="0 0 0.175"
+      size="0.28 0.005"
+      material="deck_mat" contype="0" conaffinity="0"/>
+    <geom name="frame_ring" type="cylinder"
+      pos="0 0 0.085"
+      size="0.24 0.085"
+      material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
+
+    <geom name="s1_feed" type="box" pos="0.235 0 0.21" size="0.035 0.04 0.03" euler="0 0 0" material="station_mat" contype="0" conaffinity="0"/>
+    <site name="s1_feed_wp" pos="0.2 0 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s2_slit" type="box" pos="0.192501 0.13479 0.21" size="0.035 0.04 0.03" euler="0 0 0.610865" material="station_mat" contype="0" conaffinity="0"/>
+    <site name="s2_slit_wp" pos="0.16383 0.114715 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s3_strip" type="box" pos="0.0803747 0.220828 0.21" size="0.035 0.04 0.03" euler="0 0 1.22173" material="station_mat" contype="0" conaffinity="0"/>
+    <site name="s3_strip_wp" pos="0.068404 0.187939 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s5_insert" type="box" pos="-0.220828 -0.0803747 0.21" size="0.035 0.04 0.03" euler="0 0 3.49066" material="station_mat" contype="0" conaffinity="0"/>
+    <site name="s5_insert_wp" pos="-0.187939 -0.068404 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s6_drop" type="box" pos="-0.1175 -0.203516 0.21" size="0.035 0.04 0.03" euler="0 0 4.18879" material="station_mat" contype="0" conaffinity="0"/>
+    <site name="s6_drop_wp" pos="-0.1 -0.173205 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s6_reject" type="box" pos="-0.0204816 -0.234106 0.21" size="0.035 0.04 0.03" euler="0 0 4.62512" material="reject_mat" contype="0" conaffinity="0"/>
+    <site name="s6_reject_wp" pos="-0.0174311 -0.199239 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+
+    <!-- Z stage: fixed column. Carries the whole rotating assembly. -->
+    <geom name="z_column" type="box" pos="0 0 0.23"
+      size="0.035 0.035 0.14"
+      material="zstage_mat" contype="0" conaffinity="0"/>
+
+    <!-- ============ the moving assembly ============ -->
+    <body name="z_carriage" pos="0 0 0.18">
+      <joint name="Z" type="slide" axis="0 0 1" range="0 0.1"
+        damping="40"/>
+      <geom name="z_carriage_g" type="box" pos="0 0 0" size="0.05 0.05 0.018"
+        material="zstage_mat" contype="0" conaffinity="0"/>
+
+      <body name="rotor" pos="0 0 0.018">
+        <joint name="T" type="hinge" axis="0 0 1"
+          range="-2.35619 2.35619"
+          damping="12"/>
+        <geom name="main_bearing" type="cylinder" pos="0 0 0.012"
+          size="0.045 0.012"
+          material="rotor_mat" contype="0" conaffinity="0"/>
+
+        <body name="arm" pos="0 0 0.06">
+          <geom name="arm_beam" type="box"
+            pos="0.115 0 0"
+            size="0.115 0.03 0.0125"
+            material="arm_mat" contype="0" conaffinity="0"/>
+
+          <body name="radial" pos="0.12 0 0">
+            <joint name="R" type="slide" axis="1 0 0"
+              range="0 0.08" damping="20"/>
+            <geom name="radial_carriage" type="box" pos="0 0 0.014"
+              size="0.020 0.028 0.010" material="arm_mat"
+              contype="0" conaffinity="0"/>
+
+            <body name="cross" pos="0 0 0">
+              <joint name="S" type="slide" axis="0 1 0"
+                range="-0.01 0.01"
+                damping="8"/>
+              <geom name="cross_carriage" type="box" pos="0 0 0"
+                size="0.012 0.016 0.007" material="arm_mat"
+                contype="0" conaffinity="0"/>
+
+              <body name="wrist" pos="0 0 0">
+                <joint name="W" type="hinge" axis="1 0 0" range="0 3.14159"
+                  damping="6"/>
+                <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
+                <geom name="comb_body" type="box" pos="0.006 0 0"
+                  size="0.010 0.0128 0.006"
+                  material="comb_mat" contype="0" conaffinity="0"/>
+                <site name="comb_tip" pos="0.028 0 0"
+                  size="0.003" rgba="0.2 1 0.4 1"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="Z_act" joint="Z" kp="800" ctrlrange="0 0.1"/>
+    <position name="T_act" joint="T" kp="200"
+      ctrlrange="-2.35619 2.35619"/>
+    <position name="R_act" joint="R" kp="400" ctrlrange="0 0.08"/>
+    <position name="S_act" joint="S" kp="200"
+      ctrlrange="-0.01 0.01"/>
+    <position name="W_act" joint="W" kp="100" ctrlrange="0 3.14159"/>
+  </actuator>
+</mujoco>
