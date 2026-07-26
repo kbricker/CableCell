@@ -69,18 +69,71 @@ entire rotating assembly (Kyle, 2026-07-26).
 NEMA 17/23, ~0.03 mm positioning accuracy, 100–400 mm strokes, $62–200. Widely
 available; not a custom build.
 
-### Design constraints
+### 🔴 The coaxial conflict (found in the rough-in, 2026-07-26)
 
-**Stiffness is the dominant cost.** The stage carries the rotary bearing, arm,
-radial slide, cross-slide, wrist, comb and drag chain — est. 5–15 kg — and sits
-at the *bottom of a long lever*. A small angular deflection at the Z carriage
-becomes a large displacement at the comb, which must stay inside the insertion
-funnel's capture window (`cell-design.md` §8 item 5). Two implications:
+**A single commodity ballscrew module cannot carry this axis.** You cannot run a
+rotary axis through the middle of a linear rail — and the rotary axis has to be at
+the pivot, which is exactly where the rail wants to be. Visible immediately in
+`sim/studies/renders/roughin_plan.png`: the Z column and the rotor compete for the
+same space. This is the first thing the rough-in caught that prose had missed.
 
-- Specify a dual-rail module, not a printer-class single-rod T8.
+Three ways out:
+
+| | Approach | Trade |
+|---|---|---|
+| **a** | Rotor cantilevered off one commodity module's carriage face | Cheapest, simplest to build. Hangs the whole assembly on a moment arm |
+| **b** | Z platform on 3–4 vertical guide posts, driven by **one off-axis ballscrew** | Rotary axis sits at the platform centre, unobstructed. Stiffness from the post triangle rather than a cantilever. Still commodity parts, ~$150–250 |
+| **c** | Move Z onto the arm rather than the base | No coaxial conflict at all, but adds moving mass at the end of the arm, fights the wrist for space, and gives up the station-tooling decoupling base-Z bought |
+
+**OPEN, and deliberately gated on a measurement** — see below.
+
+### The deflection budget is about variance, not strength
+
+Corrected 2026-07-26 after Kyle pointed out how light the product is.
+
+**The payload is negligible.** A 1.2 m length of 22 AWG 3-conductor ribbon at
+1.4 mm OD is roughly **15–20 g**. The rotating assembly is on the order of
+**2 kg**. The cable is about **1% of the moving mass** — not a factor in any load
+calculation.
+
+So the budget is not set by payload. It is set by:
+
+1. **Self-weight** of the assembly cantilevered ~200 mm out — the dominant static
+   load, and essentially *constant*.
+2. **Arriving inside the insertion funnel's capture window.** Pencilled at
+   ±0.3 mm, which at 200 mm reach is an angular budget of roughly **1.5 mrad
+   (0.086°) across the entire stack** — Z carriage, rotary bearing, arm, radial
+   slide, cross-slide. Z is one of five contributors.
+
+This is a **precision** problem, not a strength problem, and that distinction
+changes the architecture choice:
+
+> **Repeatable sag is calibration, not error.** If the arm always droops the same
+> 0.4 mm at a given θ/R/Z, it folds into the station Z table and the angular
+> positions and costs nothing. With a ~20 g payload that never varies, that is
+> exactly the regime we are in.
+
+What defeats a cantilever is **non-repeatability** — backlash on direction
+reversal, stick-slip in the bearings, thermal drift, play in the cross-slide and
+wrist. Those do not calibrate out. Static droop does.
+
+**So option (a) is far more viable than first assessed.** The architecture
+decision waits on one number: **the funnel's real capture window**, which is the
+headline output of de-risk B (plan 657.3) and needs nothing but printed parts and
+housings.
+
+- Funnel forgiving (±0.5 mm or better) → take the cantilever, option (a).
+- Funnel tight (±0.15 mm) → the platform-on-posts earns its cost, option (b).
+
+Cheaper to measure with $20 of PLA than to insure against with $150 of ballscrew.
+**This makes 657.3 a prerequisite for the Z architecture, not just an experiment.**
+
+### Other design constraints
+
 - **Prefer the shortest Z travel that does the job.** Stiffness falls off with
   stroke, and travel is the parameter most likely to be over-specified "just in
-  case."
+  case." Currently 55 mm required → 100 mm stock stroke.
+- Specify dual guidance, not a printer-class single-rod T8.
 
 **Back-drive is a safety decision.** A trapezoidal leadscrew self-locks — cut
 power and it holds. A ballscrew is efficient enough to **back-drive** under load,

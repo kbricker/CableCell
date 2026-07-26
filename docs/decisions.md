@@ -56,7 +56,7 @@ chosen over Onshape Free (all free-tier documents are public) and Fusion Persona
 (license churn): it reads STEP natively, exports STL at controlled deviation,
 produces dimensioned drawings via TechDraw, and is scriptable in Python. FreeCAD
 1.0 fixed the topological naming problem that made it unusable historically.
-Blender retained for renders, mockups and blockouts. *Install pending Kyle's yes.*
+Blender retained for renders, mockups and blockouts.
 
 **2026-07-26 — Two shut-height standards found; applicator leads, press follows.**
 135.78 mm (Molex/TE/Mecal) vs 119.7 mm (Chinese OTP clone) — a 16 mm mismatch
@@ -107,9 +107,40 @@ Kyle meant by "free to use with a citation" — MIT only requires notice
 preservation, which is weaker and does not oblige anyone to credit him anywhere a
 human will see.
 
-**Apache-2.0 considered and rejected.** It was raised for its explicit patent
+Apache-2.0 was considered and **rejected**. It was raised for its explicit patent
 grant, but that grant runs *from* the author *to* users — as sole author, Kyle
 would be granting away rights to any patent he later holds on the applicator
-mechanism. For a solo inventor with a plausible novel mechanism, no explicit
-grant preserves more optionality. Neither MIT nor CC BY grants patent rights, and
-that is deliberate.
+mechanism. For a solo inventor with a plausible novel mechanism, no explicit grant
+preserves more optionality. Neither MIT nor CC BY grants patent rights, and that is
+deliberate.
+
+**2026-07-26 — The Z stage cannot be a single coaxial ballscrew module.** Found by
+the MuJoCo rough-in: a rotary axis cannot pass through the middle of a linear
+rail, and the pivot needs the space the rail wants. Options are (a) cantilever the
+rotor off one module's carriage, (b) a Z platform on 3–4 guide posts with one
+off-axis ballscrew, (c) move Z onto the arm. Also found: the press body passes
+through the deck disc (130→340 mm radius against a 280 mm deck) — fix by
+scalloping the tooling plate where the press lands.
+
+**2026-07-26 — The deflection budget is about variance, not strength.** Kyle:
+these cables are small and light, worst case 3–4 ft, nowhere near a pound. Correct
+and decisive — a 1.2 m length of the ribbon is ~15–20 g against a ~2 kg rotating
+assembly, so payload is ~1% of moving mass and irrelevant to any load
+calculation.
+
+The real budget is *arriving inside the insertion funnel's capture window*
+(pencilled ±0.3 mm, ≈1.5 mrad across the whole stack at 200 mm reach). That makes
+it a precision problem, and precision cares about **variance**: with a constant
+~20 g payload, a cantilever's sag is *repeatable*, and repeatable sag folds into
+the station Z table as calibration rather than error. What defeats a cantilever is
+backlash, stick-slip and thermal drift, not droop.
+
+**Consequence: the Z architecture decision is deferred and explicitly gated on
+measuring the funnel capture window in de-risk B (657.3).** Option (a) is now the
+likely answer. Measuring it costs $20 of PLA; insuring against it costs $150 of
+ballscrew. This promotes 657.3 from "an experiment" to a prerequisite for a design
+decision.
+
+**2026-07-26 — Cable length envelope confirmed at ~1000 mm.** Kyle: "3.3 ft is
+perfectly fine for now, way larger than any early prototype I have planned." The
+figure in `cell-design.md` stands; the payout trough is sized to it.
