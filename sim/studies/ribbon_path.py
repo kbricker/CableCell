@@ -31,6 +31,7 @@ from sim import layout as L
 # radial budget to blow and nothing here to clash with.
 HALF_LENGTH = {
     "feed_head": 35.0,
+    "strip_die": 20.0,
     "splitting_wedge": 25.0,
     "spreader_plate": 12.5,
 }

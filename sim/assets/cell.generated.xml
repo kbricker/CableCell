@@ -34,6 +34,7 @@
     <material name="printed_mat" rgba="0.24 0.52 0.72 1"/>
     <material name="mount_mat" rgba="0.34 0.38 0.44 1"/>
     <material name="pedestal_mat" rgba="0.18 0.40 0.56 1"/>
+    <material name="clamp_mat" rgba="0.78 0.38 0.20 1"/>
     <material name="unknown_mat" rgba="0.52 0.52 0.54 0.55"/>
     <material name="zstage_mat" rgba="0.35 0.55 0.42 1"/>
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
@@ -65,6 +66,9 @@
     <mesh name="camera_mount_mesh" file="camera_mount.stl" scale="0.001 0.001 0.001"/>
     <mesh name="drive_roller_block_mesh" file="drive_roller_block.stl" scale="0.001 0.001 0.001"/>
     <mesh name="station_mount_mesh" file="station_mount.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="cross_slide_carrier_mesh" file="cross_slide_carrier.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="body_clamp_mesh" file="body_clamp.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="strip_die_mesh" file="strip_die.stl" scale="0.001 0.001 0.001"/>
   </asset>
 
   <worldbody>
@@ -123,8 +127,7 @@
     <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s2_slit_wp" pos="0.168076 0.108399 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="0" conaffinity="0"/>
-    <!-- S3_STRIP: greybox - V-blade die geometry undecided -->
-    <geom name="s3_strip" type="box" pos="0.0969329 0.214077 0.224" size="0.035 0.04 0.028" euler="0 0 1.14562" material="unknown_mat" contype="0" conaffinity="0"/>
+    <geom name="s3_strip_strip_die" type="mesh" mesh="strip_die_mesh" pos="0.0915706 0.202235 0.196" euler="0 0 1.14562" material="printed_mat" contype="0" conaffinity="0"/>
     <geom name="s3_strip_tag" type="box" pos="0.0812586 0.17946 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.14562" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s3_strip_wp" pos="0.082496 0.182193 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s5_insert_mount" type="mesh" mesh="station_mount_mesh" pos="-0.232444 0.0345685 0.186" euler="0 0 2.99396" material="mount_mat" contype="0" conaffinity="0"/>
@@ -213,8 +216,11 @@
               <joint name="S" type="slide" axis="0 1 0"
                 range="-0.01 0.01"
                 damping="8"/>
-              <geom name="cross_carriage" type="box" pos="0 0 0"
-                size="0.012 0.016 0.007" material="arm_mat"
+              <!-- S axis carrier. Takes almost no load: the 50 N pull-off
+                   runs along R, not S. Sizing it for the pull-off would have
+                   been the obvious mistake. -->
+              <geom name="cross_carriage" type="mesh" mesh="cross_slide_carrier_mesh"
+                pos="0 0 -0.021" material="arm_mat"
                 contype="0" conaffinity="0"/>
 
               <body name="wrist" pos="0 0 0">
@@ -229,6 +235,14 @@
                 <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
                 <geom name="comb_body" type="mesh" mesh="comb_mesh"
                   pos="-0.004 0 -0.006" material="comb_mat"
+                  contype="0" conaffinity="0"/>
+                <!-- Body clamp, inboard of the comb and flipping with it.
+                     Sprung closed, air opens it: losing pressure fails to
+                     GRIPPING rather than dropping a part mid-cycle. If the
+                     ribbon creeps here the measured length is silently wrong,
+                     which makes this the most critical printed part we have. -->
+                <geom name="body_clamp" type="mesh" mesh="body_clamp_mesh"
+                  pos="-0.030 0 -0.014" material="clamp_mat"
                   contype="0" conaffinity="0"/>
                 <site name="comb_tip" pos="0.028 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>

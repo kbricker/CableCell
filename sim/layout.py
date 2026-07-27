@@ -132,6 +132,7 @@ STATION_MOUNT_T = _d(10.0, COMMITTED, "station_mount base", "STATION_MOUNT_T")
 # PRESENTATION_GAP below.
 STATION_PART_PASSAGE: dict[str, Dim] = {
     "feed_head": _d(34.0, COMMITTED, "cut line, build_parts", "PASS_feedhead"),
+    "strip_die": _d(34.0, COMMITTED, "strip line, build_parts", "PASS_stripdie"),
     "splitting_wedge": _d(18.0, COMMITTED, "channel floor, build_parts", "PASS_wedge"),
     "spreader_plate": _d(4.0, COMMITTED, "mid-plate, build_parts", "PASS_spreader"),
 }
@@ -146,6 +147,43 @@ STATION_PART_PASSAGE: dict[str, Dim] = {
 # length is taken from, so any play between tube and blade would land directly
 # on the machine's headline spec.
 PRESENTATION_GAP = _d(8.0, COMMITTED, "docs/stations.md 1", "PRESENTATION_GAP")
+
+# ---------------------------------------------------------------------------
+# Body clamp — the part that must not slip
+# ---------------------------------------------------------------------------
+# S3 pulls insulation off three conductors at once by RETRACTING THE ARM 4 mm.
+# There is no dedicated pull-off actuator, which is a saving, but it means the
+# clamp holding the ribbon body takes the whole ~50 N.
+#
+# If the ribbon creeps in the clamp during pull-off, strip length is wrong AND
+# the measured cable length is wrong, because the ribbon has moved relative to
+# the datum the encoder established. A slipping clamp corrupts the machine's
+# headline spec SILENTLY - nothing downstream notices. That makes it the single
+# most safety-critical printed part in Phase 1.
+#
+# Sprung closed, air OPENS it. That is the opposite of the obvious arrangement
+# and it is deliberate: a single-acting cylinder is simpler and cheaper than a
+# double-acting one, and losing air pressure then fails to GRIPPING rather than
+# dropping a part mid-cycle.
+CLAMP_FORCE_N = _d(80.0, ESTIMATED, "1.6x the 50 N pull-off", "CLAMP_FORCE_N")
+CLAMP_JAW_LENGTH = _d(16.0, ESTIMATED, "grip area vs comb clearance", "CLAMP_JAW_LENGTH")
+CLAMP_SERRATION_PITCH = _d(1.2, ESTIMATED, "bite without cutting PVC", "CLAMP_SERRATION_PITCH")
+CLAMP_OPEN_GAP = _d(3.0, ESTIMATED, "ribbon entry clearance", "CLAMP_OPEN_GAP")
+
+# ---------------------------------------------------------------------------
+# S3 strip die
+# ---------------------------------------------------------------------------
+# Three V-blade pairs at COMB_PITCH, one stroke, so all three conductors get
+# the same strip length BY CONSTRUCTION rather than by three separate settings.
+#
+# Depth is the whole game and it is set by a swappable SHIM, not by an
+# adjustment screw. A screw can be knocked; a shim is a discrete part you can
+# hold up and identify. Too shallow and the slug will not part; too deep and
+# the blade nicks strands, which does not fail here - it fails a pull test two
+# stations later, after the crimp, which is the expensive kind of failure.
+STRIP_BLADE_ANGLE = _d(60.0, ESTIMATED, "included angle, V blade", "STRIP_BLADE_ANGLE")
+STRIP_SHIM_T = _d(1.10, ESTIMATED, "= OD - 2x0.15 wall left", "STRIP_SHIM_T")
+STRIP_SLUG_DROP = _d(30.0, ESTIMATED, "chute clears mechanism", "STRIP_SLUG_DROP")
 
 
 def tallest_passage() -> float:

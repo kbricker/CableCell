@@ -74,7 +74,8 @@ MESHES = (
     "comb", "spool", "spool_hanger", "dancer_arm", "feed_head",
     "measuring_wheel", "splitting_wedge", "spreader_plate", "z_platform",
     "spindle_shaft", "radial_carriage", "wrist_mount", "camera_mount",
-    "drive_roller_block", "station_mount",
+    "drive_roller_block", "station_mount", "cross_slide_carrier",
+    "body_clamp", "strip_die",
 )
 
 
@@ -126,12 +127,16 @@ STATION_PARTS: dict[str, tuple] = {
         ("splitting_wedge", 25.0, 0.0, False, None),
         ("spreader_plate", 67.0, 0.0, False, None),
     ),
+    # S3 takes three conductors already fanned to comb pitch and scores all
+    # three in one stroke. The arm does the pull-off by retracting.
+    "S3_STRIP": (
+        ("strip_die", 22.0, 0.0, False, None),
+    ),
 }
 
 # Stops with no modelled tooling yet. These stay grey ON PURPOSE and say why —
 # a detailed guess is worse than an obvious blank.
 UNMODELLED = {
-    "S3_STRIP": "V-blade die geometry undecided",
     "S5_INSERT": "out of Phase 1 scope",
     "S6_DROP": "chute not designed",
     "S6_REJECT": "chute not designed",
@@ -453,6 +458,7 @@ def build_mjcf() -> str:
     <material name="printed_mat" rgba="0.24 0.52 0.72 1"/>
     <material name="mount_mat" rgba="0.34 0.38 0.44 1"/>
     <material name="pedestal_mat" rgba="0.18 0.40 0.56 1"/>
+    <material name="clamp_mat" rgba="0.78 0.38 0.20 1"/>
     <material name="unknown_mat" rgba="0.52 0.52 0.54 0.55"/>
     <material name="zstage_mat" rgba="0.35 0.55 0.42 1"/>
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
@@ -552,8 +558,11 @@ def build_mjcf() -> str:
               <joint name="S" type="slide" axis="0 1 0"
                 range="{-float(L.CROSS_SLIDE_STROKE) / 2 * MM:.6g} {float(L.CROSS_SLIDE_STROKE) / 2 * MM:.6g}"
                 damping="8"/>
-              <geom name="cross_carriage" type="box" pos="0 0 0"
-                size="0.012 0.016 0.007" material="arm_mat"
+              <!-- S axis carrier. Takes almost no load: the 50 N pull-off
+                   runs along R, not S. Sizing it for the pull-off would have
+                   been the obvious mistake. -->
+              <geom name="cross_carriage" type="mesh" mesh="cross_slide_carrier_mesh"
+                pos="0 0 -0.021" material="arm_mat"
                 contype="0" conaffinity="0"/>
 
               <body name="wrist" pos="0 0 0">
@@ -568,6 +577,14 @@ def build_mjcf() -> str:
                 <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
                 <geom name="comb_body" type="mesh" mesh="comb_mesh"
                   pos="-0.004 0 -0.006" material="comb_mat"
+                  contype="0" conaffinity="0"/>
+                <!-- Body clamp, inboard of the comb and flipping with it.
+                     Sprung closed, air opens it: losing pressure fails to
+                     GRIPPING rather than dropping a part mid-cycle. If the
+                     ribbon creeps here the measured length is silently wrong,
+                     which makes this the most critical printed part we have. -->
+                <geom name="body_clamp" type="mesh" mesh="body_clamp_mesh"
+                  pos="-0.030 0 -0.014" material="clamp_mat"
                   contype="0" conaffinity="0"/>
                 <site name="comb_tip" pos="{float(L.TAIL_PROJECTION) * MM:.6g} 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>

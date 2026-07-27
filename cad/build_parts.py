@@ -696,6 +696,188 @@ def drive_roller_block():
     return body
 
 
+def _v_groove(y_c: float, depth: float, half_w: float, x0: float, length: float,
+              z_top: float):
+    """A V-section groove cutter running along +x. Built as a lofted face and
+    extruded, because Shape.rotate() mutates in place and returns None."""
+    pts = [
+        V(x0, y_c - half_w, z_top),
+        V(x0, y_c + half_w, z_top),
+        V(x0, y_c, z_top - depth),
+        V(x0, y_c - half_w, z_top),
+    ]
+    face = Part.Face(Part.Wire(Part.makePolygon(pts)))
+    return face.extrude(V(length, 0, 0))
+
+
+def cross_slide_carrier():
+    """Rides the MGN9 rail on top of the radial carriage; carries the wrist.
+
+    The S axis. 20 mm of stroke in 8 mm steps, which selects conductor 1, 2 or
+    3 at comb pitch — that is its entire job, and it is why the stroke is
+    exactly 2 x COMB_PITCH rather than a round number.
+
+    It takes almost no load. The 50 N pull-off runs along R, not S, so this can
+    be a small screw and a light rail. Sizing it for the pull-off would have
+    been the obvious mistake.
+    """
+    stroke = float(L.CROSS_SLIDE_STROKE)
+    w, d, t = 44.0, float(L.MGN9_CARRIAGE_W) + 14.0, 8.0
+    body = Part.makeBox(w, d, t, V(-w / 2, -d / 2, 0))
+
+    # MGN9C mounting underneath.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(
+                _z_cyl(1.7, t + 2.0, -1.0,
+                       sx * float(L.MGN9_BOLT_X) / 2.0,
+                       sy * float(L.MGN9_BOLT_Y) / 2.0)
+            )
+
+    # Upright carrying the wrist hub bore. Hub axis is RADIAL (+x), matching
+    # wrist_mount and the W joint.
+    up_t, up_h = 9.0, 30.0
+    up = Part.makeBox(up_t, d, up_h, V(-w / 2 + 2.0, -d / 2, t))
+    body = body.fuse(up)
+    hub_z = t + up_h - 13.0
+    body = body.cut(
+        Part.makeCylinder(3.1, up_t + 8.0, V(-w / 2, 0, hub_z), V(1, 0, 0))
+    )
+
+    # Leadscrew nut boss, offset clear of the rail. Stroke is stamped into the
+    # part as a witness slot so a mis-cut carrier is visible, not silent.
+    boss_y = d / 2.0 - 6.0
+    body = body.fuse(Part.makeBox(18.0, 12.0, 14.0, V(-9.0, boss_y - 12.0, t)))
+    body = body.cut(
+        Part.makeCylinder(2.1, 40.0, V(-20.0, boss_y - 6.0, t + 7.0), V(1, 0, 0))
+    )
+    body = body.cut(
+        Part.makeBox(stroke, 2.0, 1.0, V(-stroke / 2, -d / 2 + 1.0, t - 1.0))
+    )
+    return body
+
+
+def body_clamp():
+    """Holds the ribbon body while S3 rips insulation off three conductors.
+
+    THE part that must not slip. The arm pulls off by retracting 4 mm, so this
+    clamp takes the whole ~50 N. If the ribbon creeps here, strip length is
+    wrong and the MEASURED CABLE LENGTH is wrong too, because the ribbon has
+    moved relative to the datum the encoder established — and nothing
+    downstream notices. It corrupts the headline spec silently.
+
+    Sprung closed, air opens it. A single-acting cylinder is simpler and
+    cheaper than a double-acting one, and losing air pressure fails to
+    GRIPPING rather than dropping a part mid-cycle.
+
+    Serrations run ACROSS the ribbon, so their ridges bite perpendicular to the
+    pull. Pitch is fine enough to grip PVC without shearing into it.
+    """
+    jaw_l = float(L.CLAMP_JAW_LENGTH)
+    rib_w = float(L.RIBBON_WIDTH)
+    rib_t = float(L.RIBBON_THICKNESS)
+    pitch = float(L.CLAMP_SERRATION_PITCH)
+    open_gap = float(L.CLAMP_OPEN_GAP)
+
+    body_x, body_y, body_z = jaw_l + 16.0, 30.0, 34.0
+    body = Part.makeBox(body_x, body_y, body_z, V(-body_x / 2, -body_y / 2, 0))
+
+    grip_z = 14.0
+    # Ribbon channel through the fixed lower jaw.
+    body = body.cut(
+        Part.makeBox(body_x + 4.0, rib_w + 0.6, rib_t + 0.3,
+                     V(-body_x / 2 - 2, -(rib_w + 0.6) / 2, grip_z))
+    )
+    # Serration ridges on the fixed jaw floor: cut narrow slots across the
+    # ribbon, leaving ridges between them.
+    n = int(jaw_l / pitch)
+    for i in range(n):
+        x = -jaw_l / 2.0 + i * pitch
+        body = body.cut(
+            Part.makeBox(pitch * 0.45, rib_w + 2.0, 0.35,
+                         V(x, -(rib_w + 2.0) / 2, grip_z - 0.35))
+        )
+    # Moving jaw slideway, open above the ribbon.
+    body = body.cut(
+        Part.makeBox(jaw_l + 1.0, rib_w + 4.0, open_gap + 10.0,
+                     V(-(jaw_l + 1.0) / 2, -(rib_w + 4.0) / 2, grip_z + rib_t + 0.3))
+    )
+    # Spring pocket above the moving jaw — closes the clamp with no air.
+    body = body.cut(_z_cyl(4.5, 12.0, body_z - 12.0))
+    # Single-acting cylinder mount on top.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(_z_cyl(2.2, 12.0, body_z - 11.0, sx * 10.0, sy * 10.0))
+    # Mounts to the wrist pad, alongside the comb.
+    for y in (-11.0, 11.0):
+        body = body.cut(_z_cyl(1.7, grip_z, -1.0, -body_x / 2 + 6.0, y))
+    return body
+
+
+def strip_die():
+    """S3. Three V-blade pairs at comb pitch, one stroke, one shim.
+
+    All three conductors get the same strip length BY CONSTRUCTION rather than
+    from three separate settings — that is the reason for a gang die rather
+    than a single blade indexed three times.
+
+    Depth is set by a SWAPPABLE SHIM, not an adjustment screw. A screw can be
+    knocked out of true and nobody sees it; a shim is a discrete part you can
+    hold up and identify. Too shallow and the slug will not part; too deep and
+    the blade nicks strands — which does not fail here, it fails a pull test
+    two stations later after the crimp, which is the expensive kind.
+
+    No pull-off actuator: the arm retracting 4 mm does that. Hence body_clamp.
+    """
+    pitch = float(L.COMB_PITCH)
+    n = int(L.COMB_CHANNELS)
+    od = float(L.RIBBON_CONDUCTOR_OD)
+    shim_t = float(L.STRIP_SHIM_T)
+    drop = float(L.STRIP_SLUG_DROP)
+
+    span = pitch * (n + 1)
+    body_x, body_z = 40.0, 52.0
+    body = Part.makeBox(body_x, span, body_z, V(-body_x / 2, -span / 2, 0))
+
+    cut_z = 34.0
+    half_w = od / 2.0 + 0.6
+
+    for i in range(n):
+        y = (i - (n - 1) / 2.0) * pitch
+        # Conductor passage straight through.
+        body = body.cut(
+            Part.makeCylinder(od / 2.0 + 0.25, body_x + 4.0,
+                              V(-body_x / 2 - 2, y, cut_z), V(1, 0, 0))
+        )
+        # The V blade itself, scoring from above at the strip line.
+        body = body.cut(
+            _v_groove(y, half_w - shim_t / 2.0, half_w, -0.6, 1.2,
+                      cut_z + od / 2.0 + 0.25)
+        )
+        # Slug chute: the three insulation slugs drop away rather than into the
+        # mechanism, which is what stops the second cycle jamming on the first
+        # cycle's waste.
+        body = body.cut(
+            Part.makeCylinder(od / 2.0 + 1.5, drop, V(-6.0, y, cut_z - drop), V(0, 0, 1))
+        )
+
+    # Shim slot, entered from the side so the shim swaps without stripping the
+    # die off the deck.
+    body = body.cut(
+        Part.makeBox(body_x + 4.0, span + 4.0, shim_t,
+                     V(-body_x / 2 - 2, -(span + 4.0) / 2, cut_z + od / 2.0 + 2.0))
+    )
+    # SDA20 cylinder mount on top.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(_z_cyl(2.2, 14.0, body_z - 13.0, sx * 13.0, sy * 13.0))
+    # Station mount pattern.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(_z_cyl(2.6, 14.0, -1.0, sx * 14.0, sy * 20.0))
+    return body
+
+
 def station_mount():
     """Generic station base — bolts a station to the deck on the bolt circle.
 
@@ -740,6 +922,9 @@ PARTS = {
     "z_platform": z_platform,
     "spindle_shaft": spindle_shaft,
     "radial_carriage": radial_carriage,
+    "cross_slide_carrier": cross_slide_carrier,
+    "body_clamp": body_clamp,
+    "strip_die": strip_die,
     "wrist_mount": wrist_mount,
     "camera_mount": camera_mount,
     "drive_roller_block": drive_roller_block,
