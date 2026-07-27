@@ -34,15 +34,22 @@ from sim import layout as L
 
 def swept_annulus() -> tuple[float, float]:
     """Radial band the arm sweeps through, mm."""
-    return B._BEAM_X0, float(L.ARM_R0) + 30.0
+    return B._BEAM_X0, L.arm_structure_max_r()
 
 
 def z_band() -> tuple[float, float]:
-    """Height band the arm occupies across its whole Z travel, mm above bench."""
-    # From the PLATFORM, which is where the rotating assembly actually stands —
-    # not from the deck, which it now passes through.
-    low = B._ROTOR_BASE + B.COMB_ABOVE_ROTOR
-    return low - float(L.ARM_THICKNESS) / 2.0, low + L.z_stage_choice() + float(L.ARM_THICKNESS) / 2.0
+    """Height band the arm occupies across its whole Z travel, mm above bench.
+
+    Read from layout.py section 4d, which is now the only place the arm's stack
+    exists. This function used to build the band from the comb's height plus
+    half the beam thickness — a third private copy of the stack, and wrong in
+    both directions once the arm stopped being a single slab.
+    """
+    low = float(L.DECK_ABOVE_BENCH) + min(
+        L.arm_beam_bottom(), float(L.STATION_TOOLING_HEIGHT) - L.wrist_flip_r()
+    )
+    high = float(L.DECK_ABOVE_BENCH) + L.arm_stack_top()
+    return low, high + L.z_stage_choice()
 
 
 def obstacles() -> list[tuple[str, float, float, float]]:

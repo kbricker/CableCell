@@ -197,27 +197,51 @@ def comb():
     """
     pitch = float(L.COMB_PITCH)
     n = int(L.COMB_CHANNELS)
-    ch_w = float(L.RIBBON_CONDUCTOR_OD) + 0.4  # clearance to slide, not grip
-    ch_d = float(L.RIBBON_CONDUCTOR_OD) + 0.6
+    od = float(L.RIBBON_CONDUCTOR_OD)
+    ch_r = (od + 0.4) / 2.0  # clearance to slide, not grip
 
-    body_x, body_y, body_z = 26.0, pitch * (n + 1), 12.0
-    body = Part.makeBox(body_x, body_y, body_z, V(0, -body_y / 2, 0))
+    # THE CHANNELS SIT ON Z=0, AND Z=0 IS THE WRIST'S FLIP AXIS.
+    #
+    # They used to sit at the comb's top face. With the flip axis anywhere else,
+    # rotating the wrist 180 degrees does not just turn the cable over, it
+    # TRANSLATES it by the channel offset — so every second end would have come
+    # out short or long by that amount. It would have read as a feed-length
+    # error, which is the worst kind to chase: the encoder would have been
+    # measuring perfectly the whole time.
+    #
+    # On the axis, the flip is a pure rotation and the conductors do not move.
+    body_x = float(L.COMB_LENGTH)
+    body_y = float(L.COMB_BODY_W)
+    body_z = float(L.COMB_BODY_H)
+    body = Part.makeBox(body_x, body_y, body_z, V(0, -body_y / 2, -body_z / 2))
+
+    # Throat width. Narrower than the conductor, so it snaps in and stays in.
+    # A plain open-topped slot would be open-BOTTOMED after a flip and drop the
+    # cable; a closed bore would never release it at S6. A compliant PVC
+    # conductor through a 0.2 mm interference throat does both jobs with no
+    # moving parts, which is the cheapest way to own this problem.
+    throat = od - 0.2
 
     for i in range(n):
         y = (i - (n - 1) / 2.0) * pitch
-        slot = Part.makeBox(
-            body_x + 2.0, ch_w, ch_d, V(-1.0, y - ch_w / 2.0, body_z - ch_d)
+        body = body.cut(
+            Part.makeCylinder(ch_r, body_x + 2.0, V(-1.0, y, 0.0), V(1, 0, 0))
         )
-        body = body.cut(slot)
+        body = body.cut(
+            Part.makeBox(body_x + 2.0, throat, body_z,
+                         V(-1.0, y - throat / 2.0, 0.0))
+        )
         # Lead-in funnel at the outboard face so a fanned tail self-finds.
-        cone = Part.makeCone(
-            ch_w / 2.0, 3.2, 6.0, V(body_x - 6.0, y, body_z - ch_d / 2.0), V(1, 0, 0)
+        body = body.cut(
+            Part.makeCone(ch_r, 3.2, 6.0, V(body_x - 6.0, y, 0.0), V(1, 0, 0))
         )
-        body = body.cut(cone)
 
-    # Mounting to the cross-slide carrier.
-    for y in (-body_y / 2 + 5.0, body_y / 2 - 5.0):
-        body = body.cut(_z_cyl(1.7, body_z + 2.0, -1.0, 6.0, y))
+    # Mounting to the body clamp's outboard face — bolts run RADIALLY now, not
+    # vertically, because the mating face is a radial face.
+    for y in (-body_y / 2 + 4.0, body_y / 2 - 4.0):
+        body = body.cut(
+            Part.makeCylinder(1.7, body_x + 2.0, V(-1.0, y, 0.0), V(1, 0, 0))
+        )
     return body
 
 
@@ -548,7 +572,10 @@ def radial_carriage():
     import math
 
     w = float(L.MGN12_CARRIAGE_W) + 12.0
-    ln, t = 52.0, 8.0
+    # 52 -> ARM_CARRIAGE_LEN. Not cosmetic: the retracted carriage's inboard
+    # face is what has to miss the spindle housing, and check_arm_stack() counts
+    # half this length into that clearance.
+    ln, t = float(L.ARM_CARRIAGE_LEN), float(L.ARM_PLATE_T)
     body = Part.makeBox(ln, w, t, V(-ln / 2, -w / 2, 0))
 
     # MGN12H mounting pattern.
@@ -559,8 +586,10 @@ def radial_carriage():
                        sy * float(L.MGN12_BOLT_Y) / 2.0)
             )
 
-    # T8 nut boss, standing proud so the screw clears the rail.
-    boss_y = w / 2.0 + 6.0
+    # T8 nut boss, standing proud so the screw clears the rail. On the AWAY side
+    # from the wrist: this plate now sits ARM_BEAM_Y off the ribbon centreline
+    # and the boss was the part of it reaching back toward the comb.
+    boss_y = -(w / 2.0 + 6.0) + 16.0
     body = body.fuse(Part.makeBox(30.0, 16.0, 22.0, V(-15, boss_y - 16.0, 0)))
     nut_y = boss_y - 8.0
     body = body.cut(_z_cyl(5.5, 30.0, -1.0, 0.0, nut_y))
@@ -585,29 +614,48 @@ def wrist_mount():
     reach them. The pneumatic rotary actuator originally specified here was
     dropped at $220 against ~$20 for a stepper and belt.
     """
-    hub_r, hub_w = 13.0, 14.0
+    hub_r = float(L.WRIST_HUB_R)
+    hub_w = float(L.WRIST_HUB_WIDTH)
+    shaft = float(L.WRIST_SHAFT_DIA)
 
-    # Hub axis is RADIAL (+X), matching the sim's W joint. It was built on Y
-    # originally, which would have flipped the comb about the wrong axis — the
-    # cable is turned end-for-end about the arm's long axis, not side to side.
-    # The scene caught the mismatch; fixing it here rather than rotating the
-    # mesh at placement keeps the part and the model telling the same story.
-    part = Part.makeCylinder(hub_r, hub_w, V(-hub_w / 2, 0, 0), V(1, 0, 0))
-    part = part.cut(Part.makeCylinder(2.6, hub_w + 4.0, V(-hub_w / 2 - 2, 0, 0), V(1, 0, 0)))
+    # Hub axis is RADIAL (+X), matching the sim's W joint, and X=0 here is the
+    # OUTBOARD face of the cross-slide cheek. Everything from here outward —
+    # hub, clamp, comb — cantilevers off the wrist shaft.
+    #
+    # THE PART LOST ITS COMB PAD. It used to carry a 26 x 32 x 6 pad so the comb
+    # could bolt straight to it, which put the comb immediately outboard of the
+    # hub and left nowhere for the body clamp: the clamp has to sit BETWEEN the
+    # ribbon's entry and the comb, and it has to flip with them. Now the train
+    # is hub -> clamp -> comb, and this part's whole job is to key the clamp to
+    # the shaft and stop it in two places.
+    #
+    # Width is 10 mm and that is a designed number, not a comfortable one. Every
+    # millimetre here is spent twice — once reaching out to the work point, once
+    # retracting back past the spindle. At 14 mm check_arm_stack() reported the
+    # retracted carriage inside the spindle housing.
+    part = Part.makeCylinder(hub_r, hub_w, V(0, 0, 0), V(1, 0, 0))
+    part = part.cut(
+        Part.makeCylinder(shaft / 2.0 + 0.1, hub_w + 4.0, V(-2.0, 0, 0), V(1, 0, 0))
+    )
 
-    # Comb mounting pad, on the outboard face of the hub so the comb projects
-    # radially outward toward the station.
-    pad = Part.makeBox(26.0, 32.0, 6.0, V(hub_w / 2, -16.0, -3.0))
-    part = part.fuse(pad)
+    # Grub screw onto the shaft flat.
+    part = part.cut(
+        Part.makeCylinder(1.6, hub_r + 2.0, V(hub_w / 2.0, 0, 0), V(0, 0, 1))
+    )
+
+    # Tapped bosses for the body clamp, on the outboard face. Same y as the
+    # clamp's own radial through-holes.
     for y in (-11.0, 11.0):
         part = part.cut(
-            Part.makeCylinder(1.7, 12.0, V(hub_w / 2 + 8.0, y, -6.0), V(0, 0, 1))
+            Part.makeCylinder(1.35, 8.0, V(hub_w - 7.0, y, 0.0), V(1, 0, 0))
         )
 
-    # Hard-stop lugs — the two positions are mechanical, not commanded.
+    # Hard-stop lugs — the two positions are mechanical, not commanded. They sit
+    # 180 degrees apart so ONE fixed stop on the cheek serves both ends.
     for sign in (1.0, -1.0):
         part = part.fuse(
-            Part.makeBox(6.0, 8.0, 10.0, V(-hub_w / 2 - 3.0, sign * hub_r - 4.0, -5.0))
+            Part.makeBox(hub_w, 8.0, 6.0,
+                         V(0, sign * (hub_r - 4.0) - 4.0, sign * hub_r - 3.0))
         )
     return part
 
@@ -741,33 +789,51 @@ def rotor_plate():
         )
     plate = plate.cut(_z_cyl(bore - 9.0, plate_t + 2.0, -1.0))
 
-    # Saddle the beam sits in, running out along +x.
-    saddle_l = flange_r + 30.0
+    # THE SADDLE FOLLOWED THE BEAM OFF THE CENTRELINE.
+    #
+    # It ran along +x at y=0, which was correct while the beam was on the ribbon
+    # centreline. The beam now sits at -ARM_BEAM_Y so the R stack clears the
+    # wrist's flip envelope, and a saddle left at y=0 would have held nothing —
+    # and would have stood in the wrist's path on the way in, which is how
+    # MuJoCo found it.
+    #
+    # It is also shorter now. It used to reach flange_r+30, out past where the
+    # wrist cheek comes down at full retraction.
+    beam_y = -float(L.ARM_BEAM_Y)
+    saddle_l = flange_r + 14.0
+    web_y0 = beam_y - (beam_w + 12.0) / 2
+    web_y1 = beam_w / 2 + 6.0
+
+    # Web from the flange across to the beam line.
+    plate = plate.fuse(
+        Part.makeBox(saddle_l, web_y1 - web_y0, plate_t, V(0, web_y0, 0))
+    )
+    # Saddle cheeks either side of the beam.
     plate = plate.fuse(
         Part.makeBox(saddle_l, beam_w + 12.0, plate_t + beam_h * 0.6,
-                     V(0, -(beam_w + 12.0) / 2, 0))
+                     V(0, beam_y - (beam_w + 12.0) / 2, 0))
     )
     plate = plate.cut(
         Part.makeBox(saddle_l + 2.0, beam_w + 0.4, beam_h,
-                     V(-1.0, -(beam_w + 0.4) / 2, plate_t))
+                     V(-1.0, beam_y - (beam_w + 0.4) / 2, plate_t))
     )
     # Beam clamping bolts, through the saddle cheeks.
-    for x in (flange_r * 0.6, saddle_l - 12.0):
+    for x in (flange_r * 0.5, saddle_l - 10.0):
         plate = plate.cut(
             Part.makeCylinder(2.6, beam_w + 20.0,
-                              V(x, -(beam_w + 12.0) / 2 - 4, plate_t + beam_h * 0.3),
+                              V(x, beam_y - (beam_w + 12.0) / 2 - 4,
+                                plate_t + beam_h * 0.3),
                               V(0, 1, 0))
         )
-    # Ribs from the flange out to the saddle.
-    for sign in (1.0, -1.0):
-        tri = Part.makePolygon([
-            V(0, sign * (beam_w / 2 + 5.0), plate_t),
-            V(flange_r + 4.0, sign * (beam_w / 2 + 5.0), plate_t),
-            V(0, sign * (beam_w / 2 + 5.0), plate_t + beam_h * 0.55),
-            V(0, sign * (beam_w / 2 + 5.0), plate_t),
-        ])
-        face = Part.Face(Part.Wire(tri))
-        plate = plate.fuse(face.extrude(V(0, sign * 4.0, 0)))
+    # Rib along the web's open edge, carrying the beam's moment into the flange.
+    tri = Part.makePolygon([
+        V(0, web_y0, plate_t),
+        V(saddle_l, web_y0, plate_t),
+        V(0, web_y0, plate_t + beam_h * 0.55),
+        V(0, web_y0, plate_t),
+    ])
+    face = Part.Face(Part.Wire(tri))
+    plate = plate.fuse(face.extrude(V(0, 5.0, 0)))
     return plate
 
 
@@ -783,8 +849,15 @@ def cross_slide_carrier():
     been the obvious mistake.
     """
     stroke = float(L.CROSS_SLIDE_STROKE)
-    w, d, t = 44.0, float(L.MGN9_CARRIAGE_W) + 14.0, 8.0
-    body = Part.makeBox(w, d, t, V(-w / 2, -d / 2, 0))
+    reach = float(L.ARM_BEAM_Y)
+    w, t = float(L.CROSS_PLATE_LEN), float(L.ARM_PLATE_T)
+    # Y=0 is the MGN9 block; the plate reaches ACROSS to +ARM_BEAM_Y, which is
+    # the ribbon centreline. The R axis runs alongside the work line rather than
+    # under it, because 59 mm of rail stack and a 46 mm flip envelope cannot
+    # share 34 mm of height — see layout.py ARM_BEAM_Y.
+    y0 = -(float(L.MGN9_CARRIAGE_W) + 14.0) / 2.0
+    y1 = reach + 12.0
+    body = Part.makeBox(w, y1 - y0, t, V(-w / 2, y0, 0))
 
     # MGN9C mounting underneath.
     for sx in (-1, 1):
@@ -795,25 +868,57 @@ def cross_slide_carrier():
                        sy * float(L.MGN9_BOLT_Y) / 2.0)
             )
 
-    # Upright carrying the wrist hub bore. Hub axis is RADIAL (+x), matching
-    # wrist_mount and the W joint.
-    up_t, up_h = 9.0, 30.0
-    up = Part.makeBox(up_t, d, up_h, V(-w / 2 + 2.0, -d / 2, t))
-    body = body.fuse(up)
-    hub_z = t + up_h - 13.0
+    # Gusset along the reach. The plate carries the wrist train out at
+    # ARM_BEAM_Y, and the 50 N strip pull acts at the far end of it.
+    body = body.fuse(
+        Part.makeBox(6.0, y1 - y0, 14.0, V(w / 2 - 6.0, y0, t))
+    )
+
+    # THE CHEEK HANGS DOWN, AND IT HANGS FROM THE INBOARD END.
+    #
+    # This was a 30 mm upright standing UP from the plate with the hub bore near
+    # its top. That put the wrist axis above the plate, above the rail, above
+    # the beam — nowhere near the work line — and the scene papered over it with
+    # a hand-typed -0.009 offset that nobody ever added up.
+    #
+    # The drop is derived, not chosen: the plate seats on the MGN9 block and the
+    # wrist axis has to land on the engagement plane, so the cheek is exactly as
+    # long as the gap between them. If the stack under it ever grows past the
+    # work line, this goes negative and layout.py refuses to import.
+    #
+    # Inboard end, because everything on the wrist cantilevers OUTBOARD from
+    # here: hub, then clamp, then comb. A cheek in the middle would have the
+    # clamp swinging through it on every flip.
+    drop = float(L.wrist_cheek_drop_from_seat())
+    ch_t = float(L.WRIST_CHEEK_T)
+    hub_r = float(L.WRIST_HUB_R)
+    cheek_h = drop + hub_r + 5.0
+    cheek_w = 2.0 * (hub_r + 3.0)
+    cheek = Part.makeBox(ch_t, cheek_w, cheek_h,
+                         V(-w / 2, reach - cheek_w / 2, -cheek_h))
+    body = body.fuse(cheek)
+
+    # Wrist shaft bore, at the engagement plane, on the ribbon centreline.
     body = body.cut(
-        Part.makeCylinder(3.1, up_t + 8.0, V(-w / 2, 0, hub_z), V(1, 0, 0))
+        Part.makeCylinder(float(L.WRIST_SHAFT_DIA) / 2.0 + 0.15, ch_t + 8.0,
+                          V(-w / 2 - 4.0, reach, -drop), V(1, 0, 0))
+    )
+    # Fixed hard stop the wrist's two lugs land on — one stop, both ends,
+    # because the lugs are 180 degrees apart.
+    body = body.fuse(
+        Part.makeBox(ch_t, 7.0, 10.0,
+                     V(-w / 2, reach + hub_r - 7.0, -drop - hub_r - 5.0))
     )
 
     # Leadscrew nut boss, offset clear of the rail. Stroke is stamped into the
     # part as a witness slot so a mis-cut carrier is visible, not silent.
-    boss_y = d / 2.0 - 6.0
-    body = body.fuse(Part.makeBox(18.0, 12.0, 14.0, V(-9.0, boss_y - 12.0, t)))
+    boss_y = y0 + 6.0
+    body = body.fuse(Part.makeBox(18.0, 12.0, 14.0, V(-9.0, boss_y, t)))
     body = body.cut(
-        Part.makeCylinder(2.1, 40.0, V(-20.0, boss_y - 6.0, t + 7.0), V(1, 0, 0))
+        Part.makeCylinder(2.1, 40.0, V(-20.0, boss_y + 6.0, t + 7.0), V(1, 0, 0))
     )
     body = body.cut(
-        Part.makeBox(stroke, 2.0, 1.0, V(-stroke / 2, -d / 2 + 1.0, t - 1.0))
+        Part.makeBox(stroke, 2.0, 1.0, V(-stroke / 2, y0 + 1.0, t - 1.0))
     )
     return body
 
@@ -840,38 +945,58 @@ def body_clamp():
     pitch = float(L.CLAMP_SERRATION_PITCH)
     open_gap = float(L.CLAMP_OPEN_GAP)
 
-    body_x, body_y, body_z = jaw_l + 16.0, 30.0, 34.0
-    body = Part.makeBox(body_x, body_y, body_z, V(-body_x / 2, -body_y / 2, 0))
+    # THE GRIP PLANE IS Z=0, WHICH IS THE WRIST'S FLIP AXIS.
+    #
+    # Same reasoning as the comb, and it matters more here: this is the clamp
+    # that establishes the length datum. If flipping translated the gripped
+    # ribbon, it would move the datum, and the encoder would go on measuring
+    # correctly from a datum that had shifted.
+    #
+    # X runs from 0 at the wrist hub's outboard face, radially outward; the comb
+    # bolts to this part's outboard face at X = CLAMP_BODY_LEN.
+    body_x = float(L.CLAMP_BODY_LEN)
+    body_y = float(L.CLAMP_BODY_W)
+    body_z = float(L.CLAMP_BODY_H)
+    body = Part.makeBox(body_x, body_y, body_z, V(0, -body_y / 2, -body_z / 2))
 
-    grip_z = 14.0
-    # Ribbon channel through the fixed lower jaw.
+    # Ribbon channel, straddling the axis.
     body = body.cut(
         Part.makeBox(body_x + 4.0, rib_w + 0.6, rib_t + 0.3,
-                     V(-body_x / 2 - 2, -(rib_w + 0.6) / 2, grip_z))
+                     V(-2.0, -(rib_w + 0.6) / 2, -(rib_t + 0.3) / 2))
     )
-    # Serration ridges on the fixed jaw floor: cut narrow slots across the
-    # ribbon, leaving ridges between them.
+    # Serration ridges on the fixed (lower) jaw floor: cut narrow slots across
+    # the ribbon, leaving ridges between them.
+    jaw_x0 = (body_x - jaw_l) / 2.0
     n = int(jaw_l / pitch)
     for i in range(n):
-        x = -jaw_l / 2.0 + i * pitch
+        x = jaw_x0 + i * pitch
         body = body.cut(
             Part.makeBox(pitch * 0.45, rib_w + 2.0, 0.35,
-                         V(x, -(rib_w + 2.0) / 2, grip_z - 0.35))
+                         V(x, -(rib_w + 2.0) / 2, -(rib_t + 0.3) / 2 - 0.35))
         )
-    # Moving jaw slideway, open above the ribbon.
+    # Moving jaw slideway, above the ribbon.
     body = body.cut(
         Part.makeBox(jaw_l + 1.0, rib_w + 4.0, open_gap + 10.0,
-                     V(-(jaw_l + 1.0) / 2, -(rib_w + 4.0) / 2, grip_z + rib_t + 0.3))
+                     V(jaw_x0 - 0.5, -(rib_w + 4.0) / 2, (rib_t + 0.3) / 2))
     )
     # Spring pocket above the moving jaw — closes the clamp with no air.
-    body = body.cut(_z_cyl(4.5, 12.0, body_z - 12.0))
+    body = body.cut(_z_cyl(4.5, 10.0, body_z / 2 - 10.0, body_x / 2))
     # Single-acting cylinder mount on top.
     for sx in (-1, 1):
         for sy in (-1, 1):
-            body = body.cut(_z_cyl(2.2, 12.0, body_z - 11.0, sx * 10.0, sy * 10.0))
-    # Mounts to the wrist pad, alongside the comb.
+            body = body.cut(
+                _z_cyl(2.2, 9.0, body_z / 2 - 9.0, body_x / 2 + sx * 10.0, sy * 10.0)
+            )
+    # Mounts to the wrist hub's outboard face — radial bolts, matching the comb.
     for y in (-11.0, 11.0):
-        body = body.cut(_z_cyl(1.7, grip_z, -1.0, -body_x / 2 + 6.0, y))
+        body = body.cut(
+            Part.makeCylinder(1.7, 14.0, V(-1.0, y, 0.0), V(1, 0, 0))
+        )
+    # Tapped bosses for the comb, on the outboard face.
+    for y in (-float(L.COMB_BODY_W) / 2 + 4.0, float(L.COMB_BODY_W) / 2 - 4.0):
+        body = body.cut(
+            Part.makeCylinder(1.35, 12.0, V(body_x - 11.0, y, 0.0), V(1, 0, 0))
+        )
     return body
 
 
@@ -961,12 +1086,23 @@ def station_mount():
         for sy in (-1, 1):
             base = base.cut(_z_cyl(2.2, t + 2.0, -1.0, sx * 20.0, sy * 20.0))
 
-    # Tag plate ledge, angled toward the pivot so the arm camera reads it square.
-    ledge = Part.makeBox(6.0, 34.0, 30.0, V(-w / 2, -17.0, t))
-    base = base.fuse(ledge)
+    # AprilTag pocket, FLAT on the top face at the inboard end.
+    #
+    # This was a 30 mm tall ledge on the inboard face, put there so the arm
+    # camera saw the tag square-on. It solved that by standing a wall at radius
+    # 162-168 mm, rising to 226 — which is exactly where the arm sweeps, at
+    # exactly the arm's height, at all seven stops. MuJoCo found it seven times
+    # over once contacts were switched on.
+    #
+    # The camera already looks outward AND DOWN (CAMERA_TILT, 33 deg below
+    # horizontal), so a flat tag is read at ~57 deg obliquity instead of ~33.
+    # tag36h11 takes that in its stride, and it hands back the arm's entire
+    # radial path. Rejected: moving the ledge outboard, which would have put the
+    # tag behind the tooling and occluded it exactly when registration matters.
+    tag = float(L.STATION_TAG_SIZE)
     base = base.cut(
-        Part.makeBox(2.0, float(L.STATION_TAG_SIZE) + 1.0, float(L.STATION_TAG_SIZE) + 1.0,
-                     V(-w / 2 - 0.5, -(float(L.STATION_TAG_SIZE) + 1.0) / 2, t + 2.0))
+        Part.makeBox(tag + 1.0, tag + 1.0, 1.2,
+                     V(-w / 2 + 3.0, -(tag + 1.0) / 2, t - 1.2))
     )
     return base
 

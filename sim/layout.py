@@ -240,7 +240,18 @@ ARM_R0 = _d(200.0, ESTIMATED, "angular fit, see fit_check", "ARM_R0")
 STATION_WIDTH = _d(80.0, ESTIMATED, "printed station class", "STATION_WIDTH")
 
 # Radial stroke of the arm: how far it extends from retracted to engaged.
-ARM_STROKE = _d(80.0, ESTIMATED, "MGN12 slide class", "ARM_STROKE")
+# RADIAL STROKE. Was 80 mm, chosen as "an MGN12 slide class" — a number picked
+# from what you can buy rather than from what the machine does. What R actually
+# has to travel is the longest radial WORKING motion, and rotation clearance is
+# not one of them: clearance is vertical, which is the entire reason there is a
+# Z axis. The working motions are pull-the-tail-across-the-wedge (SPLIT_LENGTH
+# 25), pull-slugs-off (STRIP_LENGTH 2.75 + approach), and insert (INSERT_DEPTH 6
+# + PULLBACK 1.5). The longest is the split at 25 mm.
+#
+# 40 mm is that plus approach margin. The 40 mm this gives back is not free
+# money — it is what lets the beam stop short of the stations entirely. See
+# section 4d.
+ARM_STROKE = _d(40.0, ESTIMATED, "longest working motion = SPLIT_LENGTH + approach", "ARM_STROKE")
 
 
 # Station identifiers, in cycle order.
@@ -612,6 +623,17 @@ MGN9_CARRIAGE_W = _d(20.0, COMMITTED, "MGN9C standard", "MGN9_CARRIAGE_W")
 MGN9_BOLT_X = _d(20.0, COMMITTED, "MGN9C M3 pattern", "MGN9_BOLT_X")
 MGN9_BOLT_Y = _d(10.0, COMMITTED, "MGN9C M3 pattern", "MGN9_BOLT_Y")
 
+# HEIGHTS, which is what section 4d spends. These were missing entirely, which
+# is precisely why the arm stack was never added up: the rail and block were
+# drawn as whatever looked right in the scene (a 8 mm half-height box) rather
+# than as the bought parts they are. Recalled from the HIWIN MGN table —
+# ESTIMATED rather than COMMITTED because a datasheet has not been read this
+# session, and the stack has no slack to absorb being wrong by 2 mm.
+MGN12_RAIL_H = _d(8.0, ESTIMATED, "HIWIN MGN12 table, confirm at order", "MGN12_RAIL_H")
+MGN12_BLOCK_H = _d(13.0, ESTIMATED, "HIWIN MGN12H table, confirm at order", "MGN12_BLOCK_H")
+MGN9_RAIL_H = _d(6.5, ESTIMATED, "HIWIN MGN9 table, confirm at order", "MGN9_RAIL_H")
+MGN9_BLOCK_H = _d(10.0, ESTIMATED, "HIWIN MGN9C table, confirm at order", "MGN9_BLOCK_H")
+
 NEMA17_SQUARE = _d(42.3, COMMITTED, "NEMA 17 standard", "NEMA17_SQUARE")
 NEMA17_BOLT = _d(31.0, COMMITTED, "NEMA 17 M3 pattern", "NEMA17_BOLT")
 NEMA17_BOSS_DIA = _d(22.0, COMMITTED, "NEMA 17 standard", "NEMA17_BOSS_DIA")
@@ -621,6 +643,361 @@ T8_NUT_BOLT_CIRCLE = _d(16.0, COMMITTED, "T8 nut M3 pattern", "T8_NUT_BOLT_CIRCL
 
 # Standard commodity stroke options, mm.
 Z_STAGE_STOCK_STROKES = (50.0, 100.0, 150.0, 200.0, 300.0, 400.0)
+
+
+# ---------------------------------------------------------------------------
+# 4d. THE ARM STACK — where every part of the arm actually is
+# ---------------------------------------------------------------------------
+# This section exists because of a specific failure. MuJoCo, asked with contacts
+# switched on, found 115 interfering pairs. Nearly all of them traced to one
+# thing: every part of the arm was placed in the scene by a hand-typed offset
+# (pos="-0.030 0 -0.014" and friends) and nothing ever added them up. The beam
+# ran out to R0+30, straight through all seven stations, at the height of the
+# work line.
+#
+# So the stack is DERIVED here and asserted, and the scene reads it. A number
+# that is computed cannot silently disagree with the number next to it.
+#
+# ALL HEIGHTS IN THIS SECTION are above the deck's UNDERSIDE, the same datum
+# STATION_Z uses. Add DECK_ABOVE_BENCH for bench-absolute.
+#
+# ---- what the arm has to fit around -----------------------------------------
+#
+# Two obstacles, and only two, once the station tag ledge is off the mount (see
+# below):
+#
+#   1. THE STATION MOUNT PLATES, top at ARM_FLOOR. They reach inboard to within
+#      38 mm of R0, so the arm sweeps over them at every stop. Everything on the
+#      arm must be above this.
+#   2. THE STATION TOOLING, which starts at STATION_INNER_R and goes outward and
+#      upward (feed_head tops out 20 mm ABOVE the work line). Nothing structural
+#      on the arm may reach this radius.
+#
+# The second one is the real find. The arm does not need to reach the station at
+# all — the RIBBON does. TAIL_PROJECTION is exactly that: 28 mm of free tail
+# sticking out past the comb, and it is the tail, not the tooling, that enters
+# the station. Once that is stated, the arm's whole envelope can stop 28 mm
+# short of R0 and the collision problem stops being a packaging problem.
+
+ARM_FLOOR = _d(
+    float(DECK_THICKNESS) + float(STATION_MOUNT_T),
+    COMMITTED,
+    "derived: top of the station mount plates",
+    "ARM_FLOOR",
+)
+
+# Innermost radius ANY station structure occupies above ARM_FLOOR. Set by the
+# feed head, whose inboard face lands 2 mm inside R0.
+#
+# This number is duplicated knowledge — the placements it summarises live in
+# build_scene.STATION_PARTS. Rather than move that whole table here, the scene
+# ASSERTS its own table against this value, so the copy cannot drift silently.
+STATION_INNER_R = _d(
+    float(ARM_R0) - 2.0,
+    COMMITTED,
+    "feed_head inboard face; asserted in build_scene",
+    "STATION_INNER_R",
+)
+
+# The ONLY free choice in the vertical chain. 4 mm was the first value; the
+# flip-envelope assertion below rejected it — the body clamp swept 2 mm up into
+# the cross-slide plate during a wrist flip. 8 mm is what makes the stack close,
+# and it costs nothing: it is air over the station mounts either way.
+ARM_BEAM_CLEARANCE = _d(8.0, ESTIMATED, "set by the flip-envelope assertion", "ARM_BEAM_CLEARANCE")
+ARM_PLATE_T = _d(8.0, COMMITTED, "printed carriage plates", "ARM_PLATE_T")
+
+# The wrist train, as radial lengths — needed to know where the work point ends
+# up. Previously buried as literals in build_parts, which is exactly why nobody
+# could add them up.
+#
+# ONE CHEEK, NOT A YOKE. The cross-slide plate drops a single cheek at its
+# INBOARD end and everything else — hub, clamp, comb — cantilevers outboard from
+# it on the wrist shaft. The obvious layout (cheek in the middle, hub straddling
+# it) leaves nowhere to put the body clamp: the clamp has to be inboard of the
+# comb and it has to flip with it, so a central cheek would swing straight
+# through it.
+#
+# The cantilever is free. The 50 N strip pull runs ALONG the shaft as pure
+# thrust; only gravity bends it, at ~0.08 Nm.
+CROSS_PLATE_LEN = _d(44.0, COMMITTED, "build_parts.cross_slide_carrier w", "CROSS_PLATE_LEN")
+ARM_CARRIAGE_LEN = _d(44.0, COMMITTED, "build_parts.radial_carriage ln", "ARM_CARRIAGE_LEN")
+WRIST_CHEEK_T = _d(8.0, COMMITTED, "printed plate in shear", "WRIST_CHEEK_T")
+# The flip hub keys the clamp to the wrist shaft and carries the hard-stop lugs.
+# Every millimetre of it is radius spent twice — once going out to the work
+# point, once coming back in on the retract — so it is as thin as those two jobs
+# allow. It was 14; at 14 the retracted carriage reached inside the spindle
+# housing and check_arm_stack() said so.
+WRIST_HUB_WIDTH = _d(10.0, COMMITTED, "build_parts.wrist_mount hub_w", "WRIST_HUB_WIDTH")
+CLAMP_BODY_LEN = _d(
+    float(CLAMP_JAW_LENGTH) + 16.0,
+    COMMITTED,
+    "derived: jaw + cylinder boss",
+    "CLAMP_BODY_LEN",
+)
+CLAMP_BODY_W = _d(30.0, COMMITTED, "build_parts.body_clamp body_y", "CLAMP_BODY_W")
+CLAMP_BODY_H = _d(34.0, COMMITTED, "build_parts.body_clamp body_z", "CLAMP_BODY_H")
+COMB_LENGTH = _d(26.0, COMMITTED, "build_parts.comb body_x", "COMB_LENGTH")
+COMB_BODY_W = _d(
+    float(COMB_PITCH) * (COMB_CHANNELS + 1), COMMITTED, "derived: pitch x (n+1)", "COMB_BODY_W"
+)
+COMB_BODY_H = _d(14.0, COMMITTED, "build_parts.comb body_z", "COMB_BODY_H")
+WRIST_HUB_R = _d(13.0, COMMITTED, "build_parts.wrist_mount hub_r", "WRIST_HUB_R")
+WRIST_SHAFT_DIA = _d(8.0, COMMITTED, "8 mm ground rod, same stock as the Z posts", "WRIST_SHAFT_DIA")
+
+
+# ---- the vertical stack, bottom up ------------------------------------------
+# Each of these is the TOP of the thing it names. The chain is the design: the
+# only free choice in it is ARM_BEAM_CLEARANCE.
+
+def arm_beam_bottom() -> float:
+    return float(ARM_FLOOR) + float(ARM_BEAM_CLEARANCE)
+
+
+def arm_beam_top() -> float:
+    return arm_beam_bottom() + float(ARM_THICKNESS)
+
+
+def arm_r_rail_top() -> float:
+    return arm_beam_top() + float(MGN12_RAIL_H)
+
+
+def arm_r_block_top() -> float:
+    """Top of the MGN12 BLOCK. It wraps the rail, so it only adds the
+    difference between block and rail height, not the whole block."""
+    return arm_beam_top() + float(MGN12_BLOCK_H)
+
+
+def arm_carriage_plate_top() -> float:
+    return arm_r_block_top() + float(ARM_PLATE_T)
+
+
+def arm_s_rail_top() -> float:
+    return arm_carriage_plate_top() + float(MGN9_RAIL_H)
+
+
+def arm_s_block_top() -> float:
+    return arm_carriage_plate_top() + float(MGN9_BLOCK_H)
+
+
+def arm_stack_top() -> float:
+    """Top of the cross-slide plate — the last thing above the work line."""
+    return arm_s_block_top() + float(ARM_PLATE_T)
+
+
+def wrist_cheek_drop() -> float:
+    """How far the cross-slide plate must reach DOWN to put the wrist axis on
+    the work line.
+
+    This is the assertion that matters, and it replaces the "34 mm budget" this
+    was first framed as. A budget invites the question "how much is left"; this
+    asks the only question worth asking — does the wrist axis land on the work
+    line, given everything under it? If the stack ever grows past the work line
+    this goes negative and the build stops.
+    """
+    return arm_stack_top() - float(STATION_TOOLING_HEIGHT)
+
+
+def wrist_cheek_drop_from_seat() -> float:
+    """Same drop, measured from the cross-slide plate's MATING FACE — which is
+    the datum build_parts actually builds the cheek from."""
+    return arm_s_block_top() - float(STATION_TOOLING_HEIGHT)
+
+
+# ---- the radial chain, inboard out -------------------------------------------
+# THE WRIST AXIS IS THE WORK LINE. The comb's channels lie ON the axis, so the
+# 180-degree flip is a pure rotation of the part and the conductors do not move.
+# They used to sit at the comb's top face, which meant flipping translated them
+# by the channel depth — an error that would have shown up as a length error in
+# every cable made with the second end.
+
+def arm_tool_train() -> float:
+    """Radial distance from the R-carriage centreline to the comb's FRONT FACE.
+
+    The last piece of machine. Starts at the inboard end of the cross-slide
+    plate (negative), crosses the cheek, then the clamp, then the comb.
+    """
+    return (
+        -float(CROSS_PLATE_LEN) / 2.0
+        + float(WRIST_CHEEK_T)
+        + float(WRIST_HUB_WIDTH)
+        + float(CLAMP_BODY_LEN)
+        + float(COMB_LENGTH)
+    )
+
+
+def arm_tool_reach() -> float:
+    """Radial distance from the R-carriage centreline to the WORK POINT.
+
+    Everything past the comb's front face is RIBBON, not machine — that is
+    TAIL_PROJECTION, and it is what keeps the arm clear of the tooling.
+    """
+    return arm_tool_train() + float(TAIL_PROJECTION)
+
+
+def wrist_half_width() -> float:
+    """Half the widest thing on the wrist, tangentially."""
+    return max(float(CLAMP_BODY_W), float(COMB_BODY_W)) / 2.0
+
+
+def arm_carriage_half_width() -> float:
+    """Half the R carriage plate, tangentially."""
+    return (float(MGN12_CARRIAGE_W) + 12.0) / 2.0
+
+
+# THE BEAM RUNS BESIDE THE WORK LINE, NOT UNDER IT.
+#
+# This is the one that took a second pass of MuJoCo to find, and it is worth
+# stating exactly, because it is not a clearance problem that can be tuned away.
+#
+# The wrist flips about the engagement plane, sweeping a cylinder of radius
+# wrist_flip_r() (~23 mm) centred on it. The R axis stack — beam 20, MGN12 rail
+# 8, block 13, carriage plate 8, MGN9 10 — is 59 mm tall and has to start above
+# the station mounts. Stack it under the work line and it reaches 25 mm past it;
+# stack it over, and it hangs into the flip from above. There is no vertical
+# arrangement where 59 mm of rail stack and a 46 mm flip envelope share the same
+# 34 mm of height. They cannot both be on the ribbon's centreline.
+#
+# So the beam moves sideways, and the cross-slide plate reaches across to put
+# the wrist back on the centreline. Standard side-mounted linear axis.
+#
+# REJECTED: an overhead gantry, beam above the flip envelope with the wrist
+# hanging down. Geometrically trivial and it needs no cantilever at all — but it
+# lifts the whole R and S assembly ~50 mm, and every millimetre of that is
+# additional lever arm on the spindle bearings, which are the reason the slew
+# ring was dropped in the first place. Paying bearing load to avoid a printed
+# bracket is the wrong trade.
+#
+# The cantilever costs 50 N x ARM_BEAM_Y = ~2 Nm of yaw on the MGN12 block,
+# against a rating around 20. Gravity's contribution is 0.12 Nm.
+#
+# Sized off the FLIP RADIUS, not the wrist's half-width. Mid-flip the clamp is
+# standing on its side, so the widest the wrist ever gets tangentially is the
+# same 23 mm cylinder it sweeps vertically. Using the 15 mm half-width left 8 mm
+# that only existed at the two ends of the flip.
+# The S stroke is in here too, and that was the last thing MuJoCo caught: the
+# wrist rides the cross-slide, so it swings +/-CROSS_SLIDE_STROKE/2 tangentially
+# relative to the beam. Sized without it, the clamp reached the MGN9 rail by
+# 0.8 mm at the far end of the S travel.
+ARM_BEAM_Y = _d(
+    22.7 + arm_carriage_half_width() + float(CROSS_SLIDE_STROKE) / 2.0 + 4.0,
+    COMMITTED,
+    "derived: flip radius + carriage half-width + S stroke + clearance",
+    "ARM_BEAM_Y",
+)
+
+
+def wrist_flip_r() -> float:
+    """Radius of the cylinder the wrist sweeps when it flips end-for-end.
+
+    The flip is a pure rotation about the work line, so this is the half
+    diagonal of the widest/tallest thing hanging on the wrist. The body clamp
+    wins on both counts.
+    """
+    import math as _m
+
+    return max(
+        _m.hypot(float(CLAMP_BODY_W) / 2.0, float(CLAMP_BODY_H) / 2.0),
+        _m.hypot(float(COMB_BODY_W) / 2.0, float(COMB_BODY_H) / 2.0),
+    )
+
+
+def arm_r_engaged() -> float:
+    """Radius of the carriage centreline when the work point is at R0."""
+    return float(ARM_R0) - arm_tool_reach()
+
+
+def arm_r_retracted() -> float:
+    return arm_r_engaged() - float(ARM_STROKE)
+
+
+def arm_carriage_half_len() -> float:
+    """Half the R carriage plate's radial length."""
+    return float(ARM_CARRIAGE_LEN) / 2.0
+
+
+def arm_beam_tip() -> float:
+    """How far out the beam and its rail need to go. The carriage has to still
+    be ON the rail at full extension, and no further."""
+    return arm_r_engaged() + arm_carriage_half_len() + 8.0
+
+
+def arm_structure_max_r() -> float:
+    """Outboard-most STRUCTURE on the arm, in the worst pose. The comb is
+    included; the tail is not, because the tail is the workpiece."""
+    return max(arm_beam_tip(), arm_r_engaged() + arm_tool_train())
+
+
+def check_arm_stack() -> list[str]:
+    """Everything the stack has to satisfy. Returns failures, empty if sound."""
+    bad: list[str] = []
+    if arm_beam_bottom() <= float(ARM_FLOOR):
+        bad.append(
+            f"beam bottom {arm_beam_bottom():.1f} is not above the station "
+            f"mounts at {float(ARM_FLOOR):.1f}"
+        )
+    if wrist_cheek_drop() <= 0.0:
+        bad.append(
+            f"stack top {arm_stack_top():.1f} is at or below the work line "
+            f"{float(STATION_TOOLING_HEIGHT):.1f} — the wrist cannot reach it "
+            f"by hanging down ({wrist_cheek_drop():.1f} mm)"
+        )
+    if arm_structure_max_r() >= float(STATION_INNER_R):
+        bad.append(
+            f"arm structure reaches R={arm_structure_max_r():.1f}, into the "
+            f"stations at R={float(STATION_INNER_R):.1f}"
+        )
+    inner_limit = float(SPINDLE_HOUSING_OD) / 2.0 + 6.0
+    if arm_r_retracted() - arm_carriage_half_len() <= inner_limit:
+        bad.append(
+            f"retracted carriage reaches R={arm_r_retracted() - arm_carriage_half_len():.1f}, "
+            f"into the spindle housing at R={inner_limit:.1f}"
+        )
+    if float(ARM_STROKE) < float(SPLIT_LENGTH):
+        bad.append(
+            f"ARM_STROKE {float(ARM_STROKE):.1f} is shorter than the split pull "
+            f"{float(SPLIT_LENGTH):.1f}"
+        )
+
+    # The flip envelope, three ways. This is the assertion that rejected
+    # ARM_BEAM_CLEARANCE=4 (clamp into the cross-slide plate) and then rejected
+    # a beam on the centreline entirely.
+    flip_top = float(STATION_TOOLING_HEIGHT) + wrist_flip_r()
+    flip_bottom = float(STATION_TOOLING_HEIGHT) - wrist_flip_r()
+    if flip_top >= arm_s_block_top():
+        bad.append(
+            f"wrist flip sweeps to {flip_top:.1f}, into the cross-slide plate "
+            f"at {arm_s_block_top():.1f} — raise ARM_BEAM_CLEARANCE"
+        )
+    if flip_bottom <= float(ARM_FLOOR):
+        bad.append(
+            f"wrist flip sweeps down to {flip_bottom:.1f}, into the station "
+            f"mounts at {float(ARM_FLOOR):.1f}"
+        )
+
+    # ...and sideways. The R stack straddles the work line in height, so the
+    # only thing keeping it out of the flip is that it is not on the centreline.
+    # Flip radius, not half-width: mid-flip the clamp stands on its side.
+    side_gap = (
+        float(ARM_BEAM_Y)
+        - arm_carriage_half_width()
+        - wrist_flip_r()
+        - float(CROSS_SLIDE_STROKE) / 2.0
+    )
+    if side_gap <= 0.0:
+        bad.append(
+            f"R carriage overlaps the wrist's flip cylinder by {-side_gap:.1f} "
+            f"mm — increase ARM_BEAM_Y"
+        )
+    return bad
+
+
+# Fail at import. A layout that does not close is not a layout, and every
+# downstream consumer — the CAD, the scene, the BOM — reads this module first.
+_ARM_STACK_FAILURES = check_arm_stack()
+if _ARM_STACK_FAILURES:
+    raise AssertionError(
+        "arm stack does not close:\n  " + "\n  ".join(_ARM_STACK_FAILURES)
+    )
 
 
 # ---------------------------------------------------------------------------

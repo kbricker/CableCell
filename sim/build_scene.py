@@ -37,26 +37,36 @@ from sim import ribbon as RIB
 MM = 0.001  # layout is in millimetres; MuJoCo works in metres
 
 ASSETS = pathlib.Path(__file__).parent / "assets"
+MESH_DIR = pathlib.Path(__file__).parent.parent / "cad" / "parts"
 MJCF_PATH = ASSETS / "cell.generated.xml"
 
 # Fixed stack heights between the Z carriage and the arm.
 Z_CARRIAGE_T = 18.0   # platform half-thickness + rotor seat
 ROTOR_SEAT_T = 18.0
 
-# Where the comb sits above the rotor base, so that Z qpos=0 puts it at the
-# LOWEST station engagement height measured from the DECK (Datum A).
-#
-# This was previously just min(STATION_Z), which silently ignored the carriage
-# and rotor stack underneath — putting the comb 28 mm above where every station
-# expects to meet the ribbon. Derive it instead.
+# Where the rotating assembly stands. COMB_ABOVE_ROTOR used to live here and
+# was deleted with this pass: the arm's heights are all derived in layout.py
+# section 4d now, and a second copy here is exactly how clearance_check came to
+# grade a machine that no longer existed.
 _DECK_TOP = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
 # The platform rides BELOW the deck, through its 7" centre hole, so the rotor
 # base is measured from the platform rather than from the deck.
 _PLATFORM_BASE = float(L.Z_PLATFORM_BASE)
 _ROTOR_BASE = _PLATFORM_BASE + float(L.Z_PLATFORM_T) + ROTOR_SEAT_T
-COMB_ABOVE_ROTOR = (
-    float(L.DECK_ABOVE_BENCH) + min(float(v) for v in L.STATION_Z.values()) - _ROTOR_BASE
-)
+# THE ARM'S DATUM. Bench-absolute height of the beam's bottom face, and the
+# helper that converts any layout height (which are all measured from the deck's
+# UNDERSIDE) into this body's local frame.
+#
+# There is exactly one conversion in the scene and this is it. Every arm offset
+# below goes through _REL(); none of them is typed.
+_ARM_BEAM_BOTTOM = float(L.DECK_ABOVE_BENCH) + L.arm_beam_bottom()
+_BEAM_TIP = L.arm_beam_tip()
+
+
+def _REL(h_above_deck_underside: float) -> float:
+    """A layout height, expressed in the arm body's local frame."""
+    return float(L.DECK_ABOVE_BENCH) + h_above_deck_underside - _ARM_BEAM_BOTTOM
+
 
 # Station display bodies are centred outboard of their work point, so the inner
 # face of the tooling lands on the bolt circle.
@@ -99,9 +109,9 @@ def _mesh_assets() -> str:
     )
 
 
-# Where the station mount sits. Its tag ledge is at part x = -38, and the tag
-# must land just inboard of the bolt circle, so the mount centre goes 35 mm
-# outboard of R0.
+# Where the station mount sits. The tag pocket is in its top face at the inboard
+# end (part x = -38 + 3), and the mount centre goes 35 mm outboard of R0 so the
+# plate straddles the bolt circle.
 STATION_MOUNT_R = float(L.ARM_R0) + 35.0
 STATION_MOUNT_T = float(L.STATION_MOUNT_T)
 
@@ -149,6 +159,49 @@ UNMODELLED = {
     "S6_DROP": "chute not designed",
     "S6_REJECT": "chute not designed",
 }
+
+
+def _mesh_x_range(name: str) -> tuple[float, float]:
+    """Radial extent of a printed part, read from its own STL, in mm."""
+    import struct
+
+    raw = (MESH_DIR / f"{name}.stl").read_bytes()
+    n = struct.unpack("<I", raw[80:84])[0]
+    lo, hi = 1e9, -1e9
+    for i in range(n):
+        base = 84 + i * 50 + 12
+        for v in range(3):
+            x = struct.unpack_from("<f", raw, base + v * 12)[0]
+            lo, hi = min(lo, x), max(hi, x)
+    return lo, hi
+
+
+def check_station_inner_radius() -> list[str]:
+    """L.STATION_INNER_R is a summary of THIS table. Prove it still is.
+
+    The value lives in layout.py because that is where the arm reads it from;
+    the placements it summarises live here. That is duplicated knowledge, and
+    duplicated knowledge drifts — clearance_check.py once carried its own copy
+    of the Z-post formula and went on reporting "clear" about a machine that had
+    already been changed. So the copy has to prove itself on every build.
+    """
+    bad: list[str] = []
+    innermost, owner = 1e9, "?"
+    for parts in STATION_PARTS.values():
+        for mesh, r_off, _t, reversed_, _e in parts:
+            x_lo, x_hi = _mesh_x_range(mesh)
+            # A reversed part faces inward, so its OUTBOARD extent becomes the
+            # inboard one.
+            inner = float(L.ARM_R0) + r_off + (-x_hi if reversed_ else x_lo)
+            if inner < innermost:
+                innermost, owner = inner, mesh
+    if innermost < float(L.STATION_INNER_R) - 0.01:
+        bad.append(
+            f"{owner} reaches inboard to R={innermost:.1f}, inside "
+            f"L.STATION_INNER_R={float(L.STATION_INNER_R):.1f} — the arm is "
+            f"cleared against the layout value, so fix the layout value"
+        )
+    return bad
 
 
 def _ribbon_bodies() -> str:
@@ -226,13 +279,18 @@ def _station_bodies() -> str:
                 f'euler="0 0 {rot:.6g}" material="{mat}" '
                 f'contype="0" conaffinity="0"/>'
             )
-        # AprilTag facing the pivot — what the arm camera registers against.
-        tx, ty = _polar(float(L.ARM_R0) - 3.0, theta)
-        tz = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name]) + 10.0
+        # AprilTag, LYING FLAT in the mount's top face — what the arm camera
+        # registers against. It used to stand upright on a 30 mm ledge facing
+        # the pivot, which read better to the camera and stood squarely in the
+        # arm's path at every one of the seven stops. Flat costs ~24 degrees of
+        # obliquity and buys back the entire radial approach.
+        tag_r = STATION_MOUNT_R - 38.0 + 3.0 + float(L.STATION_TAG_SIZE) / 2.0
+        tx, ty = _polar(tag_r, theta)
+        tz = deck_top + STATION_MOUNT_T - 0.6
         out.append(
             f'    <geom name="{name.lower()}_tag" type="box" '
             f'pos="{_fmt(tx * MM, ty * MM, tz * MM)}" '
-            f'size="{_fmt(0.0015, float(L.STATION_TAG_SIZE) / 2 * MM, float(L.STATION_TAG_SIZE) / 2 * MM)}" '
+            f'size="{_fmt(float(L.STATION_TAG_SIZE) / 2 * MM, float(L.STATION_TAG_SIZE) / 2 * MM, 0.0006)}" '
             f'euler="0 0 {math.radians(theta):.6g}" material="tag_mat" '
             f'contype="0" conaffinity="0"/>'
         )
@@ -553,40 +611,62 @@ def build_mjcf() -> str:
         <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
           material="rotor_mat" contype="0" conaffinity="0"/>
 
-        <body name="arm" pos="0 0 {COMB_ABOVE_ROTOR * MM:.6g}">
-          <!-- THREE parts, not one. This was a single 230x60x25 box - the
-               largest object in the machine and the last greybox in it. Drawn
-               as one solid, the two BOUGHT parts here were invisible to the
-               BOM. Section dropped from 60x25 to stock 2020 extrusion: still
-               {L.arm_tip_deflection() * 1000:.0f} um of tip droop against a
+        <body name="arm" pos="0 0 {(_ARM_BEAM_BOTTOM - _ROTOR_BASE) * MM:.6g}">
+          <!-- EVERY OFFSET BELOW IS DERIVED. They used to be hand-typed
+               (pos="-0.030 0 -0.014" and friends), which is how the arm came to
+               have 115 interfering pairs: nothing added them up because the
+               stack was not written down anywhere. It is now layout.py section
+               4d, and layout.py refuses to import if it does not close.
+
+               This body's origin is the BEAM'S BOTTOM FACE, {float(L.ARM_BEAM_CLEARANCE):.0f} mm of air
+               above the station mount plates.
+
+               Three parts, not one: printed rotor_plate, BOUGHT 2020 extrusion,
+               BOUGHT MGN12 rail. Tip droop {L.arm_tip_deflection() * 1000:.0f} um against a
                300 um strip tolerance. -->
           <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
-            pos="0 0 -0.014" material="arm_mat" contype="0" conaffinity="0"/>
+            pos="0 0 0" material="arm_mat" contype="0" conaffinity="0"/>
           <geom name="arm_beam" type="box"
-            pos="{(_BEAM_X0 + arm_len) / 2 * MM:.6g} 0 0"
-            size="{(arm_len - _BEAM_X0) / 2 * MM:.6g} {float(L.ARM_WIDTH) / 2 * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
+            pos="{(_BEAM_X0 + _BEAM_TIP) / 2 * MM:.6g} {-float(L.ARM_BEAM_Y) * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
+            size="{(_BEAM_TIP - _BEAM_X0) / 2 * MM:.6g} {float(L.ARM_WIDTH) / 2 * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
             material="extrusion_mat" contype="0" conaffinity="0"/>
+          <!-- The beam stops at R={_BEAM_TIP:.0f}. It used to run to R0+30={float(L.ARM_R0) + 30:.0f} —
+               a 20 mm bar driven through all seven stations at exactly the
+               height of their tooling. -->
           <geom name="mgn12_rail" type="box"
-            pos="{(_BEAM_X0 + arm_len) / 2 * MM:.6g} 0 {(float(L.ARM_THICKNESS) / 2 + 4.0) * MM:.6g}"
-            size="{(arm_len - _BEAM_X0) / 2 * MM:.6g} 0.006 0.004"
+            pos="{(_BEAM_X0 + _BEAM_TIP) / 2 * MM:.6g} {-float(L.ARM_BEAM_Y) * MM:.6g} {(float(L.ARM_THICKNESS) + float(L.MGN12_RAIL_H) / 2) * MM:.6g}"
+            size="{(_BEAM_TIP - _BEAM_X0) / 2 * MM:.6g} 0.006 {float(L.MGN12_RAIL_H) / 2 * MM:.6g}"
             material="rail_mat" contype="0" conaffinity="0"/>
 
-          <body name="radial" pos="{r_retracted * MM:.6g} 0 0">
+          <body name="radial" pos="{L.arm_r_retracted() * MM:.6g} 0 0">
             <joint name="R" type="slide" axis="1 0 0"
               range="0 {float(L.ARM_STROKE) * MM:.6g}" damping="20"/>
+            <!-- The bought MGN12 block, drawn because it is 5 mm of the stack
+                 and was previously invisible. -->
+            <geom name="mgn12_block" type="box"
+              pos="0 {-float(L.ARM_BEAM_Y) * MM:.6g} {(float(L.ARM_THICKNESS) + float(L.MGN12_BLOCK_H) / 2) * MM:.6g}"
+              size="0.021 {float(L.MGN12_CARRIAGE_W) / 2 * MM:.6g} {float(L.MGN12_BLOCK_H) / 2 * MM:.6g}"
+              material="rail_mat" contype="0" conaffinity="0"/>
             <geom name="radial_carriage" type="mesh" mesh="radial_carriage_mesh"
-              pos="0 0 0.004" material="arm_mat"
-              contype="0" conaffinity="0"/>
+              pos="0 {-float(L.ARM_BEAM_Y) * MM:.6g} {_REL(L.arm_r_block_top()) * MM:.6g}"
+              material="arm_mat" contype="0" conaffinity="0"/>
+            <!-- MGN9 rail. FIXED to the R carriage, so it lives here and not in
+                 the cross body — the block slides along it, not the other way
+                 round. -->
+            <geom name="mgn9_rail" type="box"
+              pos="0 {-float(L.ARM_BEAM_Y) * MM:.6g} {(_REL(L.arm_carriage_plate_top()) + float(L.MGN9_RAIL_H) / 2) * MM:.6g}"
+              size="0.0045 {(float(L.CROSS_SLIDE_STROKE) / 2 + float(L.MGN9_CARRIAGE_W) / 2) * MM:.6g} {float(L.MGN9_RAIL_H) / 2 * MM:.6g}"
+              material="rail_mat" contype="0" conaffinity="0"/>
             <!-- Arm camera. Rides the RADIAL carriage, deliberately NOT the
                  wrist — the wrist flips 180 degrees and the camera must not.
-                 Looks radially outward and down at the station work point;
-                 registers against each station's AprilTag. -->
+                 Offsets are from the WORK POINT, which is where it has to look;
+                 they were from the comb, which now moves relative to it. -->
             <geom name="arm_camera" type="mesh" mesh="camera_mount_mesh"
-              pos="{-float(L.CAMERA_BACK_OFFSET) * MM:.6g} 0 {float(L.CAMERA_UP_OFFSET) * MM:.6g}"
+              pos="{(L.arm_tool_reach() - float(L.CAMERA_BACK_OFFSET)) * MM:.6g} 0 {(_REL(float(L.STATION_TOOLING_HEIGHT)) + float(L.CAMERA_UP_OFFSET)) * MM:.6g}"
               euler="0 {math.radians(float(L.CAMERA_TILT)):.6g} 0"
               material="camera_mat" contype="0" conaffinity="0"/>
             <camera name="arm_cam"
-              pos="{-float(L.CAMERA_BACK_OFFSET) * MM:.6g} 0 {float(L.CAMERA_UP_OFFSET) * MM:.6g}"
+              pos="{(L.arm_tool_reach() - float(L.CAMERA_BACK_OFFSET)) * MM:.6g} 0 {(_REL(float(L.STATION_TOOLING_HEIGHT)) + float(L.CAMERA_UP_OFFSET)) * MM:.6g}"
               euler="0 {math.radians(float(L.CAMERA_TILT) - 90.0):.6g} 0"
               fovy="48"/>
 
@@ -596,33 +676,45 @@ def build_mjcf() -> str:
                 damping="8"/>
               <!-- S axis carrier. Takes almost no load: the 50 N pull-off
                    runs along R, not S. Sizing it for the pull-off would have
-                   been the obvious mistake. -->
+                   been the obvious mistake. Its cheek hangs DOWN from the
+                   inboard end to put the wrist axis on the engagement plane —
+                   {L.wrist_cheek_drop_from_seat():.0f} mm, derived, not chosen. -->
               <geom name="cross_carriage" type="mesh" mesh="cross_slide_carrier_mesh"
-                pos="0 0 -0.021" material="arm_mat"
-                contype="0" conaffinity="0"/>
+                pos="0 {-float(L.ARM_BEAM_Y) * MM:.6g} {_REL(L.arm_s_block_top()) * MM:.6g}"
+                material="arm_mat" contype="0" conaffinity="0"/>
 
-              <body name="wrist" pos="0 0 0">
+              <body name="wrist"
+                pos="{(-float(L.CROSS_PLATE_LEN) / 2 + float(L.WRIST_CHEEK_T)) * MM:.6g} 0 {_REL(float(L.STATION_TOOLING_HEIGHT)) * MM:.6g}">
                 <joint name="W" type="hinge" axis="1 0 0" range="0 {math.pi:.6g}"
                   damping="6"/>
-                <!-- Wrist hub. Two positions only, set by mechanical hard
-                     stops; the motor just has to reach them. Hub axis is
-                     radial, so the cable turns end-for-end. -->
+                <!-- THE WRIST AXIS IS THE ENGAGEMENT PLANE, and the comb's
+                     channels and the clamp's grip face both lie ON it. The flip
+                     is therefore a pure rotation: the conductors do not move.
+                     With the axis anywhere else, turning the cable end-for-end
+                     would also TRANSLATE it, and every second end would come
+                     out the wrong length while the encoder measured perfectly.
+
+                     hub -> clamp -> comb, cantilevered outboard off one cheek.
+                     Two positions only, set by mechanical hard stops. -->
                 <geom name="wrist_hub" type="mesh" mesh="wrist_mount_mesh"
-                  pos="-0.014 0 -0.009" material="arm_mat"
+                  pos="0 0 0" material="arm_mat"
                   contype="0" conaffinity="0"/>
-                <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
-                <geom name="comb_body" type="mesh" mesh="comb_mesh"
-                  pos="-0.004 0 -0.006" material="comb_mat"
-                  contype="0" conaffinity="0"/>
-                <!-- Body clamp, inboard of the comb and flipping with it.
-                     Sprung closed, air opens it: losing pressure fails to
+                <!-- Sprung closed, air opens it: losing pressure fails to
                      GRIPPING rather than dropping a part mid-cycle. If the
                      ribbon creeps here the measured length is silently wrong,
                      which makes this the most critical printed part we have. -->
                 <geom name="body_clamp" type="mesh" mesh="body_clamp_mesh"
-                  pos="-0.030 0 -0.014" material="clamp_mat"
+                  pos="{float(L.WRIST_HUB_WIDTH) * MM:.6g} 0 0" material="clamp_mat"
                   contype="0" conaffinity="0"/>
-                <site name="comb_tip" pos="{float(L.TAIL_PROJECTION) * MM:.6g} 0 0"
+                <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
+                <geom name="comb_body" type="mesh" mesh="comb_mesh"
+                  pos="{(float(L.WRIST_HUB_WIDTH) + float(L.CLAMP_BODY_LEN)) * MM:.6g} 0 0"
+                  material="comb_mat" contype="0" conaffinity="0"/>
+                <!-- The work point: comb front face + the free tail. Past this
+                     face it is ribbon, not machine — which is the whole reason
+                     the arm can stop {float(L.TAIL_PROJECTION):.0f} mm short of the stations. -->
+                <site name="comb_tip"
+                  pos="{(float(L.WRIST_HUB_WIDTH) + float(L.CLAMP_BODY_LEN) + float(L.COMB_LENGTH) + float(L.TAIL_PROJECTION)) * MM:.6g} 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>
               </body>
             </body>
@@ -662,6 +754,11 @@ def build_mjcf() -> str:
 
 
 def write() -> pathlib.Path:
+    failures = check_station_inner_radius()
+    if failures:
+        raise AssertionError(
+            "station placement contradicts the layout:\n  " + "\n  ".join(failures)
+        )
     ASSETS.mkdir(parents=True, exist_ok=True)
     MJCF_PATH.write_text(build_mjcf(), encoding="utf-8")
     return MJCF_PATH
@@ -683,6 +780,11 @@ def write_collide() -> pathlib.Path:
     MuJoCo's own collision engine answer. It knows about every geom, not just
     the ones a study author remembered.
     """
+    failures = check_station_inner_radius()
+    if failures:
+        raise AssertionError(
+            "station placement contradicts the layout:\n  " + "\n  ".join(failures)
+        )
     ASSETS.mkdir(parents=True, exist_ok=True)
     xml = build_mjcf().replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
     COLLIDE_PATH.write_text(xml, encoding="utf-8")

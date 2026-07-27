@@ -124,28 +124,28 @@
 
     <geom name="s1_feed_mount" type="mesh" mesh="station_mount_mesh" pos="0.235 0 0.186" euler="0 0 0" material="mount_mat" contype="1" conaffinity="1"/>
     <geom name="s1_feed_feed_head" type="mesh" mesh="feed_head_mesh" pos="0.21 0 0.196" euler="0 0 0" material="printed_mat" contype="1" conaffinity="1"/>
-    <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s1_feed_tag" type="box" pos="0.2125 0 0.1954" size="0.0125 0.0125 0.0006" euler="0 0 0" material="tag_mat" contype="1" conaffinity="1"/>
     <geom name="s2_slit_mount" type="mesh" mesh="station_mount_mesh" pos="0.19749 0.127369 0.186" euler="0 0 0.572811" material="mount_mat" contype="1" conaffinity="1"/>
     <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.189086 0.121949 0.212" euler="0 0 0.572811" material="printed_mat" contype="1" conaffinity="1"/>
     <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.189086 0.121949 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="1" conaffinity="1"/>
     <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.224382 0.144713 0.226" euler="0 0 0.572811" material="printed_mat" contype="1" conaffinity="1"/>
     <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.224382 0.144713 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="1" conaffinity="1"/>
-    <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_tag" type="box" pos="0.178581 0.115174 0.1954" size="0.0125 0.0125 0.0006" euler="0 0 0.572811" material="tag_mat" contype="1" conaffinity="1"/>
     <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="1" conaffinity="1"/>
     <geom name="s3_strip_strip_die" type="mesh" mesh="strip_die_mesh" pos="0.0915706 0.202235 0.196" euler="0 0 1.14562" material="printed_mat" contype="1" conaffinity="1"/>
-    <geom name="s3_strip_tag" type="box" pos="0.0812586 0.17946 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.14562" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s3_strip_tag" type="box" pos="0.087652 0.19358 0.1954" size="0.0125 0.0125 0.0006" euler="0 0 1.14562" material="tag_mat" contype="1" conaffinity="1"/>
     <geom name="s5_insert_mount" type="mesh" mesh="station_mount_mesh" pos="-0.232444 0.0345685 0.186" euler="0 0 2.99396" material="mount_mat" contype="1" conaffinity="1"/>
     <!-- S5_INSERT: greybox - out of Phase 1 scope -->
     <geom name="s5_insert" type="box" pos="-0.232444 0.0345685 0.224" size="0.035 0.04 0.028" euler="0 0 2.99396" material="unknown_mat" contype="1" conaffinity="1"/>
-    <geom name="s5_insert_tag" type="box" pos="-0.194857 0.0289787 0.24" size="0.0015 0.0125 0.0125" euler="0 0 2.99396" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s5_insert_tag" type="box" pos="-0.210188 0.0312587 0.1954" size="0.0125 0.0125 0.0006" euler="0 0 2.99396" material="tag_mat" contype="1" conaffinity="1"/>
     <geom name="s6_drop_mount" type="mesh" mesh="station_mount_mesh" pos="-0.214077 -0.0969329 0.186" euler="0 0 3.56677" material="mount_mat" contype="1" conaffinity="1"/>
     <!-- S6_DROP: greybox - chute not designed -->
     <geom name="s6_drop" type="box" pos="-0.214077 -0.0969329 0.224" size="0.035 0.04 0.028" euler="0 0 3.56677" material="unknown_mat" contype="1" conaffinity="1"/>
-    <geom name="s6_drop_tag" type="box" pos="-0.17946 -0.0812586 0.24" size="0.0015 0.0125 0.0125" euler="0 0 3.56677" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s6_drop_tag" type="box" pos="-0.19358 -0.087652 0.1954" size="0.0125 0.0125 0.0006" euler="0 0 3.56677" material="tag_mat" contype="1" conaffinity="1"/>
     <geom name="s6_reject_mount" type="mesh" mesh="station_mount_mesh" pos="-0.127369 -0.19749 0.186" euler="0 0 4.13958" material="mount_mat" contype="1" conaffinity="1"/>
     <!-- S6_REJECT: greybox - chute not designed -->
     <geom name="s6_reject" type="box" pos="-0.127369 -0.19749 0.224" size="0.035 0.04 0.028" euler="0 0 4.13958" material="reject_mat" contype="1" conaffinity="1"/>
-    <geom name="s6_reject_tag" type="box" pos="-0.106773 -0.165555 0.24" size="0.0015 0.0125 0.0125" euler="0 0 4.13958" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s6_reject_tag" type="box" pos="-0.115174 -0.178581 0.1954" size="0.0125 0.0125 0.0006" euler="0 0 4.13958" material="tag_mat" contype="1" conaffinity="1"/>
 
     <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
     <geom name="spool" type="mesh" mesh="spool_mesh" pos="0.29 0.0155 0.336" euler="1.5708 0 0" material="spool_mat" contype="1" conaffinity="1"/>
@@ -402,40 +402,62 @@
         <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
           material="rotor_mat" contype="1" conaffinity="1"/>
 
-        <body name="arm" pos="0 0 0.102">
-          <!-- THREE parts, not one. This was a single 230x60x25 box - the
-               largest object in the machine and the last greybox in it. Drawn
-               as one solid, the two BOUGHT parts here were invisible to the
-               BOM. Section dropped from 60x25 to stock 2020 extrusion: still
-               24 um of tip droop against a
+        <body name="arm" pos="0 0 0.076">
+          <!-- EVERY OFFSET BELOW IS DERIVED. They used to be hand-typed
+               (pos="-0.030 0 -0.014" and friends), which is how the arm came to
+               have 115 interfering pairs: nothing added them up because the
+               stack was not written down anywhere. It is now layout.py section
+               4d, and layout.py refuses to import if it does not close.
+
+               This body's origin is the BEAM'S BOTTOM FACE, 8 mm of air
+               above the station mount plates.
+
+               Three parts, not one: printed rotor_plate, BOUGHT 2020 extrusion,
+               BOUGHT MGN12 rail. Tip droop 24 um against a
                300 um strip tolerance. -->
           <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
-            pos="0 0 -0.014" material="arm_mat" contype="1" conaffinity="1"/>
+            pos="0 0 0" material="arm_mat" contype="1" conaffinity="1"/>
           <geom name="arm_beam" type="box"
-            pos="0.13725 0 0"
-            size="0.09275 0.01 0.01"
+            pos="0.09625 -0.0562 0.01"
+            size="0.05175 0.01 0.01"
             material="extrusion_mat" contype="1" conaffinity="1"/>
+          <!-- The beam stops at R=148. It used to run to R0+30=230 —
+               a 20 mm bar driven through all seven stations at exactly the
+               height of their tooling. -->
           <geom name="mgn12_rail" type="box"
-            pos="0.13725 0 0.014"
-            size="0.09275 0.006 0.004"
+            pos="0.09625 -0.0562 0.024"
+            size="0.05175 0.006 0.004"
             material="rail_mat" contype="1" conaffinity="1"/>
 
-          <body name="radial" pos="0.12 0 0">
+          <body name="radial" pos="0.078 0 0">
             <joint name="R" type="slide" axis="1 0 0"
-              range="0 0.08" damping="20"/>
+              range="0 0.04" damping="20"/>
+            <!-- The bought MGN12 block, drawn because it is 5 mm of the stack
+                 and was previously invisible. -->
+            <geom name="mgn12_block" type="box"
+              pos="0 -0.0562 0.0265"
+              size="0.021 0.0135 0.0065"
+              material="rail_mat" contype="1" conaffinity="1"/>
             <geom name="radial_carriage" type="mesh" mesh="radial_carriage_mesh"
-              pos="0 0 0.004" material="arm_mat"
-              contype="1" conaffinity="1"/>
+              pos="0 -0.0562 0.033"
+              material="arm_mat" contype="1" conaffinity="1"/>
+            <!-- MGN9 rail. FIXED to the R carriage, so it lives here and not in
+                 the cross body — the block slides along it, not the other way
+                 round. -->
+            <geom name="mgn9_rail" type="box"
+              pos="0 -0.0562 0.04425"
+              size="0.0045 0.02 0.00325"
+              material="rail_mat" contype="1" conaffinity="1"/>
             <!-- Arm camera. Rides the RADIAL carriage, deliberately NOT the
                  wrist — the wrist flips 180 degrees and the camera must not.
-                 Looks radially outward and down at the station work point;
-                 registers against each station's AprilTag. -->
+                 Offsets are from the WORK POINT, which is where it has to look;
+                 they were from the comb, which now moves relative to it. -->
             <geom name="arm_camera" type="mesh" mesh="camera_mount_mesh"
-              pos="-0.062 0 0.048"
+              pos="0.02 0 0.074"
               euler="0 0.575959 0"
               material="camera_mat" contype="1" conaffinity="1"/>
             <camera name="arm_cam"
-              pos="-0.062 0 0.048"
+              pos="0.02 0 0.074"
               euler="0 -0.994838 0"
               fovy="48"/>
 
@@ -445,33 +467,45 @@
                 damping="8"/>
               <!-- S axis carrier. Takes almost no load: the 50 N pull-off
                    runs along R, not S. Sizing it for the pull-off would have
-                   been the obvious mistake. -->
+                   been the obvious mistake. Its cheek hangs DOWN from the
+                   inboard end to put the wrist axis on the engagement plane —
+                   25 mm, derived, not chosen. -->
               <geom name="cross_carriage" type="mesh" mesh="cross_slide_carrier_mesh"
-                pos="0 0 -0.021" material="arm_mat"
-                contype="1" conaffinity="1"/>
+                pos="0 -0.0562 0.051"
+                material="arm_mat" contype="1" conaffinity="1"/>
 
-              <body name="wrist" pos="0 0 0">
+              <body name="wrist"
+                pos="-0.014 0 0.026">
                 <joint name="W" type="hinge" axis="1 0 0" range="0 3.14159"
                   damping="6"/>
-                <!-- Wrist hub. Two positions only, set by mechanical hard
-                     stops; the motor just has to reach them. Hub axis is
-                     radial, so the cable turns end-for-end. -->
+                <!-- THE WRIST AXIS IS THE ENGAGEMENT PLANE, and the comb's
+                     channels and the clamp's grip face both lie ON it. The flip
+                     is therefore a pure rotation: the conductors do not move.
+                     With the axis anywhere else, turning the cable end-for-end
+                     would also TRANSLATE it, and every second end would come
+                     out the wrong length while the encoder measured perfectly.
+
+                     hub -> clamp -> comb, cantilevered outboard off one cheek.
+                     Two positions only, set by mechanical hard stops. -->
                 <geom name="wrist_hub" type="mesh" mesh="wrist_mount_mesh"
-                  pos="-0.014 0 -0.009" material="arm_mat"
+                  pos="0 0 0" material="arm_mat"
                   contype="1" conaffinity="1"/>
-                <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
-                <geom name="comb_body" type="mesh" mesh="comb_mesh"
-                  pos="-0.004 0 -0.006" material="comb_mat"
-                  contype="1" conaffinity="1"/>
-                <!-- Body clamp, inboard of the comb and flipping with it.
-                     Sprung closed, air opens it: losing pressure fails to
+                <!-- Sprung closed, air opens it: losing pressure fails to
                      GRIPPING rather than dropping a part mid-cycle. If the
                      ribbon creeps here the measured length is silently wrong,
                      which makes this the most critical printed part we have. -->
                 <geom name="body_clamp" type="mesh" mesh="body_clamp_mesh"
-                  pos="-0.030 0 -0.014" material="clamp_mat"
+                  pos="0.01 0 0" material="clamp_mat"
                   contype="1" conaffinity="1"/>
-                <site name="comb_tip" pos="0.028 0 0"
+                <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
+                <geom name="comb_body" type="mesh" mesh="comb_mesh"
+                  pos="0.042 0 0"
+                  material="comb_mat" contype="1" conaffinity="1"/>
+                <!-- The work point: comb front face + the free tail. Past this
+                     face it is ribbon, not machine — which is the whole reason
+                     the arm can stop 28 mm short of the stations. -->
+                <site name="comb_tip"
+                  pos="0.096 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>
               </body>
             </body>
@@ -531,7 +565,7 @@
     <position name="Z_act" joint="Z" kp="800" ctrlrange="0 0.05"/>
     <position name="T_act" joint="T" kp="200"
       ctrlrange="0 4.71239"/>
-    <position name="R_act" joint="R" kp="400" ctrlrange="0 0.08"/>
+    <position name="R_act" joint="R" kp="400" ctrlrange="0 0.04"/>
     <position name="S_act" joint="S" kp="200"
       ctrlrange="-0.01 0.01"/>
     <position name="W_act" joint="W" kp="100" ctrlrange="0 3.14159"/>
