@@ -177,7 +177,12 @@ def gif(count: int = 84, fps: int = 16, scale: float = 0.46) -> pathlib.Path:
 def viewer() -> None:
     import mujoco.viewer
 
-    path = build_scene.write()
+    # THE COLLIDE SCENE, so the ribbon rests on things instead of falling
+    # through them. The display scene disables contacts everywhere for render
+    # speed, which is fine for a still and wrong for a cycle: the workpiece is
+    # the one thing here that is supposed to touch the machine.
+    build_scene.write()
+    path = build_scene.write_collide()
     model = mujoco.MjModel.from_xml_path(str(path))
     data = mujoco.MjData(model)
 
