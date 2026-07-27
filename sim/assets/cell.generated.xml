@@ -123,10 +123,10 @@
     <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s1_feed_wp" pos="0.2 0 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s2_slit_mount" type="mesh" mesh="station_mount_mesh" pos="0.19749 0.127369 0.186" euler="0 0 0.572811" material="mount_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.193288 0.124659 0.212" euler="0 0 3.7144" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.193288 0.124659 0.204" size="0.02 0.02 0.008" euler="0 0 3.7144" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.169757 0.109483 0.226" euler="0 0 3.7144" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.169757 0.109483 0.211" size="0.02 0.02 0.015" euler="0 0 3.7144" material="pedestal_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.193288 0.124659 0.212" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.193288 0.124659 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.228584 0.147423 0.226" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.228584 0.147423 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s2_slit_wp" pos="0.168076 0.108399 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="0" conaffinity="0"/>

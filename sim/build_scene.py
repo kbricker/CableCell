@@ -116,9 +116,15 @@ STATION_PARTS: dict[str, tuple] = {
         ("guide_tube_mount", 30.0, 0.0, True, None),
         ("guillotine_holder", 8.0, 0.0, True, None),
     ),
+    # S2's order was BACKWARDS. At S1 the ribbon is fed from outboard inward,
+    # so upstream parts sit further out. At S2 the arm has already got the
+    # ribbon and pushes its free tail OUTWARD into the tooling — so the wedge
+    # (which the tail meets first) is inboard and the spreader is outboard,
+    # the opposite arrangement. Copying S1's ordering put the fan before the
+    # splitter.
     "S2_SLIT": (
-        ("splitting_wedge", 30.0, 0.0, True, None),
-        ("spreader_plate", 2.0, 0.0, True, None),
+        ("splitting_wedge", 30.0, 0.0, False, None),
+        ("spreader_plate", 72.0, 0.0, False, None),
     ),
 }
 
