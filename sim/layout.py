@@ -360,6 +360,57 @@ DECK_RADIUS = _d(
 # ---------------------------------------------------------------------------
 
 
+def assign_station_angles(radius: float | None = None) -> dict[str, float]:
+    """Lay the seven stops out around the arc, respecting their real widths.
+
+    The press is 210 mm wide against a normal station's ~80 mm, so an even
+    angular spread is wrong — it either crowds the press or wastes arc. Walk
+    the stops in cycle order, giving each its own half-width and sharing the
+    leftover arc equally as gaps.
+
+    S1 stays at theta = 0 by definition; the arm sweeps counter-clockwise.
+    Returns degrees. Raises if the layout does not close.
+    """
+    r = ARM_R0 if radius is None else radius
+    order = list(STATIONS)
+
+    def half(name: str) -> float:
+        width = PRESS_WIDTH if name == "S4_CRIMP" else STATION_WIDTH
+        return angular_half_width(float(width), float(r))
+
+    occupied = sum(2.0 * half(n) for n in order)
+    gaps = len(order) - 1
+    spare = float(SWEEP_ARC) - occupied
+    if spare < 0:
+        raise ValueError(
+            f"layout does not close at R0={float(r):.0f} mm: "
+            f"needs {occupied:.1f}° of {float(SWEEP_ARC):.0f}°"
+        )
+    gap = spare / (gaps + 1)  # leave a half-gap of margin at each end
+
+    angles: dict[str, float] = {}
+    cursor = 0.0
+    for i, name in enumerate(order):
+        if i == 0:
+            angles[name] = 0.0
+            cursor = half(name)
+            continue
+        cursor += gap + half(name)
+        angles[name] = cursor
+        cursor += half(name)
+    return angles
+
+
+def apply_derived_station_angles() -> None:
+    """Replace the placeholder spread with the derived layout, in place."""
+    for name, value in assign_station_angles().items():
+        if name == "S1_FEED":
+            continue
+        STATION_ANGLES[name] = _d(
+            value, ESTIMATED, "derived by assign_station_angles", f"theta_{name}"
+        )
+
+
 def station_xy(name: str, radius: float | None = None) -> tuple[float, float]:
     """Plan-view position of a station's work point, relative to Datum B."""
     r = ARM_R0 if radius is None else radius
@@ -448,6 +499,13 @@ def press_centre_distance() -> float:
 # ---------------------------------------------------------------------------
 # Provenance reporting
 # ---------------------------------------------------------------------------
+
+
+# Station angles start as an even placeholder spread; replace them with the
+# width-aware layout as soon as the helpers above are defined. Done at import so
+# every consumer — the scene builder, the studies, the CAD — sees the same
+# numbers without having to remember to call it.
+apply_derived_station_angles()
 
 
 def report() -> str:

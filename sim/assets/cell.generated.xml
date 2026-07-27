@@ -56,22 +56,22 @@
 
     <!-- S4 CRIMP: the press. Placed first; everything else is derived from it. -->
     <geom name="press_base" type="box"
-      pos="-0.16617 0.16617 0.03"
+      pos="-0.112457 0.206345 0.03"
       size="0.105 0.105 0.03"
-      euler="0 0 2.35619" material="press_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="press_mat" contype="0" conaffinity="0"/>
     <geom name="press_column" type="box"
-      pos="-0.207006 0.207006 0.29"
+      pos="-0.140093 0.257054 0.29"
       size="0.04725 0.105 0.29"
-      euler="0 0 2.35619" material="press_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="press_mat" contype="0" conaffinity="0"/>
     <geom name="press_baseplate" type="box"
-      pos="-0.16617 0.16617 0.2"
+      pos="-0.112457 0.206345 0.2"
       size="0.105 0.105 0.008"
-      euler="0 0 2.35619" material="press_plate_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="press_plate_mat" contype="0" conaffinity="0"/>
     <geom name="applicator" type="box"
-      pos="-0.192687 0.192687 0.2825"
+      pos="-0.130403 0.239273 0.2825"
       size="0.1125 0.04 0.0825"
-      euler="0 0 2.35619" material="applicator_mat" contype="0" conaffinity="0"/>
-    <site name="crimp_point" pos="-0.141421 0.141421 0.23"
+      euler="0 0 2.06979" material="applicator_mat" contype="0" conaffinity="0"/>
+    <site name="crimp_point" pos="-0.0957083 0.175613 0.23"
       size="0.006" rgba="1 0.25 0.2 1"/>
 
     <!-- Frame and deck. Deck raised deliberately to collapse Z travel. -->
@@ -87,21 +87,21 @@
     <geom name="s1_feed" type="box" pos="0.235 0 0.21" size="0.035 0.04 0.03" euler="0 0 0" material="station_mat" contype="0" conaffinity="0"/>
     <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s1_feed_wp" pos="0.2 0 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
-    <geom name="s2_slit" type="box" pos="0.192501 0.13479 0.21" size="0.035 0.04 0.03" euler="0 0 0.610865" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_tag" type="box" pos="0.161373 0.112995 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.610865" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s2_slit_wp" pos="0.16383 0.114715 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
-    <geom name="s3_strip" type="box" pos="0.0803747 0.220828 0.21" size="0.035 0.04 0.03" euler="0 0 1.22173" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s3_strip_tag" type="box" pos="0.067378 0.185119 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.22173" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s3_strip_wp" pos="0.068404 0.187939 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
-    <geom name="s5_insert" type="box" pos="-0.220828 -0.0803747 0.21" size="0.035 0.04 0.03" euler="0 0 3.49066" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s5_insert_tag" type="box" pos="-0.185119 -0.067378 0.24" size="0.0015 0.0125 0.0125" euler="0 0 3.49066" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s5_insert_wp" pos="-0.187939 -0.068404 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
-    <geom name="s6_drop" type="box" pos="-0.1175 -0.203516 0.21" size="0.035 0.04 0.03" euler="0 0 4.18879" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_drop_tag" type="box" pos="-0.0985 -0.170607 0.26" size="0.0015 0.0125 0.0125" euler="0 0 4.18879" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s6_drop_wp" pos="-0.1 -0.173205 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
-    <geom name="s6_reject" type="box" pos="-0.0204816 -0.234106 0.21" size="0.035 0.04 0.03" euler="0 0 4.62512" material="reject_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_reject_tag" type="box" pos="-0.0171697 -0.19625 0.26" size="0.0015 0.0125 0.0125" euler="0 0 4.62512" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s6_reject_wp" pos="-0.0174311 -0.199239 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s2_slit" type="box" pos="0.19749 0.127369 0.21" size="0.035 0.04 0.03" euler="0 0 0.572811" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s2_slit_wp" pos="0.168076 0.108399 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s3_strip" type="box" pos="0.0969329 0.214077 0.21" size="0.035 0.04 0.03" euler="0 0 1.14562" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s3_strip_tag" type="box" pos="0.0812586 0.17946 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.14562" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s3_strip_wp" pos="0.082496 0.182193 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s5_insert" type="box" pos="-0.232444 0.0345685 0.21" size="0.035 0.04 0.03" euler="0 0 2.99396" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s5_insert_tag" type="box" pos="-0.194857 0.0289787 0.24" size="0.0015 0.0125 0.0125" euler="0 0 2.99396" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s5_insert_wp" pos="-0.197824 0.02942 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s6_drop" type="box" pos="-0.214077 -0.0969329 0.21" size="0.035 0.04 0.03" euler="0 0 3.56677" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s6_drop_tag" type="box" pos="-0.17946 -0.0812586 0.26" size="0.0015 0.0125 0.0125" euler="0 0 3.56677" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s6_drop_wp" pos="-0.182193 -0.082496 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s6_reject" type="box" pos="-0.127369 -0.19749 0.21" size="0.035 0.04 0.03" euler="0 0 4.13958" material="reject_mat" contype="0" conaffinity="0"/>
+    <geom name="s6_reject_tag" type="box" pos="-0.106773 -0.165555 0.26" size="0.0015 0.0125 0.0125" euler="0 0 4.13958" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s6_reject_wp" pos="-0.108399 -0.168076 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
 
     <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
     <geom name="spool_hub" type="cylinder" pos="0.29 0 0.33" size="0.03 0.0125" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
