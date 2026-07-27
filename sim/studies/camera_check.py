@@ -11,6 +11,9 @@ This study drives the arm to each stop and answers, per station:
     range          camera to tag, mm
     off-axis       how far from the optical centre, degrees
     obliquity      viewing angle onto the tag face, degrees
+    occlusion      is anything standing in the line of sight - to the tag, and
+                   separately to the WORK POINT, which is the other half of the
+                   camera's job and a different ray
 
 Obliquity is the one people forget. AprilTag pose degrades sharply past ~60°
 off-normal because the tag's projected area collapses and corner localisation
@@ -57,6 +60,37 @@ def _tag_geom_name(station: str) -> str:
     return f"{station.lower()}_tag"
 
 
+def _first_hit(model, data, origin, target) -> tuple[str, float]:
+    """What the camera actually sees first along this line of sight.
+
+    THIS IS THE PART THAT WAS MISSING, and it is why this study passed while
+    the body clamp filled the camera's view. Everything above computes angles
+    and ranges by trigonometry, which tells you where a thing IS and says
+    nothing about what is standing in front of it. Kyle saw the occlusion in
+    the viewer; the study could not have.
+
+    mj_ray is the same answer-by-simulation move interference.py makes: ask the
+    engine what the geometry does rather than deciding in advance which
+    obstacles to check for.
+    """
+    vec = np.array(target) - np.array(origin)
+    dist = float(np.linalg.norm(vec))
+    if dist <= 0:
+        return "", 0.0
+    gid = np.zeros(1, dtype=np.int32)
+    hit = mujoco.mj_ray(model, data, np.array(origin), vec / dist, None, 1, -1, gid)
+    if hit < 0:
+        return "", dist
+    name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, int(gid[0])) or "?"
+    # The ribbon is the workpiece. It is SUPPOSED to be in front of the camera —
+    # seeing it is the job. Same exclusion interference.py makes, for the same
+    # reason: a study that reports the thing being worked on as an obstruction
+    # buries the findings that matter.
+    if name.startswith(("rib_", "stock_")):
+        return "", dist
+    return name, float(hit)
+
+
 def check() -> list[dict]:
     model = mujoco.MjModel.from_xml_path(str(build_scene.MJCF_PATH))
     data = mujoco.MjData(model)
@@ -64,6 +98,13 @@ def check() -> list[dict]:
     cam_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, "arm_cam")
     if cam_id < 0:
         raise SystemExit("arm_cam not found in the scene")
+    # tail_mid, not comb_tip. The work point at S1 is INSIDE the feed head's
+    # channel — unseeable from anywhere, by design, and testing it would report
+    # a permanent failure no camera position could fix. What the camera actually
+    # verifies is the exposed tail between the comb and the tooling.
+    wp_sid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "tail_mid")
+    if wp_sid < 0:
+        raise SystemExit("tail_mid site not found in the scene")
 
     fovy = float(model.cam_fovy[cam_id])
     half_v = math.radians(fovy) / 2.0
@@ -99,11 +140,26 @@ def check() -> list[dict]:
         ang_v = math.atan2(local[1], depth)
         in_frame = abs(ang_h) <= half_h and abs(ang_v) <= half_v
 
-        # The tag plate is a thin box; its local x is the face normal.
-        normal = tag_mat[:, 0]
+        # The tag plate is a thin box, and its face normal is its THIN axis.
+        # This read local x, which was right while the tag stood upright on a
+        # ledge and became exactly wrong when it was laid flat — the reported
+        # obliquity was the complement of the real one (72.6 where the truth was
+        # 17.4), so a tag the camera looks almost straight down at was being
+        # failed as too oblique. Take the thinnest half-extent instead of naming
+        # an axis, so the study cannot be wrong about this again.
+        normal = tag_mat[:, int(np.argmin(model.geom_size[gid]))]
         to_cam = cam_pos - tag_pos
         to_cam /= np.linalg.norm(to_cam)
         obliquity = math.degrees(math.acos(min(1.0, abs(float(normal @ to_cam)))))
+
+        # OCCLUSION. Two lines of sight, because the camera has two jobs.
+        tag_hit, tag_d = _first_hit(model, data, cam_pos, tag_pos)
+        tag_blocked = tag_hit not in ("", _tag_geom_name(station))
+
+        wp = np.array(data.site_xpos[wp_sid])
+        wp_hit, wp_d = _first_hit(model, data, cam_pos, wp)
+        wp_range = float(np.linalg.norm(wp - cam_pos))
+        wp_blocked = wp_hit != "" and wp_d < wp_range - 0.002
 
         rows.append(
             {
@@ -114,6 +170,8 @@ def check() -> list[dict]:
                 "obliquity_deg": obliquity,
                 "half_h_deg": math.degrees(half_h),
                 "half_v_deg": math.degrees(half_v),
+                "tag_blocked_by": tag_hit if tag_blocked else "",
+                "work_blocked_by": wp_hit if wp_blocked else "",
             }
         )
     return rows
@@ -166,6 +224,10 @@ def main() -> int:
             continue
 
         issues = []
+        if r["tag_blocked_by"]:
+            issues.append(f"tag behind {r['tag_blocked_by']}")
+        if r["work_blocked_by"]:
+            issues.append(f"tail behind {r['work_blocked_by']}")
         if r["obliquity_deg"] > MAX_OBLIQUITY_DEG:
             issues.append("too oblique")
         if r["range_mm"] < MIN_RANGE_MM:
@@ -182,6 +244,8 @@ def main() -> int:
     print()
     print(f"limits: obliquity < {MAX_OBLIQUITY_DEG:.0f}°, "
           f"range {MIN_RANGE_MM:.0f}–{MAX_RANGE_MM:.0f} mm")
+    print("occlusion tested by ray cast on TWO lines of sight: the tag, and the")
+    print("work point. Angles alone said this was fine while the clamp filled the view.")
     if problems:
         print(f"\n{problems} station(s) need the camera mount reworked — "
               "adjust CAMERA_BACK_OFFSET / CAMERA_UP_OFFSET / CAMERA_TILT.")

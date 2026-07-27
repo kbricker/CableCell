@@ -40,6 +40,16 @@ PER-STATION HOLES - 4 per stop
   The printed station mounts are slotted radially, so a little
   drift is absorbed at assembly.
 
+S6 DROP AND REJECT HOLES - 2 of them, and they are NOT on the bolt circle
+  At the S6 drop (204.4 deg) and S6 reject (237.2 deg) angles.
+  Slot 2-3/4" radial x 2-1/2" tangential (69 x 64 mm),
+  running from 4-13/16" to 7-9/16" from centre (123 to 192 mm).
+  These stops get NO station mount - the mount would roof over
+  the hole. The printed collar bolts around each slot instead.
+  Inboard edge is set by the Z platform's CORNERS passing
+  underneath at 117 mm - the platform is square,
+  so its corners reach further than its edges.
+
 PRESS SCALLOP
   The press body crosses the disc at the S4 stop (118.6 deg).
   Cut a scallop 8-1/4" wide, inward from the

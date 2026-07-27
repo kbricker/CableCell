@@ -120,7 +120,7 @@ def _chain(name: str, i: int, x0: float, n: int, z: float, theta_deg: float,
         lines.append(
             f'{inner}<geom name="{name}_{i}_{k}" type="capsule" '
             f'fromto="0 0 0 {seg:.6g} 0 0" size="{r:.6g}" '
-            f'material="ribbon_mat" contype="0" conaffinity="0" mass="{mass:.6g}"/>'
+            f'material="cond_mat_{i}" contype="0" conaffinity="0" mass="{mass:.6g}"/>'
         )
     for k in range(n - 1, -1, -1):
         lines.append("    " + "  " * k + "</body>")

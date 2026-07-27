@@ -411,12 +411,88 @@ CAMERA_MASS_G = _d(28.0, ESTIMATED, "ELP board + lens", "CAMERA_MASS_G")
 # Offsets from the comb. CAMERA_TILT is degrees BELOW horizontal, positive down.
 # Validated by sim/studies/camera_check.py, which checks every station tag for
 # framing, range and obliquity.
-CAMERA_BACK_OFFSET = _d(62.0, ESTIMATED, "camera_check validated", "CAMERA_BACK_OFFSET")
-CAMERA_UP_OFFSET = _d(48.0, ESTIMATED, "camera_check validated", "CAMERA_UP_OFFSET")
-CAMERA_TILT = _d(33.0, ESTIMATED, "camera_check validated", "CAMERA_TILT")
+# RE-SITED after camera_check learned to test occlusion. 62/48/33 put the lens
+# inside the cross-slide carrier's gusset — every station reported "tag behind
+# cross_carriage, work point behind cross_carriage". The old numbers were
+# "camera_check validated", and they were: the study measured angle and range,
+# both of which were fine, and had no way to notice a bracket in the way.
+#
+# The new position sits OUTBOARD of the cross-slide plate (which ends 22 mm from
+# the R carriage centreline) and high enough that the sight line clears the comb
+# and the body clamp. Offsets are from the WORK POINT, not from the comb — the
+# comb moves relative to it and the work point does not.
+CAMERA_BACK_OFFSET = _d(42.0, ESTIMATED, "clears the cross-slide, camera_check", "CAMERA_BACK_OFFSET")
+CAMERA_UP_OFFSET = _d(55.0, ESTIMATED, "clears the comb and clamp, camera_check", "CAMERA_UP_OFFSET")
+CAMERA_TILT = _d(52.6, ESTIMATED, "derived: atan(up/back)", "CAMERA_TILT")
 
 # AprilTag at each station, tag36h11. TendWright prints these at 40 mm.
-STATION_TAG_SIZE = _d(25.0, ESTIMATED, "scaled from TendWright 40mm", "STATION_TAG_SIZE")
+# 25 -> 20 mm, and the tag size is now SET BY the gap it has to live in rather
+# than scaled from TendWright's 40 mm. The band between the arm's outermost
+# structure (172) and the tooling line (198) is 26 mm; a 25 mm tag with any
+# clearance either side does not fit in it, and check_station_tag() said so.
+# 20 mm is ~275 px across at 100 mm range through a 3.6 mm lens on a 1920-wide
+# sensor, which is far more than tag36h11 needs.
+STATION_TAG_SIZE = _d(20.0, ESTIMATED, "set by the gap between arm reach and tooling", "STATION_TAG_SIZE")
+
+# WHERE THE TAG GOES, which took three tries and is worth recording as three.
+#
+#   1. Upright on a 30 mm ledge on the mount's inboard face. Read beautifully;
+#      stood in the arm's path at all seven stops.
+#   2. Flat in the mount's top face at the inboard end. Out of the arm's way,
+#      and directly UNDERNEATH the station tooling, which starts 1 mm further
+#      out. camera_check could not see that until it learned to cast rays.
+#   3. Flat on the mount, in the GAP between the arm's reach and the tooling.
+#      A small inboard shelf so a 25 mm tag fits on the plate.
+#   4. (tried and rejected) the same, swung 40 mm tangentially to duck the comb.
+#      It ducked the comb and fell out of the FOV: the camera's narrow axis is
+#      the tangential one, so a tangential offset spends the 24-degree budget
+#      rather than the 35-degree one.
+#
+# The band that works is bounded on both sides and is only 26 mm wide:
+# outboard of arm_structure_max_r() (172, where the comb reaches) and inboard of
+# STATION_INNER_R (198, where the tooling starts). The tag sits in it, on the
+# radial centreline, and the camera looks over the comb at it.
+STATION_TAG_SHELF = _d(14.0, COMMITTED, "inboard extension of station_mount", "STATION_TAG_SHELF")
+STATION_TAG_OFFSET_T = _d(0.0, COMMITTED, "on the radial centreline", "STATION_TAG_OFFSET_T")
+STATION_MOUNT_LEN = _d(76.0, COMMITTED, "build_parts.station_mount w", "STATION_MOUNT_LEN")
+# Was a bare literal in build_scene — a placement, and therefore a dimension.
+STATION_MOUNT_R = _d(
+    float(ARM_R0) + 15.0, COMMITTED, "straddles the bolt circle", "STATION_MOUNT_R"
+)
+STATION_TAG_CLEARANCE = _d(2.0, COMMITTED, "tag edge to the tooling line", "STATION_TAG_CLEARANCE")
+
+
+def station_tag_radius() -> float:
+    """Tucked just inboard of the tooling, on the radial centreline.
+
+    Derived rather than chosen, because the band it has to land in is narrow and
+    is defined by two things that move: the arm's outermost structure and the
+    tooling line. If either closes on the other this stops fitting, and the
+    assertion below says so rather than the camera quietly going blind.
+    """
+    return (
+        float(STATION_INNER_R)
+        - float(STATION_TAG_CLEARANCE)
+        - float(STATION_TAG_SIZE) / 2.0
+    )
+
+
+def check_station_tag() -> list[str]:
+    bad: list[str] = []
+    r = station_tag_radius()
+    inner_edge = r - float(STATION_TAG_SIZE) / 2.0
+    if inner_edge <= arm_structure_max_r():
+        bad.append(
+            f"tag inner edge at R={inner_edge:.1f} is inside the arm's reach at "
+            f"R={arm_structure_max_r():.1f} — the comb would sit on it"
+        )
+    mount_inner = float(STATION_MOUNT_R) - float(STATION_MOUNT_LEN) / 2.0 - float(STATION_TAG_SHELF)
+    if inner_edge < mount_inner:
+        bad.append(
+            f"tag overhangs the mount: inner edge {inner_edge:.1f} vs mount "
+            f"inboard edge {mount_inner:.1f} — lengthen STATION_TAG_SHELF"
+        )
+    return bad
 
 
 # ---------------------------------------------------------------------------
@@ -998,6 +1074,128 @@ if _ARM_STACK_FAILURES:
     raise AssertionError(
         "arm stack does not close:\n  " + "\n  ".join(_ARM_STACK_FAILURES)
     )
+
+
+# ---------------------------------------------------------------------------
+# 4e. THE FINISHED CABLE, and where it goes at S6
+# ---------------------------------------------------------------------------
+# The machine's headline spec — "3 cables, 5 inch total length" — was not a
+# dimension anywhere in this file. That is why the drop station could be left as
+# a greybox for as long as it was: nothing in the model knew how big the thing
+# being dropped is.
+
+CABLE_LENGTH_MIN = _d(90.0, COMMITTED, "2 x split + handling, cell-design 2", "CABLE_LENGTH_MIN")
+CABLE_LENGTH_NOMINAL = _d(127.0, COMMITTED, '5", README headline', "CABLE_LENGTH_NOMINAL")
+CABLE_LENGTH_MAX = _d(1000.0, ESTIMATED, "set by the payout trough, cell-design 2", "CABLE_LENGTH_MAX")
+
+# Where the clamp grips, at engagement. This is the radius the finished cable
+# hangs from when it is released.
+def clamp_grip_radius() -> float:
+    return (
+        arm_r_engaged()
+        - float(CROSS_PLATE_LEN) / 2.0
+        + float(WRIST_CHEEK_T)
+        + float(WRIST_HUB_WIDTH)
+        + float(CLAMP_BODY_LEN) / 2.0
+    )
+
+
+# THE CHUTE IS A HOLE IN THE DECK, NOT A FUNNEL ON THE BOLT CIRCLE.
+#
+# 702 asked for "a drop chute with its mouth ON the engagement plane". That
+# framing came from me, and it was wrong in a way worth recording, because the
+# reasoning behind it was sound and the conclusion still did not follow.
+#
+# The real argument was: do not make the arm LIFT over a bin rim, because that
+# buys Z travel. True. From there I assumed the chute mouth therefore had to sit
+# up at the engagement plane where the work happens. It does not — it has to sit
+# UNDER THE CABLE, and the cable does not hang at the bolt circle.
+#
+# The arm holds the finished cable by its END, at clamp_grip_radius() = 130 mm.
+# Everything outboard of ~172 mm is where the arm's own structure has to be, and
+# everything outboard of 198 mm is station tooling. A funnel at R0 would be
+# 68 mm outboard of the cable it is supposed to catch, and its inboard wall
+# would be inside the arm's envelope.
+#
+# So: cut a hole in the DECK under where the cable hangs, put a bin under the
+# deck, and print a shallow collar around the hole to gather a cable that lands
+# off-centre. The Z-travel saving survives, for a better reason than the one I
+# gave: there is no rim to lift over because the bin is under the deck.
+#
+# The same part serves S6_DROP and S6_REJECT. One part number, two holes.
+
+Z_PLATFORM_HALF = _d(82.5, COMMITTED, "build_parts.z_platform", "Z_PLATFORM_HALF")
+
+
+def z_platform_corner_r() -> float:
+    """The platform is SQUARE and sits right under the deck, so its corners —
+    not its edges — are what a falling cable can land on."""
+    return float(Z_PLATFORM_HALF) * math.sqrt(2.0)
+
+
+# Deck centre clearance. Lived in deck_cut_sheet.py, which made it a second
+# source for a dimension the chutes now have to clear. Rule 3 of 701.
+DECK_CENTRE_HOLE_R = _d(
+    math.ceil(((float(Z_POST_CIRCLE_R) + float(NEMA17_SQUARE) / 2.0) * 2.0 + 20.0) / 25.4 * 2)
+    / 2 * 25.4 / 2.0,
+    COMMITTED,
+    "derived: Z stage reach, rounded up to the next half inch",
+    "DECK_CENTRE_HOLE_R",
+)
+
+DROP_HOLE_CLEARANCE = _d(6.0, ESTIMATED, "saw kerf and wander in ply", "DROP_HOLE_CLEARANCE")
+
+DROP_HOLE_R_IN = _d(
+    max(z_platform_corner_r(), float(DECK_CENTRE_HOLE_R)) + float(DROP_HOLE_CLEARANCE),
+    COMMITTED,
+    "derived: outboard of the Z platform's corners",
+    "DROP_HOLE_R_IN",
+)
+DROP_HOLE_R_OUT = _d(
+    float(STATION_INNER_R) - float(DROP_HOLE_CLEARANCE),
+    COMMITTED,
+    "derived: inboard of the station tooling line",
+    "DROP_HOLE_R_OUT",
+)
+DROP_HOLE_W = _d(64.0, ESTIMATED, "cable curl, unvalidated", "DROP_HOLE_W")
+CHUTE_COLLAR_H = _d(16.0, ESTIMATED, "gathers a cable that lands off-centre", "CHUTE_COLLAR_H")
+CHUTE_COLLAR_WALL = _d(3.0, COMMITTED, "printed wall", "CHUTE_COLLAR_WALL")
+
+# The bin hangs under the deck. Depth is what stops a 127 mm cable bridging the
+# hole and staying in the machine.
+BIN_DEPTH = _d(90.0, ESTIMATED, "clears a nominal cable end-on", "BIN_DEPTH")
+
+
+def check_drop_station() -> list[str]:
+    bad: list[str] = []
+    if DROP_HOLE_R_IN >= DROP_HOLE_R_OUT:
+        bad.append(
+            f"drop hole has no width: inboard {float(DROP_HOLE_R_IN):.1f} is not "
+            f"inside outboard {float(DROP_HOLE_R_OUT):.1f}"
+        )
+    grip = clamp_grip_radius()
+    if not (float(DROP_HOLE_R_IN) < grip < float(DROP_HOLE_R_OUT)):
+        bad.append(
+            f"the cable hangs from R={grip:.1f}, which is not over the drop hole "
+            f"({float(DROP_HOLE_R_IN):.1f}..{float(DROP_HOLE_R_OUT):.1f}) — it "
+            f"would land on the deck"
+        )
+    if float(DROP_HOLE_R_IN) <= z_platform_corner_r():
+        bad.append(
+            f"drop hole starts at R={float(DROP_HOLE_R_IN):.1f}, over the Z "
+            f"platform's corners at R={z_platform_corner_r():.1f}"
+        )
+    if float(BIN_DEPTH) < float(CABLE_LENGTH_NOMINAL) * 0.6:
+        bad.append(
+            f"bin is {float(BIN_DEPTH):.0f} mm deep against a "
+            f"{float(CABLE_LENGTH_NOMINAL):.0f} mm cable — it will bridge"
+        )
+    return bad
+
+
+_DROP_FAILURES = check_drop_station() + check_station_tag()
+if _DROP_FAILURES:
+    raise AssertionError("S6 does not close:\n  " + "\n  ".join(_DROP_FAILURES))
 
 
 # ---------------------------------------------------------------------------

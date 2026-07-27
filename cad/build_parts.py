@@ -1064,6 +1064,70 @@ def strip_die():
     return body
 
 
+def drop_chute():
+    """S6. Gathers a released cable through a hole in the deck, into a bin.
+
+    ONE PART, TWO STOPS. S6_DROP and S6_REJECT are the same geometry at
+    different angles over different bins — good work and rejects must never
+    share a bin, but they can share a part number.
+
+    It is a collar, not a funnel on a stalk, and that is the whole design
+    argument. The arm holds the finished cable by its END, at 130 mm radius.
+    A chute mouth up at the bolt circle would be 68 mm outboard of the cable it
+    is meant to catch, with its inboard wall inside the arm's own envelope. The
+    cable hangs; the deck is what is under it; so the chute is a hole in the
+    deck with sloped lips to gather anything that lands off-centre.
+
+    Sized from layout: the hole clears the Z platform's CORNERS inboard (the
+    platform is square and sits directly under the deck) and stops short of the
+    station tooling line outboard.
+
+    The lips slope at 45 degrees. Steeper than the ~17 degrees PVC-on-PLA needs
+    to slide, because a limp cable landing across a lip has to be tipped in, not
+    just kept from sticking.
+    """
+    r_in = float(L.DROP_HOLE_R_IN)
+    r_out = float(L.DROP_HOLE_R_OUT)
+    w = float(L.DROP_HOLE_W)
+    h = float(L.CHUTE_COLLAR_H)
+    wall = float(L.CHUTE_COLLAR_WALL)
+
+    # Part origin is the hole's centre on the deck's TOP face, +x radially out.
+    ln = r_out - r_in
+    x0 = -ln / 2.0
+
+    # Outer body: the collar footprint, standing proud of the deck.
+    outer_l = ln + 2.0 * (wall + h)
+    outer_w = w + 2.0 * (wall + h)
+    body = Part.makeBox(outer_l, outer_w, h, V(x0 - wall - h, -outer_w / 2, 0))
+
+    # The through-hole, and the 45-degree gathering lip above it. Built as a
+    # loft from the hole at the deck face up to the collar's outer rim, then
+    # cut — which is the lip and the hole in one operation.
+    def _rect(dx: float, dy: float, z: float):
+        pts = [
+            V(x0 - dx, -w / 2 - dy, z),
+            V(x0 + ln + dx, -w / 2 - dy, z),
+            V(x0 + ln + dx, w / 2 + dy, z),
+            V(x0 - dx, w / 2 + dy, z),
+            V(x0 - dx, -w / 2 - dy, z),
+        ]
+        return Part.Wire(Part.makePolygon(pts))
+
+    void = Part.makeLoft([_rect(0.0, 0.0, -1.0), _rect(h + 1.0, h + 1.0, h + 0.001)], True)
+    body = body.cut(void)
+
+    # Bolt-down ears at the four corners, outside the lip.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(
+                _z_cyl(2.7, h + 2.0, -1.0,
+                       sx * (outer_l / 2.0 - 6.0) + (x0 + ln / 2.0),
+                       sy * (outer_w / 2.0 - 6.0))
+            )
+    return body
+
+
 def station_mount():
     """Generic station base — bolts a station to the deck on the bolt circle.
 
@@ -1072,8 +1136,16 @@ def station_mount():
     sector rather than rebuilding the dial. Slotted radially so a station can
     be trimmed in and out during commissioning without redrilling the deck.
     """
-    w, d, t = 76.0, 60.0, 10.0
+    # An INBOARD SHELF carries the tag, because the tooling stands on
+    # everything else. The bolt pattern does not move — the shelf is added
+    # inboard and the part's origin stays on the tooling pattern's centre.
+    w, d, t = float(L.STATION_MOUNT_LEN), 60.0, 10.0
+    shelf = float(L.STATION_TAG_SHELF)
+    d_full = max(d, 2.0 * (float(L.STATION_TAG_OFFSET_T) + float(L.STATION_TAG_SIZE) / 2.0 + 5.0))
     base = Part.makeBox(w, d, t, V(-w / 2, -d / 2, 0))
+    base = base.fuse(
+        Part.makeBox(shelf, d_full, t, V(-w / 2 - shelf, -d_full / 2, 0))
+    )
 
     # Radial adjustment slots.
     for y in (-20.0, 20.0):
@@ -1100,9 +1172,13 @@ def station_mount():
     # radial path. Rejected: moving the ledge outboard, which would have put the
     # tag behind the tooling and occluded it exactly when registration matters.
     tag = float(L.STATION_TAG_SIZE)
+    # Absolute radius, converted into the part's frame — so the pocket and the
+    # scene's tag geom cannot land in different places.
+    tag_x = L.station_tag_radius() - float(L.STATION_MOUNT_R)
+    tag_y = float(L.STATION_TAG_OFFSET_T)
     base = base.cut(
         Part.makeBox(tag + 1.0, tag + 1.0, 1.2,
-                     V(-w / 2 + 3.0, -(tag + 1.0) / 2, t - 1.2))
+                     V(tag_x - (tag + 1.0) / 2, tag_y - (tag + 1.0) / 2, t - 1.2))
     )
     return base
 
@@ -1127,6 +1203,7 @@ PARTS = {
     "camera_mount": camera_mount,
     "drive_roller_block": drive_roller_block,
     "station_mount": station_mount,
+    "drop_chute": drop_chute,
 }
 
 

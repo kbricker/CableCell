@@ -93,7 +93,7 @@ MESHES = (
     "measuring_wheel", "splitting_wedge", "spreader_plate", "z_platform",
     "spindle_shaft", "radial_carriage", "wrist_mount", "camera_mount",
     "drive_roller_block", "station_mount", "cross_slide_carrier",
-    "body_clamp", "strip_die", "rotor_plate",
+    "body_clamp", "strip_die", "rotor_plate", "drop_chute",
 )
 
 
@@ -112,7 +112,7 @@ def _mesh_assets() -> str:
 # Where the station mount sits. The tag pocket is in its top face at the inboard
 # end (part x = -38 + 3), and the mount centre goes 35 mm outboard of R0 so the
 # plate straddles the bolt circle.
-STATION_MOUNT_R = float(L.ARM_R0) + 35.0
+STATION_MOUNT_R = float(L.STATION_MOUNT_R)
 STATION_MOUNT_T = float(L.STATION_MOUNT_T)
 
 # Which real parts stand at each stop, as
@@ -156,8 +156,14 @@ STATION_PARTS: dict[str, tuple] = {
 # a detailed guess is worse than an obvious blank.
 UNMODELLED = {
     "S5_INSERT": "out of Phase 1 scope",
-    "S6_DROP": "chute not designed",
-    "S6_REJECT": "chute not designed",
+}
+
+# The two stops that are a hole in the deck rather than a piece of tooling.
+# Same printed collar at both; SEPARATE bins, because good work and rejects
+# sharing a bin would silently defeat the point of having a reject angle.
+CHUTE_STOPS = {
+    "S6_DROP": ("collect", "collect_bin_mat"),
+    "S6_REJECT": ("reject", "reject_mat"),
 }
 
 
@@ -211,6 +217,45 @@ def _ribbon_bodies() -> str:
     return RIB.bodies(engage, cut_x, float(L.STATION_ANGLES["S1_FEED"]))
 
 
+def _chute_body(name: str, theta: float, rot: float, deck_top: float) -> str:
+    """S6: the collar, its bin, and the tag — no station mount.
+
+    S6 gets no station_mount, deliberately. The mount spans radius 162..238 and
+    the drop hole is 123..192; a mount here would roof over the hole it exists
+    to leave open. The AprilTag moves onto the collar's own top face, which is
+    at the same height and in the same place the camera already looks.
+    """
+    kind, mat = CHUTE_STOPS[name]
+    r_mid = (float(L.DROP_HOLE_R_IN) + float(L.DROP_HOLE_R_OUT)) / 2.0
+    cx, cy = _polar(r_mid, theta)
+
+    ln = float(L.DROP_HOLE_R_OUT) - float(L.DROP_HOLE_R_IN)
+    w = float(L.DROP_HOLE_W)
+    bin_depth = float(L.BIN_DEPTH)
+    bin_top = float(L.DECK_ABOVE_BENCH)
+    bin_z = bin_top - bin_depth / 2.0
+
+    tag = float(L.STATION_TAG_SIZE)
+    tx, ty = _polar(float(L.DROP_HOLE_R_OUT) - tag / 2.0 - 2.0, theta)
+
+    return "\n".join([
+        f'    <!-- {name}: collar over a deck hole, bin under. The cable hangs',
+        f'         from R={L.clamp_grip_radius():.0f} and the deck is what is under it — a',
+        f'         funnel out at the bolt circle would have missed by 68 mm. -->',
+        f'    <geom name="{name.lower()}_chute" type="mesh" mesh="drop_chute_mesh" '
+        f'pos="{_fmt(cx * MM, cy * MM, deck_top * MM)}" '
+        f'euler="0 0 {rot:.6g}" material="chute_mat" contype="0" conaffinity="0"/>',
+        f'    <geom name="{name.lower()}_bin" type="box" '
+        f'pos="{_fmt(cx * MM, cy * MM, bin_z * MM)}" '
+        f'size="{_fmt(ln / 2 * MM, w / 2 * MM, bin_depth / 2 * MM)}" '
+        f'euler="0 0 {rot:.6g}" material="{mat}" contype="0" conaffinity="0"/>',
+        f'    <geom name="{name.lower()}_tag" type="box" '
+        f'pos="{_fmt(tx * MM, ty * MM, (deck_top + float(L.CHUTE_COLLAR_H) - 0.6) * MM)}" '
+        f'size="{_fmt(tag / 2 * MM, tag / 2 * MM, 0.0006)}" '
+        f'euler="0 0 {rot:.6g}" material="tag_mat" contype="0" conaffinity="0"/>',
+    ])
+
+
 def _station_bodies() -> str:
     """Station assemblies on the deck, one per angular stop.
 
@@ -225,6 +270,10 @@ def _station_bodies() -> str:
         theta = float(L.STATION_ANGLES[name])
         rot = math.radians(theta)
         engage_z = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name])
+
+        if name in CHUTE_STOPS:
+            out.append(_chute_body(name, theta, rot, deck_top))
+            continue
 
         # Every station sits on the same printed mount — that shared interface
         # is what makes stations bolt-on modules.
@@ -284,8 +333,10 @@ def _station_bodies() -> str:
         # the pivot, which read better to the camera and stood squarely in the
         # arm's path at every one of the seven stops. Flat costs ~24 degrees of
         # obliquity and buys back the entire radial approach.
-        tag_r = STATION_MOUNT_R - 38.0 + 3.0 + float(L.STATION_TAG_SIZE) / 2.0
-        tx, ty = _polar(tag_r, theta)
+        tag_r = L.station_tag_radius()
+        t_off = float(L.STATION_TAG_OFFSET_T)
+        tx = tag_r * math.cos(rot) - t_off * math.sin(rot)
+        ty = tag_r * math.sin(rot) + t_off * math.cos(rot)
         tz = deck_top + STATION_MOUNT_T - 0.6
         out.append(
             f'    <geom name="{name.lower()}_tag" type="box" '
@@ -542,6 +593,17 @@ def build_mjcf() -> str:
     <material name="ribbon_mat" rgba="0.85 0.95 0.15 1"/>
     <material name="hanger_mat" rgba="0.45 0.48 0.52 1"/>
     <material name="camera_mat" rgba="0.15 0.15 0.17 1"/>
+    <!-- ONE MATERIAL PER CONDUCTOR, in the cable's real colours. The ribbon was
+         a single grey "ribbon_mat", which made a 1.4 mm strand invisible AND
+         made the split unreadable — three joined conductors and three separated
+         ones look identical when they are all the same colour. Black/red/white
+         is also what the camera has to tell apart at S5, so the sim and the
+         acceptance test now agree about what they are looking at. -->
+    <material name="cond_mat_0" rgba="0.10 0.10 0.12 1"/>
+    <material name="cond_mat_1" rgba="0.85 0.15 0.12 1"/>
+    <material name="cond_mat_2" rgba="0.95 0.95 0.95 1"/>
+    <material name="chute_mat" rgba="0.45 0.50 0.58 1"/>
+    <material name="collect_bin_mat" rgba="0.20 0.55 0.35 1"/>
     <material name="tag_mat" rgba="0.97 0.97 0.97 1"/>
     <material name="screw_mat" rgba="0.72 0.68 0.45 1"/>
     <material name="motor_mat" rgba="0.20 0.22 0.26 1"/>
@@ -713,6 +775,14 @@ def build_mjcf() -> str:
                 <!-- The work point: comb front face + the free tail. Past this
                      face it is ribbon, not machine — which is the whole reason
                      the arm can stop {float(L.TAIL_PROJECTION):.0f} mm short of the stations. -->
+                <!-- What the camera INSPECTS. Not the work point: at S1 the
+                     work point is inside the feed head's channel and cannot be
+                     seen from anywhere, which is correct and not a defect. The
+                     exposed tail between the comb's front face and the tooling
+                     line is the thing a camera can actually verify. -->
+                <site name="tail_mid"
+                  pos="{(float(L.WRIST_HUB_WIDTH) + float(L.CLAMP_BODY_LEN) + float(L.COMB_LENGTH) + float(L.TAIL_PROJECTION) / 2) * MM:.6g} 0 0"
+                  size="0.002" rgba="1 0.85 0.2 1"/>
                 <site name="comb_tip"
                   pos="{(float(L.WRIST_HUB_WIDTH) + float(L.CLAMP_BODY_LEN) + float(L.COMB_LENGTH) + float(L.TAIL_PROJECTION)) * MM:.6g} 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>

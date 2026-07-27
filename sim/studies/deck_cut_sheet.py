@@ -43,8 +43,10 @@ def spec() -> dict:
     deck_d_mm = float(L.DECK_RADIUS) * 2.0
     bolt_d_mm = float(L.ARM_R0) * 2.0
     # Central clearance: the Z platform passes through, plus the off-axis motor.
-    z_reach_mm = float(L.Z_POST_CIRCLE_R) + float(L.NEMA17_SQUARE) / 2.0
-    centre_d_mm = math.ceil((z_reach_mm * 2.0 + 20.0) / MM_PER_IN * 2) / 2 * MM_PER_IN
+    # The formula lived HERE and the chutes now have to clear the same hole, so
+    # it moved to layout.DECK_CENTRE_HOLE_R and this reads it. Rule 3 of 701: a
+    # study never keeps its own copy of a dimension.
+    centre_d_mm = float(L.DECK_CENTRE_HOLE_R) * 2.0
     return {
         "deck_d": (deck_d_mm, deck_d_mm / MM_PER_IN),
         "thickness": (float(L.DECK_THICKNESS), float(L.DECK_THICKNESS) / MM_PER_IN),
@@ -53,6 +55,9 @@ def spec() -> dict:
         "deck_above_bench": (float(L.DECK_ABOVE_BENCH), float(L.DECK_ABOVE_BENCH) / MM_PER_IN),
         "station_hole_x": (28.0, 28.0 / MM_PER_IN),
         "station_hole_y": (40.0, 40.0 / MM_PER_IN),
+        "drop_r_in": (float(L.DROP_HOLE_R_IN), float(L.DROP_HOLE_R_IN) / MM_PER_IN),
+        "drop_r_out": (float(L.DROP_HOLE_R_OUT), float(L.DROP_HOLE_R_OUT) / MM_PER_IN),
+        "drop_w": (float(L.DROP_HOLE_W), float(L.DROP_HOLE_W) / MM_PER_IN),
     }
 
 
@@ -97,6 +102,21 @@ def report() -> str:
     out.append('  Drill 1/4" (6.5 mm) clearance for M5 hardware.')
     out.append("  The printed station mounts are slotted radially, so a little")
     out.append("  drift is absorbed at assembly.")
+    out.append("")
+    out.append("S6 DROP AND REJECT HOLES - 2 of them, and they are NOT on the bolt circle")
+    ri, ro, dw = s["drop_r_in"], s["drop_r_out"], s["drop_w"]
+    ln_mm = ro[0] - ri[0]
+    out.append(f"  At the S6 drop ({float(L.STATION_ANGLES['S6_DROP']):.1f} deg) and S6 reject "
+               f"({float(L.STATION_ANGLES['S6_REJECT']):.1f} deg) angles.")
+    out.append(f"  Slot {frac(ln_mm / MM_PER_IN)} radial x {frac(dw[1])} tangential "
+               f"({ln_mm:.0f} x {dw[0]:.0f} mm),")
+    out.append(f"  running from {frac(ri[1])} to {frac(ro[1])} from centre "
+               f"({ri[0]:.0f} to {ro[0]:.0f} mm).")
+    out.append("  These stops get NO station mount - the mount would roof over")
+    out.append("  the hole. The printed collar bolts around each slot instead.")
+    out.append("  Inboard edge is set by the Z platform's CORNERS passing")
+    out.append(f"  underneath at {L.z_platform_corner_r():.0f} mm - the platform is square,")
+    out.append("  so its corners reach further than its edges.")
     out.append("")
     out.append("PRESS SCALLOP")
     out.append(f"  The press body crosses the disc at the S4 stop "
