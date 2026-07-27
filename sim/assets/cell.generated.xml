@@ -85,23 +85,23 @@
       material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
 
     <geom name="s1_feed" type="box" pos="0.235 0 0.21" size="0.035 0.04 0.03" euler="0 0 0" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_tag" type="box" pos="0.197 0 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s1_feed_wp" pos="0.2 0 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s1_feed_wp" pos="0.2 0 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s2_slit" type="box" pos="0.192501 0.13479 0.21" size="0.035 0.04 0.03" euler="0 0 0.610865" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_tag" type="box" pos="0.161373 0.112995 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 0.610865" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s2_slit_wp" pos="0.16383 0.114715 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s2_slit_tag" type="box" pos="0.161373 0.112995 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.610865" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s2_slit_wp" pos="0.16383 0.114715 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s3_strip" type="box" pos="0.0803747 0.220828 0.21" size="0.035 0.04 0.03" euler="0 0 1.22173" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s3_strip_tag" type="box" pos="0.067378 0.185119 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 1.22173" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s3_strip_wp" pos="0.068404 0.187939 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s3_strip_tag" type="box" pos="0.067378 0.185119 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.22173" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s3_strip_wp" pos="0.068404 0.187939 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s5_insert" type="box" pos="-0.220828 -0.0803747 0.21" size="0.035 0.04 0.03" euler="0 0 3.49066" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s5_insert_tag" type="box" pos="-0.185119 -0.067378 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 3.49066" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s5_insert_wp" pos="-0.187939 -0.068404 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s5_insert_tag" type="box" pos="-0.185119 -0.067378 0.24" size="0.0015 0.0125 0.0125" euler="0 0 3.49066" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s5_insert_wp" pos="-0.187939 -0.068404 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s6_drop" type="box" pos="-0.1175 -0.203516 0.21" size="0.035 0.04 0.03" euler="0 0 4.18879" material="station_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_drop_tag" type="box" pos="-0.0985 -0.170607 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 4.18879" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s6_drop_wp" pos="-0.1 -0.173205 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s6_drop_tag" type="box" pos="-0.0985 -0.170607 0.26" size="0.0015 0.0125 0.0125" euler="0 0 4.18879" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s6_drop_wp" pos="-0.1 -0.173205 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s6_reject" type="box" pos="-0.0204816 -0.234106 0.21" size="0.035 0.04 0.03" euler="0 0 4.62512" material="reject_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_reject_tag" type="box" pos="-0.0171697 -0.19625 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 4.62512" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s6_reject_wp" pos="-0.0174311 -0.199239 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
+    <geom name="s6_reject_tag" type="box" pos="-0.0171697 -0.19625 0.26" size="0.0015 0.0125 0.0125" euler="0 0 4.62512" material="tag_mat" contype="0" conaffinity="0"/>
+    <site name="s6_reject_wp" pos="-0.0174311 -0.199239 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
 
     <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
     <geom name="spool_hub" type="cylinder" pos="0.29 0 0.33" size="0.03 0.0125" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
@@ -131,14 +131,18 @@
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">
+        <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
+             from there, so the range is 0..SWEEP_ARC. It was previously
+             +/-SWEEP_ARC/2, which put four of the seven stops outside the
+             joint's own limits. -->
         <joint name="T" type="hinge" axis="0 0 1"
-          range="-2.35619 2.35619"
+          range="0 4.71239"
           damping="12"/>
         <geom name="main_bearing" type="cylinder" pos="0 0 0.012"
           size="0.045 0.012"
           material="rotor_mat" contype="0" conaffinity="0"/>
 
-        <body name="arm" pos="0 0 0.06">
+        <body name="arm" pos="0 0 0.032">
           <geom name="arm_beam" type="box"
             pos="0.115 0 0"
             size="0.115 0.03 0.0125"
@@ -155,13 +159,13 @@
                  Looks radially outward and down at the station work point;
                  registers against each station's AprilTag. -->
             <geom name="arm_camera" type="box"
-              pos="-0.055 0 0.045"
+              pos="-0.062 0 0.048"
               size="0.015 0.019 0.019"
-              euler="0 -0.523599 0"
+              euler="0 0.575959 0"
               material="camera_mat" contype="0" conaffinity="0"/>
             <camera name="arm_cam"
-              pos="-0.055 0 0.045"
-              euler="0 1.0472 -1.5708"
+              pos="-0.062 0 0.048"
+              euler="0 -0.994838 0"
               fovy="48"/>
 
             <body name="cross" pos="0 0 0">
@@ -192,7 +196,7 @@
   <actuator>
     <position name="Z_act" joint="Z" kp="800" ctrlrange="0 0.1"/>
     <position name="T_act" joint="T" kp="200"
-      ctrlrange="-2.35619 2.35619"/>
+      ctrlrange="0 4.71239"/>
     <position name="R_act" joint="R" kp="400" ctrlrange="0 0.08"/>
     <position name="S_act" joint="S" kp="200"
       ctrlrange="-0.01 0.01"/>

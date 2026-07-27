@@ -37,9 +37,21 @@ MM = 0.001  # layout is in millimetres; MuJoCo works in metres
 ASSETS = pathlib.Path(__file__).parent / "assets"
 MJCF_PATH = ASSETS / "cell.generated.xml"
 
+# Fixed stack heights between the Z carriage and the arm.
+Z_CARRIAGE_T = 18.0   # platform half-thickness + rotor seat
+ROTOR_SEAT_T = 18.0
+
 # Where the comb sits above the rotor base, so that Z qpos=0 puts it at the
-# lowest station engagement height.
-COMB_ABOVE_ROTOR = float(min(L.STATION_Z.values()))
+# LOWEST station engagement height measured from the DECK (Datum A).
+#
+# This was previously just min(STATION_Z), which silently ignored the carriage
+# and rotor stack underneath — putting the comb 28 mm above where every station
+# expects to meet the ribbon. Derive it instead.
+_DECK_TOP = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
+_ROTOR_BASE = _DECK_TOP + ROTOR_SEAT_T
+COMB_ABOVE_ROTOR = (
+    float(L.DECK_ABOVE_BENCH) + min(float(v) for v in L.STATION_Z.values()) - _ROTOR_BASE
+)
 
 # Station display bodies are centred outboard of their work point, so the inner
 # face of the tooling lands on the bolt circle.
@@ -77,7 +89,7 @@ def _station_bodies() -> str:
         )
         # AprilTag facing the pivot — what the arm camera registers against.
         tx, ty = _polar(float(L.ARM_R0) - 3.0, theta)
-        tz = deck_top + STATION_BODY_HEIGHT * 0.78
+        tz = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name]) + 10.0
         out.append(
             f'    <geom name="{name.lower()}_tag" type="box" '
             f'pos="{_fmt(tx * MM, ty * MM, tz * MM)}" '
@@ -330,8 +342,12 @@ def build_mjcf() -> str:
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">
+        <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
+             from there, so the range is 0..SWEEP_ARC. It was previously
+             +/-SWEEP_ARC/2, which put four of the seven stops outside the
+             joint's own limits. -->
         <joint name="T" type="hinge" axis="0 0 1"
-          range="{-math.radians(float(L.SWEEP_ARC)) / 2:.6g} {math.radians(float(L.SWEEP_ARC)) / 2:.6g}"
+          range="0 {math.radians(float(L.SWEEP_ARC)):.6g}"
           damping="12"/>
         <geom name="main_bearing" type="cylinder" pos="0 0 0.012"
           size="{float(L.MAIN_BEARING_BORE) / 2 * MM:.6g} 0.012"
@@ -360,7 +376,7 @@ def build_mjcf() -> str:
               material="camera_mat" contype="0" conaffinity="0"/>
             <camera name="arm_cam"
               pos="{-float(L.CAMERA_BACK_OFFSET) * MM:.6g} 0 {float(L.CAMERA_UP_OFFSET) * MM:.6g}"
-              euler="0 {math.radians(90.0 + float(L.CAMERA_TILT)):.6g} {-math.pi / 2:.6g}"
+              euler="0 {math.radians(float(L.CAMERA_TILT) - 90.0):.6g} 0"
               fovy="48"/>
 
             <body name="cross" pos="0 0 0">
@@ -391,7 +407,7 @@ def build_mjcf() -> str:
   <actuator>
     <position name="Z_act" joint="Z" kp="800" ctrlrange="0 {z_stroke * MM:.6g}"/>
     <position name="T_act" joint="T" kp="200"
-      ctrlrange="{-math.radians(float(L.SWEEP_ARC)) / 2:.6g} {math.radians(float(L.SWEEP_ARC)) / 2:.6g}"/>
+      ctrlrange="0 {math.radians(float(L.SWEEP_ARC)):.6g}"/>
     <position name="R_act" joint="R" kp="400" ctrlrange="0 {float(L.ARM_STROKE) * MM:.6g}"/>
     <position name="S_act" joint="S" kp="200"
       ctrlrange="{-float(L.CROSS_SLIDE_STROKE) / 2 * MM:.6g} {float(L.CROSS_SLIDE_STROKE) / 2 * MM:.6g}"/>

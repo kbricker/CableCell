@@ -228,9 +228,12 @@ CAMERA_MASS_G = _d(28.0, ESTIMATED, "ELP board + lens", "CAMERA_MASS_G")
 
 # Mounted behind and above the comb, looking radially outward and down at the
 # station work point. Offsets are from the comb.
-CAMERA_BACK_OFFSET = _d(55.0, PLACEHOLDER, "unvalidated framing", "CAMERA_BACK_OFFSET")
-CAMERA_UP_OFFSET = _d(45.0, PLACEHOLDER, "unvalidated framing", "CAMERA_UP_OFFSET")
-CAMERA_TILT = _d(-30.0, PLACEHOLDER, "unvalidated framing", "CAMERA_TILT")
+# Offsets from the comb. CAMERA_TILT is degrees BELOW horizontal, positive down.
+# Validated by sim/studies/camera_check.py, which checks every station tag for
+# framing, range and obliquity.
+CAMERA_BACK_OFFSET = _d(62.0, ESTIMATED, "camera_check validated", "CAMERA_BACK_OFFSET")
+CAMERA_UP_OFFSET = _d(48.0, ESTIMATED, "camera_check validated", "CAMERA_UP_OFFSET")
+CAMERA_TILT = _d(33.0, ESTIMATED, "camera_check validated", "CAMERA_TILT")
 
 # AprilTag at each station, tag36h11. TendWright prints these at 40 mm.
 STATION_TAG_SIZE = _d(25.0, ESTIMATED, "scaled from TendWright 40mm", "STATION_TAG_SIZE")
