@@ -24,7 +24,9 @@ Sourcing rationale per category is in [`docs/sourcing-index.md`](../docs/sourcin
 | §4 Station 1 — feed / measure / cut | ~$70 | estimated |
 | §5 Station 2 — slit + fan | ~$35 | estimated |
 | §6 Station 3 — strip | ~$35 | estimated |
-| **Phase 1 total** | **~$1,080** | |
+| §7 Printed parts (filament) | ~$25 | estimated |
+| §7b Arm camera | ~$20 | camera already owned |
+| **Phase 1 total** | **~$1,125** | |
 
 **This is above the $700–900 I quoted, and well above the "few hundred" first
 estimated.** Two reasons: pneumatics are ~36% of the build once valves, flow
@@ -113,8 +115,8 @@ Five axes: **Z** lift, **θ** rotate, **R** extend, **S** cross-slide, **W** wri
 | 4.1 | Spool | printed | our design | — | 1 | **The ribbon ships as a loose roll, not on a rigid spool** — so hub diameter, flange spacing and bore are ours to choose |
 | 4.2 | Hanger + dancer arm | printed | our design | — | 1 | Passive payoff at constant light tension; dancer flag doubles as spool-empty detect |
 | 4.3 | Dancer spring | Amazon | extension spring assortment | ⓘ ~$8 | 1 | Also on `bom-v1.md` line 7 |
-| 4.4 | **Measuring encoder** | Amazon | 600 P/R optical rotary encoder | ⓘ ~$22 | 1 | **Owns cable length accuracy.** Independent of the drive — never trust drive-roller steps, ribbon slips. Alt: complete meter-counter [`B0D2D4F5BX`](https://www.amazon.com/Rolling-Electronic-Digital-Measuring-Accuracy/dp/B0D2D4F5BX) |
-| 4.5 | Measuring wheel | printed / McMaster | knurled, known circumference | ⓘ ~$10 | 1 | [McMaster encoder wheels](https://www.mcmaster.com/products/encoder-wheels/) if the printed one slips |
+| 4.4 | **Measuring encoder** | Amazon | **600 P/R** optical rotary, quadrature | ⓘ ~$22 | 1 | **Owns cable length accuracy.** Independent of the drive — never trust drive-roller steps, ribbon slips. With the wheel below: **0.0417 mm/count**. Alt: complete meter-counter [`B0D2D4F5BX`](https://www.amazon.com/Rolling-Electronic-Digital-Measuring-Accuracy/dp/B0D2D4F5BX) |
+| 4.5 | Measuring wheel | printed | **31.83 mm dia = 100.00 mm circumference** | — | 1 | Length in mm is `counts × 100 / 2400`. **No rubber tyre** — a compliant surface changes effective circumference, which is the exact error this wheel exists to avoid. Fallback if the printed knurl slips: [McMaster encoder wheels](https://www.mcmaster.com/products/encoder-wheels/) |
 | 4.6 | Drive rollers | printed + Amazon | knurled shaft + polyurethane idler, spring preload | ⓘ ~$15 | 1 | |
 | 4.7 | PTFE guide tube | Amazon | 2 mm ID / 4 mm OD | ⓘ ~$8 | 1 | Delivers ribbon to a repeatable presentation point |
 | 4.8 | Guillotine blade + anvil | Amazon | replaceable chisel/utility blade in printed holder | ⓘ ~$10 | 1 | Blade geometry must not crush the ribbon end — a crushed end will not enter the comb channels |
@@ -160,10 +162,38 @@ tighter. **Confirm on arrival before cutting any tooling.**
 
 ## 7. Printed parts
 
-Filament only. Spool, hanger, dancer arm, drive-roller housings, guide-tube
-mounts, guillotine holder, blade holders, spreader plate, slug chute, comb, body
-clamp mount, cross-slide carrier, wrist mount, radial carriage, Z platform,
-station mounting blocks.
+Filament only. **Eleven are modelled** — generate with
+`freecadcmd cad/build_parts.py`, which writes FCStd + STEP + STL for each from
+the same `sim/layout.py` dimensions the simulation uses.
+
+| Part | Size (mm) | Volume | Module |
+|---|---|---|---|
+| `spool` | 110 × 110 × 31 | 116.6 cm³ | S1 |
+| `spool_hanger` | 70 × 44 × 150 | 81.0 cm³ | S1 |
+| `dancer_arm` | 82 × 12 × 20 | 6.2 cm³ | S1 |
+| `guide_tube_mount` | 34 × 24 × 29 | 14.4 cm³ | S1 |
+| `measuring_wheel` | 31.8 × 31.8 × 9 | 5.3 cm³ | S1 |
+| `spreader_plate` | 25 × 32 × 8 | 6.0 cm³ | S2 |
+| `comb` | 26 × 32 × 12 | 9.3 cm³ | arm |
+| `z_platform` | 208 × 208 × 24 | 295.1 cm³ | arm |
+| `radial_carriage` | 52 × 45 × 22 | 21.2 cm³ | arm |
+| `wrist_mount` | 50 × 32 × 26 | 12.0 cm³ | arm |
+| `camera_mount` | 60 × 48 × 34 | 29.5 cm³ | arm |
+
+**~600 cm³ total ≈ 750 g of filament**, call it **$20–25** in PLA/PETG. Print
+notes and orientations in [`cad/README.md`](../cad/README.md).
+
+Still to model: drive-roller housings, guillotine and blade holders, slug chute,
+body-clamp mount, cross-slide carrier, station mounting blocks.
+
+## 7b. Arm camera
+
+| # | Item | Vendor | Pick | Unit | Qty | Notes |
+|---|---|---|---|---|---|---|
+| 7b.1 | Camera | — | **ELP-USBFHD01M-L36**, 3.6 mm | ⓘ $0 | 1 | Kyle has spares. Same model as TendWright's fleet, so `cameras.py` / `camserve.py` work unchanged |
+| 7b.2 | AprilTags | print | tag36h11, 25 mm, one per station | — | 7 | Arm registers against these — measured pose vs commanded |
+| 7b.3 | Ring light | Amazon | small LED ring or bar | ⓘ ~$12 | 1 | Tag detection needs consistent illumination more than brightness |
+| 7b.4 | USB cable | Amazon | 2 m, through the drag chain | ⓘ ~$8 | 1 | Must survive the ±135° sweep plus Z stroke |
 
 ---
 
