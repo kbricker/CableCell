@@ -460,6 +460,140 @@ def camera_mount():
     return part
 
 
+def drive_roller_block():
+    """S1's feed drive: knurled driven roller against a sprung idler.
+
+    Pays ribbon out AND pulls it back. Deliberately does NOT measure — the
+    encoder wheel does that, because a driven roller slips against the ribbon
+    under any tension change and cable length is the machine's headline spec.
+
+    The idler rides in a slot with a spring behind it, so preload is set by
+    spring choice rather than by how hard a screw is done up.
+    """
+    import math
+
+    body_x, body_y, body_z = 56.0, 30.0, 46.0
+    body = Part.makeBox(body_x, body_y, body_z, V(-body_x / 2, -body_y / 2, 0))
+
+    # NEMA 17 face on the back, driving the knurled roller directly.
+    body = body.cut(
+        Part.makeCylinder(float(L.NEMA17_BOSS_DIA) / 2.0 + 0.3, 20.0,
+                          V(-body_x / 2 - 5, 0, 30.0), V(1, 0, 0))
+    )
+    for sy in (-1, 1):
+        for sz in (-1, 1):
+            body = body.cut(
+                Part.makeCylinder(
+                    1.7, 20.0,
+                    V(-body_x / 2 - 5,
+                      sy * float(L.NEMA17_BOLT) / 2.0,
+                      30.0 + sz * float(L.NEMA17_BOLT) / 2.0),
+                    V(1, 0, 0),
+                )
+            )
+
+    # Idler shaft slot — vertical travel so the spring sets preload.
+    slot_z = 30.0 - float(L.RIBBON_THICKNESS) - 12.0
+    body = body.cut(
+        Part.makeCylinder(2.6, body_y + 4.0, V(0, -body_y / 2 - 2, slot_z), V(0, 1, 0))
+    )
+    body = body.cut(Part.makeBox(5.2, body_y + 4.0, 9.0,
+                                 V(-2.6, -body_y / 2 - 2, slot_z)))
+
+    # Ribbon slot straight through, on the nip line.
+    nip_z = 30.0 - float(L.RIBBON_THICKNESS) / 2.0
+    body = body.cut(
+        Part.makeBox(body_x + 4.0, float(L.RIBBON_WIDTH) + 2.0, 4.0,
+                     V(-body_x / 2 - 2, -(float(L.RIBBON_WIDTH) + 2.0) / 2, nip_z - 2.0))
+    )
+
+    # Spring pocket above the idler slot.
+    body = body.cut(_z_cyl(4.0, 14.0, slot_z + 6.0))
+
+    # Deck mounting.
+    for x in (-20.0, 20.0):
+        for y in (-10.0, 10.0):
+            body = body.cut(_z_cyl(2.6, 12.0, -1.0, x, y))
+    return body
+
+
+def guillotine_holder():
+    """S1's cut station: a replaceable blade shearing against a close anvil.
+
+    Blade geometry matters more than force here. A crushed ribbon end will not
+    enter the comb channels — and that failure stops the NEXT cycle rather than
+    the current one, which is the expensive kind to diagnose.
+
+    Takes a standard replaceable chisel/utility blade so it can be swapped when
+    it dulls rather than resharpened.
+    """
+    body_x, body_y, body_z = 44.0, 34.0, 54.0
+    body = Part.makeBox(body_x, body_y, body_z, V(-body_x / 2, -body_y / 2, 0))
+
+    cut_z = 34.0
+
+    # Ribbon passage through the anvil.
+    body = body.cut(
+        Part.makeBox(body_x + 4.0, float(L.RIBBON_WIDTH) + 1.0, float(L.RIBBON_THICKNESS) + 0.6,
+                     V(-body_x / 2 - 2, -(float(L.RIBBON_WIDTH) + 1.0) / 2, cut_z))
+    )
+
+    # Blade guideway — a close-fitting vertical slot. The tight clearance to the
+    # ribbon passage is what makes it shear instead of crush.
+    body = body.cut(
+        Part.makeBox(0.9, body_y + 4.0, 30.0, V(-0.45, -body_y / 2 - 2, cut_z))
+    )
+    # Blade clamp pocket + screw.
+    body = body.cut(Part.makeBox(9.0, 20.0, 16.0, V(-4.5, -10.0, body_z - 16.0)))
+    body = body.cut(
+        Part.makeCylinder(1.7, body_x + 4.0, V(-body_x / 2 - 2, 0, body_z - 8.0), V(1, 0, 0))
+    )
+
+    # Cylinder mount on top — SDA20 bolt pattern.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(
+                _z_cyl(2.2, 14.0, body_z - 13.0, sx * 13.0, sy * 13.0)
+            )
+
+    for x in (-16.0, 16.0):
+        for y in (-12.0, 12.0):
+            body = body.cut(_z_cyl(2.6, 12.0, -1.0, x, y))
+    return body
+
+
+def station_mount():
+    """Generic station base — bolts a station to the deck on the bolt circle.
+
+    Every station sits on the same interface, which is what makes stations
+    bolt-on modules and makes "other connectors later" a matter of swapping a
+    sector rather than rebuilding the dial. Slotted radially so a station can
+    be trimmed in and out during commissioning without redrilling the deck.
+    """
+    w, d, t = 76.0, 60.0, 10.0
+    base = Part.makeBox(w, d, t, V(-w / 2, -d / 2, 0))
+
+    # Radial adjustment slots.
+    for y in (-20.0, 20.0):
+        base = base.cut(_z_cyl(2.7, t + 2.0, -1.0, -14.0, y))
+        base = base.cut(_z_cyl(2.7, t + 2.0, -1.0, 14.0, y))
+        base = base.cut(Part.makeBox(28.0, 5.4, t + 2.0, V(-14.0, y - 2.7, -1.0)))
+
+    # Station bolt pattern on top, 40 mm square.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            base = base.cut(_z_cyl(2.2, t + 2.0, -1.0, sx * 20.0, sy * 20.0))
+
+    # Tag plate ledge, angled toward the pivot so the arm camera reads it square.
+    ledge = Part.makeBox(6.0, 34.0, 30.0, V(-w / 2, -17.0, t))
+    base = base.fuse(ledge)
+    base = base.cut(
+        Part.makeBox(2.0, float(L.STATION_TAG_SIZE) + 1.0, float(L.STATION_TAG_SIZE) + 1.0,
+                     V(-w / 2 - 0.5, -(float(L.STATION_TAG_SIZE) + 1.0) / 2, t + 2.0))
+    )
+    return base
+
+
 PARTS = {
     "spool": spool,
     "spool_hanger": spool_hanger,
@@ -472,6 +606,9 @@ PARTS = {
     "radial_carriage": radial_carriage,
     "wrist_mount": wrist_mount,
     "camera_mount": camera_mount,
+    "drive_roller_block": drive_roller_block,
+    "guillotine_holder": guillotine_holder,
+    "station_mount": station_mount,
 }
 
 

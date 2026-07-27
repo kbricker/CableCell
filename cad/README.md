@@ -35,6 +35,9 @@ re-run both.
 | `radial_carriage` | 52 × 45 × 22 | 21.2 cm³ | MGN12 carriage + T8 nut. Takes the ~50 N pull-off thrust |
 | `wrist_mount` | 50 × 32 × 26 | 12.0 cm³ | Carries the comb, flips 180° on mechanical hard stops |
 | `camera_mount` | 60 × 48 × 34 | 29.5 cm³ | ELP board on the radial carriage — **not** the wrist, which flips |
+| `drive_roller_block` | 56 × 30 × 46 | 67.0 cm³ | S1 feed nip. Drives and retracts; deliberately does **not** measure |
+| `guillotine_holder` | 44 × 34 × 54 | 75.1 cm³ | S1 cut. Replaceable blade, close anvil clearance to shear not crush |
+| `station_mount` | 76 × 60 × 40 | 46.6 cm³ | Generic station base with radial slots and an AprilTag ledge |
 
 ---
 
@@ -61,6 +64,9 @@ one-conductor-at-a-time premise fails.
 | `guide_tube_mount` | on its side, tube bore vertical | A horizontal 4 mm bore will sag; vertical prints round |
 | `measuring_wheel` | flat, bore vertical | Rim concentricity is everything here — a wobbling wheel measures wrong |
 | `spreader_plate` | flat, slots vertical through the plate | The lofted slots self-support; flared entries are the only overhang |
+| `drive_roller_block` | on its back, motor face down | Keeps the ribbon slot and idler slot on the same layer plane, so the nip stays square |
+| `guillotine_holder` | upright as modelled | **The 0.9 mm blade guideway is the critical feature** — print it vertical or it will not be straight |
+| `station_mount` | flat, tag ledge up | Slots print clean; the ledge overhang is shallow enough to bridge |
 
 **The measuring wheel has no rubber, deliberately.** A tyre or O-ring would grip
 better but changes the effective circumference, and its compression varies with

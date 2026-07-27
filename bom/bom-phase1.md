@@ -24,9 +24,9 @@ Sourcing rationale per category is in [`docs/sourcing-index.md`](../docs/sourcin
 | §4 Station 1 — feed / measure / cut | ~$70 | estimated |
 | §5 Station 2 — slit + fan | ~$35 | estimated |
 | §6 Station 3 — strip | ~$35 | estimated |
-| §7 Printed parts (filament) | ~$25 | estimated |
+| §7 Printed parts (filament) | ~$40 | estimated |
 | §7b Arm camera | ~$20 | camera already owned |
-| **Phase 1 total** | **~$1,125** | |
+| **Phase 1 total** | **~$1,140** | |
 
 **This is above the $700–900 I quoted, and well above the "few hundred" first
 estimated.** Two reasons: pneumatics are ~36% of the build once valves, flow
@@ -179,12 +179,15 @@ the same `sim/layout.py` dimensions the simulation uses.
 | `radial_carriage` | 52 × 45 × 22 | 21.2 cm³ | arm |
 | `wrist_mount` | 50 × 32 × 26 | 12.0 cm³ | arm |
 | `camera_mount` | 60 × 48 × 34 | 29.5 cm³ | arm |
+| `drive_roller_block` | 56 × 30 × 46 | 67.0 cm³ | S1 |
+| `guillotine_holder` | 44 × 34 × 54 | 75.1 cm³ | S1 |
+| `station_mount` × 7 | 76 × 60 × 40 | 46.6 cm³ ea | all |
 
-**~600 cm³ total ≈ 750 g of filament**, call it **$20–25** in PLA/PETG. Print
-notes and orientations in [`cad/README.md`](../cad/README.md).
+**~1,065 cm³ with seven station mounts ≈ 1.3 kg of filament**, call it
+**$35–45** in PLA/PETG. Print notes and orientations in
+[`cad/README.md`](../cad/README.md).
 
-Still to model: drive-roller housings, guillotine and blade holders, slug chute,
-body-clamp mount, cross-slide carrier, station mounting blocks.
+Still to model: slug chute, body-clamp mount, cross-slide carrier.
 
 ## 7b. Arm camera
 
