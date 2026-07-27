@@ -270,6 +270,25 @@ SPOOL_RADIAL_OFFSET = _d(90.0, PLACEHOLDER, "outboard of S1", "SPOOL_RADIAL_OFFS
 # spool-empty detect.
 DANCER_ARM_LENGTH = _d(70.0, ESTIMATED, "sets tension travel", "DANCER_ARM_LENGTH")
 
+# Measuring wheel: 31.83 mm diameter gives EXACTLY 100.00 mm circumference, so
+# with a 600 P/R encoder in quadrature (2400 counts/rev) length in mm is just
+# counts * 100 / 2400 = 0.0417 mm per count. Chosen, not inherited.
+#
+# CAVEAT: that is the nominal. Effective circumference depends on how far the
+# ribbon compresses under preload, so it is a CALIBRATION CONSTANT measured at
+# commissioning, not a constant to trust. The clean number is a convenience for
+# sanity-checking, not a guarantee. Do NOT add a rubber tyre or O-ring for grip
+# — it changes the effective circumference and its compression varies.
+MEASURING_WHEEL_DIA = _d(31.83, COMMITTED, "100.00 mm circumference", "MEASURING_WHEEL_DIA")
+MEASURING_WHEEL_WIDTH = _d(9.0, ESTIMATED, "wider than ribbon", "MEASURING_WHEEL_WIDTH")
+MEASURING_WHEEL_BORE = _d(5.0, ESTIMATED, "encoder shaft", "MEASURING_WHEEL_BORE")
+ENCODER_PPR = _d(600.0, ESTIMATED, "optical, quadrature", "ENCODER_PPR")
+
+# Presentation gap: PTFE tube exit to comb face at the grip position. Long
+# enough that the comb never hits the tube across Z and R tolerance; short
+# enough that ~28 mm of unsupported tail cannot buckle when the rollers push.
+PRESENTATION_GAP = _d(8.0, ESTIMATED, "buckle vs collision", "PRESENTATION_GAP")
+
 
 # ---------------------------------------------------------------------------
 # 5. The Z stage

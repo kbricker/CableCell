@@ -301,7 +301,7 @@ Ranked. Items 1–2 are the printed-mockup work already in plan #657.
 1. **Crimp quality with a real applicator** (de-risk A). Everything downstream assumes a good pin.
 2. **Insertion + pull-back repeatability** (de-risk B), including the funnel's real capture window — which sets how good the arm's positioning must be.
 3. **Slit depth window** on the actual ribbon — the difference between "zips cleanly" and "nicked strand."
-4. **Fan geometry** — is 8 mm comb pitch enough clearance at the applicator throat, and does a 25 mm split give enough splay without an ugly finished cable?
+4. ~~**Fan geometry**~~ — **PARTIALLY ANSWERED 2026-07-26.** The splay half is settled: from the ribbon's real ~1.45 mm pitch out to 8 mm comb pitch over a 25 mm split, each outer conductor moves 3.275 mm laterally — **7.5°**. Gentle enough that the insulation takes no set and the breakout will not look mangled. The applicator-throat clearance half stays open until the donor applicator is measured. See `docs/stations.md` §2.
 5. **Arm stiffness under insertion load** — total compliance from Z carriage → rotary bearing → arm → radial slide → comb, versus the funnel's capture window. The Z stage sits at the bottom of a long lever, so its angular deflection is magnified at the comb; it is now the first term in this budget, not an afterthought.
 6. **Slack behaviour during payout** — does the trough actually control a 127 mm cable's dangling end, and a 1 m one?
 7. **Z travel envelope** — what max(Zᵢ) − min(Zᵢ) actually turns out to be once the press crimp height and station tooling heights are known. Drives stage cost and stiffness; wants the smallest defensible number.

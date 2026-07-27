@@ -29,6 +29,8 @@ re-run both.
 | `dancer_arm` | 82 × 12 × 20 | 6.2 cm³ | Passive tension; its flag is the spool-empty detect |
 | `comb` | 26 × 32 × 12 | 9.3 cm³ | The gripper — a 3-channel **guide**, not a clamp |
 | `guide_tube_mount` | 34 × 24 × 29 | 14.4 cm³ | Holds the PTFE tube that sets S1's presentation point |
+| `measuring_wheel` | 31.8 × 31.8 × 9 | 5.3 cm³ | **Owns cable length accuracy.** 31.83 mm dia = 100.00 mm circumference |
+| `spreader_plate` | 25 × 32 × 8 | 6.0 cm³ | S2's fan — diverging slots, 1.45 → 8 mm pitch over 25 mm |
 
 ---
 
@@ -53,6 +55,15 @@ one-conductor-at-a-time premise fails.
 | `dancer_arm` | flat, as modelled | Trivial, no supports |
 | `comb` | channels facing up | Channels are open-topped so they self-support; the lead-in funnels are the only overhang |
 | `guide_tube_mount` | on its side, tube bore vertical | A horizontal 4 mm bore will sag; vertical prints round |
+| `measuring_wheel` | flat, bore vertical | Rim concentricity is everything here — a wobbling wheel measures wrong |
+| `spreader_plate` | flat, slots vertical through the plate | The lofted slots self-support; flared entries are the only overhang |
+
+**The measuring wheel has no rubber, deliberately.** A tyre or O-ring would grip
+better but changes the effective circumference, and its compression varies with
+preload — which is precisely the error the wheel exists to avoid. Grip comes from
+a printed axial knurl plus light spring preload. Even so, treat 100.00 mm as
+*nominal*: effective circumference depends on how far the ribbon compresses, so
+it is a calibration constant measured at commissioning, not a number to trust.
 
 **Tolerance reality.** Everything with a bore is modelled at nominal +0.15 mm
 (the 8 mm axle bores are 8.3 mm) because printed holes come out undersize. The

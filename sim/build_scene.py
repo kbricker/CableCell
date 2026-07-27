@@ -248,7 +248,7 @@ def build_mjcf() -> str:
     z = 0 is the bench top. x = y = 0 is the pivot axis.
     Deck at {deck_z:.0f} mm, bolt circle R0 = {float(L.ARM_R0):.0f} mm, Z stroke {z_stroke:.0f} mm.
   -->
-  <compiler angle="radian" autolimits="true"/>
+  <compiler angle="radian" autolimits="true" meshdir="../../cad/parts"/>
   <option integrator="implicitfast" timestep="0.002"/>
 
   <visual>
@@ -281,6 +281,12 @@ def build_mjcf() -> str:
     <material name="tag_mat" rgba="0.97 0.97 0.97 1"/>
     <material name="screw_mat" rgba="0.72 0.68 0.45 1"/>
     <material name="motor_mat" rgba="0.20 0.22 0.26 1"/>
+
+    <!-- Real CAD geometry from cad/build_parts.py. Same layout.py dimensions
+         drive both, so the printed part and the sim cannot disagree. STL is in
+         millimetres; MuJoCo is in metres. -->
+    <mesh name="comb_mesh" file="comb.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="spool_mesh" file="spool.stl" scale="0.001 0.001 0.001"/>
   </asset>
 
   <worldbody>
@@ -367,9 +373,9 @@ def build_mjcf() -> str:
                 <joint name="W" type="hinge" axis="1 0 0" range="0 {math.pi:.6g}"
                   damping="6"/>
                 <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
-                <geom name="comb_body" type="box" pos="0.006 0 0"
-                  size="0.010 {(float(L.COMB_PITCH) * 1.6) * MM:.6g} 0.006"
-                  material="comb_mat" contype="0" conaffinity="0"/>
+                <geom name="comb_body" type="mesh" mesh="comb_mesh"
+                  pos="-0.004 0 -0.006" material="comb_mat"
+                  contype="0" conaffinity="0"/>
                 <site name="comb_tip" pos="{float(L.TAIL_PROJECTION) * MM:.6g} 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>
               </body>
@@ -406,7 +412,8 @@ VIEWS: dict[str, tuple[float, float, float, tuple[float, float, float]]] = {
     "overview": (35.0, -24.0, 0.95, (0.0, 0.0, 0.16)),
     "plan": (90.0, -89.0, 0.80, (0.0, 0.0, 0.18)),
     "press_side": (135.0, -14.0, 0.62, (-0.12, 0.12, 0.22)),
-    "arm_detail": (0.0, -18.0, 0.42, (0.16, 0.0, 0.24)),
+    "arm_detail": (95.0, -14.0, 0.26, (0.185, 0.0, 0.247)),
+    "s1_feed": (30.0, -18.0, 0.42, (0.245, 0.0, 0.265)),
 }
 
 

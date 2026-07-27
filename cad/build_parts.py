@@ -235,12 +235,100 @@ def guide_tube_mount():
     return part
 
 
+def measuring_wheel():
+    """S1's length-measuring wheel — the part that owns cable length accuracy.
+
+    31.83 mm diameter is exactly 100.00 mm of circumference, so with a 600 P/R
+    quadrature encoder length in mm is counts * 100 / 2400.
+
+    Deliberately NO rubber tyre or O-ring: a compliant surface changes the
+    effective circumference and its compression varies with preload, which is
+    exactly the error this wheel exists to avoid. Grip comes from a light
+    axial knurl in the printed surface plus spring preload.
+    """
+    import math
+
+    r = float(L.MEASURING_WHEEL_DIA) / 2.0
+    w = float(L.MEASURING_WHEEL_WIDTH)
+    bore = float(L.MEASURING_WHEEL_BORE) / 2.0 + 0.1
+
+    body = _z_cyl(r, w)
+
+    # Axial knurl: shallow flutes cut around the rim for grip on PVC insulation.
+    flutes = 60
+    for i in range(flutes):
+        a = 2.0 * math.pi * i / flutes
+        cutter = Part.makeCylinder(
+            0.35, w + 2.0, V(r * math.cos(a), r * math.sin(a), -1.0)
+        )
+        body = body.cut(cutter)
+
+    # Relief so only the rim rides the ribbon, and a hub for the grub screw.
+    body = body.cut(_z_cyl(r - 4.0, w - 4.0, 2.0))
+    body = body.fuse(_z_cyl(bore + 4.0, w))
+    body = body.cut(_z_cyl(bore, w + 2.0, -1.0))
+    return body
+
+
+def spreader_plate():
+    """S2's fan — diverging slots that splay the slit tails into the comb.
+
+    Takes three conductors from the ribbon's ~1.45 mm pitch out to the comb's
+    8 mm pitch over the 25 mm split length. That is 3.275 mm of lateral travel
+    on each outer conductor, or 7.5 degrees — gentle enough that the insulation
+    takes no set and the finished cable does not look mangled at the breakout.
+
+    The fiddliest printed part in Phase 1: the slot entries have to catch a
+    1.45 mm-pitch tail reliably.
+    """
+    n = int(L.COMB_CHANNELS)
+    entry_pitch = float(L.RIBBON_PITCH)
+    exit_pitch = float(L.COMB_PITCH)
+    run = float(L.SPLIT_LENGTH)
+    slot_w = float(L.RIBBON_CONDUCTOR_OD) + 0.5
+    plate_t = 8.0
+    body_y = exit_pitch * (n + 1)
+
+    plate = Part.makeBox(run, body_y, plate_t, V(0, -body_y / 2, 0))
+
+    for i in range(n):
+        y_in = (i - (n - 1) / 2.0) * entry_pitch
+        y_out = (i - (n - 1) / 2.0) * exit_pitch
+
+        def rect(x: float, y: float) -> Part.Wire:
+            hw, hh = slot_w / 2.0, slot_w / 2.0
+            zc = plate_t / 2.0
+            pts = [
+                V(x, y - hw, zc - hh),
+                V(x, y + hw, zc - hh),
+                V(x, y + hw, zc + hh),
+                V(x, y - hw, zc + hh),
+                V(x, y - hw, zc - hh),
+            ]
+            return Part.Wire(Part.makePolygon(pts))
+
+        slot = Part.makeLoft([rect(-1.0, y_in), rect(run + 1.0, y_out)], True)
+        plate = plate.cut(slot)
+
+        # Flared entry so a tail that is slightly off-pitch still finds its slot.
+        flare = Part.makeCone(
+            slot_w * 1.15, slot_w / 2.0, 4.0, V(-1.0, y_in, plate_t / 2.0), V(1, 0, 0)
+        )
+        plate = plate.cut(flare)
+
+    for y in (-body_y / 2 + 4.0, body_y / 2 - 4.0):
+        plate = plate.cut(_z_cyl(1.7, plate_t + 2.0, -1.0, run / 2.0, y))
+    return plate
+
+
 PARTS = {
     "spool": spool,
     "spool_hanger": spool_hanger,
     "dancer_arm": dancer_arm,
     "comb": comb,
     "guide_tube_mount": guide_tube_mount,
+    "measuring_wheel": measuring_wheel,
+    "spreader_plate": spreader_plate,
 }
 
 

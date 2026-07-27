@@ -7,7 +7,7 @@
     z = 0 is the bench top. x = y = 0 is the pivot axis.
     Deck at 170 mm, bolt circle R0 = 200 mm, Z stroke 100 mm.
   -->
-  <compiler angle="radian" autolimits="true"/>
+  <compiler angle="radian" autolimits="true" meshdir="../../cad/parts"/>
   <option integrator="implicitfast" timestep="0.002"/>
 
   <visual>
@@ -40,6 +40,12 @@
     <material name="tag_mat" rgba="0.97 0.97 0.97 1"/>
     <material name="screw_mat" rgba="0.72 0.68 0.45 1"/>
     <material name="motor_mat" rgba="0.20 0.22 0.26 1"/>
+
+    <!-- Real CAD geometry from cad/build_parts.py. Same layout.py dimensions
+         drive both, so the printed part and the sim cannot disagree. STL is in
+         millimetres; MuJoCo is in metres. -->
+    <mesh name="comb_mesh" file="comb.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="spool_mesh" file="spool.stl" scale="0.001 0.001 0.001"/>
   </asset>
 
   <worldbody>
@@ -170,9 +176,9 @@
                 <joint name="W" type="hinge" axis="1 0 0" range="0 3.14159"
                   damping="6"/>
                 <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
-                <geom name="comb_body" type="box" pos="0.006 0 0"
-                  size="0.010 0.0128 0.006"
-                  material="comb_mat" contype="0" conaffinity="0"/>
+                <geom name="comb_body" type="mesh" mesh="comb_mesh"
+                  pos="-0.004 0 -0.006" material="comb_mat"
+                  contype="0" conaffinity="0"/>
                 <site name="comb_tip" pos="0.028 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>
               </body>
