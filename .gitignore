@@ -6,3 +6,7 @@ __pycache__/
 *.FCStd1
 .DS_Store
 Thumbs.db
+
+# FreeCAD build log is regenerated every run
+cad/build.log
+cad/_diag.txt
