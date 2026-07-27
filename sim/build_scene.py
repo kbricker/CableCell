@@ -434,6 +434,26 @@ def _press_body() -> str:
 
 Z_POST_RADIUS = float(L.Z_POST_CIRCLE_R)
 
+def _z_joint() -> str:
+    """The Z slide — only when the axis actually exists.
+
+    A DEFERRED AXIS MUST NOT BE A ZERO-RANGE JOINT. That was the first attempt
+    and it put the arm 13 mm below the engagement plane: MuJoCo joint limits are
+    soft, so the whole rotating assembly's weight pushed through a range="0 0"
+    stop and just sat there. Every station then met the ribbon 13 mm high, and
+    the workpiece hung at a constant 24-degree angle off the comb, which reads
+    exactly like a limp cable and is nothing of the sort.
+
+    Deferred means the body is FIXED. No joint, no actuator, no compliance.
+    """
+    if not L.Z_STAGE_ENABLED:
+        return "<!-- Z: deferred. Fixed body, not a zero-range joint. -->"
+    return (
+        f'<joint name="Z" type="slide" axis="0 0 1" '
+        f'range="0 {L.z_stroke_active() * MM:.6g}" damping="40"/>'
+    )
+
+
 def _z_pedestal() -> str:
     """What stands in for the Z stage while the axis is deferred.
 
@@ -705,8 +725,7 @@ def build_mjcf() -> str:
 
     <!-- ============ the moving assembly ============ -->
     <body name="z_carriage" pos="0 0 {_PLATFORM_BASE * MM:.6g}">
-      <joint name="Z" type="slide" axis="0 0 1" range="0 {z_stroke * MM:.6g}"
-        damping="40"/>
+      {_z_joint()}
       {'<geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0" material="zstage_mat" contype="0" conaffinity="0"/>' if L.Z_STAGE_ENABLED else '<!-- Z platform: deferred with the axis. The rotor sits on a fixed pedestal. -->'}
 
       <geom name="t_motor" type="box"
@@ -925,7 +944,7 @@ def build_mjcf() -> str:
   </equality>
 
   <actuator>
-    <position name="Z_act" joint="Z" kp="800" ctrlrange="0 {z_stroke * MM:.6g}"/>
+    {f'<position name="Z_act" joint="Z" kp="800" ctrlrange="0 {z_stroke * MM:.6g}"/>' if L.Z_STAGE_ENABLED else '<!-- Z_act: deferred with the axis. -->'}
     <position name="T_act" joint="T" kp="200"
       ctrlrange="0 {math.radians(float(L.SWEEP_ARC)):.6g}"/>
     <position name="R_act" joint="R" kp="400" ctrlrange="0 {float(L.ARM_STROKE) * MM:.6g}"/>

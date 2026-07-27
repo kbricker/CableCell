@@ -34,8 +34,13 @@ MM = 0.001
 # is the whole reason the cycle is watched with contacts on.
 INDEX_DEG_PER_S = 45.0
 
-# Actuator order in the model.
-ACTS = ("Z_act", "T_act", "R_act", "S_act", "W_act")
+# Actuators the model actually has. Z drops out when the axis is deferred —
+# asking for an actuator that is not there is how a deferral turns into a crash
+# three files away.
+ACTS = tuple(
+    a for a in ("Z_act", "T_act", "R_act", "S_act", "W_act")
+    if a != "Z_act" or L.Z_STAGE_ENABLED
+)
 
 
 def _z_ctrl(z_above_deck_mm: float) -> float:
@@ -217,11 +222,28 @@ def timeline(model):
         for k in range(RIB.TAIL_SEGMENTS - split_n, RIB.TAIL_SEGMENTS)
     ]
 
-    clear = _z_ctrl(L.z_clear())
     stroke = float(L.ARM_STROKE) * MM
     s_half = float(L.CROSS_SLIDE_STROKE) / 2.0 * MM
 
     # (label, targets, seconds, equality changes)
+    #
+    # THE ORDER COMES FROM KYLE, 2026-07-27: "at this station, the head needs to
+    # grab a small end of the wire coming out of the feeder, pull it in to the
+    # lengeth we want to make, then cut it. not sure what all the other activity
+    # is about."
+    #
+    # What was there: grab, cut, flip 180, flip back, THEN go and split and
+    # strip. Six seconds of wrist at a station that has no reason to flip, and
+    # the cut happening before the length was ever paid out.
+    #
+    # The flip is gone from the prototype entirely. It exists to present END B
+    # to the same stations after end A is finished — and the prototype does one
+    # end, because doing two needs the payout-trough geometry that is still open
+    # on 706. A wrist that flips for no reason is worse than no wrist.
+    #
+    # Cutting FIRST also sidesteps the thing 706 is about: process-then-cut
+    # leaves the piece attached to the feed head while the arm carries it around
+    # the dial, trailing a 200 mm chord across the deck. Cut-then-carry does not.
     steps: list[tuple[str, dict, float, list]] = []
 
     def at(name: str) -> float:
@@ -229,69 +251,65 @@ def timeline(model):
 
     # HOW LONG AN INDEX TAKES, from how far it actually turns.
     #
-    # Kyle 2026-07-27: "the arm movment is not smooth, especially from, 3 to bin
-    # and back to zero." Both of those are the long moves — S3 to the drop is
-    # 71 deg and the reset back to S1 is 199 deg — and every index was running
-    # on a flat 1.4-1.8 s regardless. So the short hops crawled and the long
-    # ones were flung, which reads as jerk even though each move is individually
-    # smoothed.
-    #
-    # A constant angular rate fixes it: same degrees per second everywhere, with
-    # a floor so a tiny move still eases rather than snapping.
+    # Kyle: "the arm movment is not smooth, especially from, 3 to bin and back
+    # to zero." Both are the long moves, and every index was running on a flat
+    # 1.4-1.8 s regardless. Short hops crawled, long ones were flung.
     def index_time(frm: float, to: float) -> float:
         deg = abs(math.degrees(to - frm))
         return max(0.7, deg / INDEX_DEG_PER_S)
 
-    # --- S1: take the ribbon, cut it free of the stock -------------------
-    steps.append(("S1 feed: index", {"T_act": at("S1_FEED"), "R_act": 0.0},
-                  index_time(at("S6_DROP"), at("S1_FEED")), []))
-    steps.append(("S1 feed: engage", {"R_act": stroke}, 0.8, []))
-    steps.append(("S1 feed: clamp closes", {}, 0.6, [(g, 1) for g in grips]))
+    # --- S1: grab the protruding end, pay out a length, cut it free ---------
+    steps.append(("S1 feed: reach for the wire end", {"R_act": stroke}, 0.9, []))
+    steps.append(("S1 feed: clamp closes on it", {}, 0.6, [(g, 1) for g in grips]))
+    steps.append((
+        f"S1 feed: pay out {float(L.CABLE_LENGTH_NOMINAL):.0f} mm (rollers, encoder measures)",
+        {}, 2.0, []))
     steps.append(("S1 feed: GUILLOTINE", {}, 0.5, [(c, 0) for c in cuts]))
-    steps.append(("S1 feed: settle", {}, 0.6, []))
-    steps.append(("S1 feed: withdraw", {"R_act": 0.0}, 0.8, []))
-
-    # The flip. Slow, and with a settle either side — this is a limp cable
-    # being turned over, not a servo hitting a stop.
-    steps.append(("wrist: flip 180", {"W_act": math.pi}, 2.2, []))
-    steps.append(("wrist: settle", {}, 0.8, []))
-    steps.append(("wrist: flip back", {"W_act": 0.0}, 2.2, []))
-    steps.append(("wrist: settle", {}, 0.8, []))
+    steps.append(("S1 feed: withdraw with the piece", {"R_act": 0.0}, 0.9, []))
 
     # --- S2: split ---------------------------------------------------------
     steps.append(("S2 slit: index", {"T_act": at("S2_SLIT")},
                   index_time(at("S1_FEED"), at("S2_SLIT")), []))
-    steps.append(("S2 slit: present tail", {"R_act": stroke}, 0.8, []))
-    steps.append(("S2 slit: WEDGE SPLITS", {}, 0.6, [(w, 0) for w in webs]))
-    steps.append(("S2 slit: fan out", {"S_act": s_half}, 0.6, []))
-    steps.append(("S2 slit: centre", {"S_act": 0.0}, 0.5, []))
-    steps.append(("S2 slit: withdraw", {"R_act": 0.0}, 0.7, []))
+    steps.append(("S2 slit: present tail to the wedge", {"R_act": stroke}, 0.9, []))
+    steps.append(("S2 slit: WEDGE SPLITS the webs", {}, 0.6, [(w, 0) for w in webs]))
+    steps.append(("S2 slit: spreader fans them", {"S_act": s_half}, 0.7, []))
+    steps.append(("S2 slit: centre", {"S_act": 0.0}, 0.6, []))
+    steps.append(("S2 slit: withdraw", {"R_act": 0.0}, 0.8, []))
 
     # --- S3: strip ---------------------------------------------------------
     steps.append(("S3 strip: index", {"T_act": at("S3_STRIP")},
                   index_time(at("S2_SLIT"), at("S3_STRIP")), []))
-    steps.append(("S3 strip: engage", {"R_act": stroke}, 0.8, []))
+    steps.append(("S3 strip: engage the die", {"R_act": stroke}, 0.9, []))
     for i, y in enumerate((-1.0, 0.0, 1.0)):
-        steps.append((f"S3 strip: conductor {i + 1}", {"S_act": y * s_half}, 0.5, []))
-    steps.append(("S3 strip: PULL OFF slugs", {"R_act": stroke * 0.6}, 0.5, []))
-    steps.append(("S3 strip: withdraw", {"R_act": 0.0, "S_act": 0.0}, 0.7, []))
+        steps.append((f"S3 strip: conductor {i + 1}", {"S_act": y * s_half}, 0.6, []))
+    steps.append(("S3 strip: PULL OFF the slugs", {"R_act": stroke * 0.6}, 0.6, []))
+    steps.append(("S3 strip: withdraw", {"R_act": 0.0, "S_act": 0.0}, 0.8, []))
 
     # --- S4: drop ----------------------------------------------------------
     steps.append(("S4 drop: index", {"T_act": at("S6_DROP")},
                   index_time(at("S3_STRIP"), at("S6_DROP")), []))
-    steps.append(("S4 drop: RELEASE", {}, 0.5, [(g, 0) for g in grips]))
-    steps.append(("S4 drop: cable falls", {}, 1.4, []))
+    steps.append(("S4 drop: clamp OPENS", {}, 0.5, [(g, 0) for g in grips]))
+    steps.append(("S4 drop: cable falls to the bin", {}, 1.6, []))
 
-    # --- reset for the next cable -----------------------------------------
+    # --- home ---------------------------------------------------------------
+    # A real rotation back, not a jump. Kyle: "the animation still just does a
+    # skip straight from the end to the beginning, the arm should rotate back
+    # normally and land in the start position to complete the loop." It DID
+    # rotate back — and then the first segment of the next lap spent another
+    # 4.4 s driving T to a value it was already at, which read as a dead pause
+    # and then a jump when the ribbon respawned.
+    steps.append(("home: rotate back to S1", {"T_act": at("S1_FEED")},
+                  index_time(at("S6_DROP"), at("S1_FEED")), []))
     steps.append((
-        "reset: rejoin stock, re-web", {"T_act": 0.0, "W_act": 0.0},
-        index_time(at("S6_DROP"), 0.0),
+        "home: new stock at the feed head",
+        {}, 1.0,
         [(c, 1) for c in cuts] + [(w, 1) for w in webs] + [(g, 0) for g in grips],
     ))
 
     # Absolute ctrl values, resolved forward so each segment knows both ends.
     cur = {name: 0.0 for name in ACTS}
-    cur["Z_act"] = clear
+    if "Z_act" in cur:
+        cur["Z_act"] = 0.0
     segs = []
     t = 0.0
     for label, targets, secs, eqs in steps:
@@ -314,14 +332,25 @@ def viewer() -> None:
 
     segs, total = timeline(model)
     ids = _act_ids(model)
+    mujoco.mj_forward(model, data)
+    home_qpos = data.qpos.copy()
     state = {"label": "", "lap": -1}
 
     def control(m, d) -> None:
         t = d.time % total
         lap = int(d.time // total)
         if lap != state["lap"]:
-            # New cable: put every equality back the way it started.
+            # NEW CABLE. Equalities back on, and the RIBBON back at the feed
+            # head — without this the old piece stays wherever it fell and the
+            # next lap runs with no stock, which is half of what read as a
+            # "skip straight from the end to the beginning".
+            #
+            # Restoring the whole qpos is safe precisely here: the previous
+            # segment drove the arm home, so every machine joint is already at
+            # its start value and only the ribbon actually moves.
             d.eq_active[:] = m.eq_active0
+            d.qpos[:] = home_qpos
+            d.qvel[:] = 0.0
             state["lap"] = lap
         for t0, t1, label, ctrl, eqs in segs:
             if t0 <= t < t1:

@@ -611,6 +611,37 @@ RIBBON_HAND_SEPARABLE = True  # the web is designed to zip apart
 RIBBON_LENGTH_STOCK = _d(15240.0, COMMITTED, "50 ft spool", "RIBBON_LENGTH_STOCK")
 RIBBON_MASS_PER_M = _d(16.4, COMMITTED, "250 g / 50 ft", "RIBBON_MASS_PER_M")
 
+# HOW STIFF A CONDUCTOR ACTUALLY IS. Kyle 2026-07-27, watching the cycle: "there
+# is a wire in the arm, but it is limp hanging down the front. the wire ... should
+# be protruding just slightly out of the yellow bit."
+#
+# Right, and the model had no basis for its floppiness at all — the chain joints
+# carried stiffness="0.02", a number picked so the fan at S2 looked like bending.
+# Real 22 AWG stranded copper in PVC over a 28 mm cantilever droops about 4 um
+# under its own weight. It sticks out dead straight. The sim was showing wet
+# string.
+#
+# E for STRANDED conductor is far below solid copper's 110 GPa, because the
+# strands slide against each other rather than sharing a section. ~5 GPa is the
+# usual effective figure for fine-strand hookup wire with insulation.
+RIBBON_E_MPA = _d(5000.0, ESTIMATED, "stranded Cu + PVC, effective", "RIBBON_E_MPA")
+
+
+def conductor_EI() -> float:
+    """Bending stiffness of one conductor, N*mm^2. Circular section."""
+    d = float(RIBBON_CONDUCTOR_OD)
+    return float(RIBBON_E_MPA) * math.pi * d ** 4 / 64.0
+
+
+def conductor_joint_stiffness(seg_len_mm: float) -> float:
+    """Hinge stiffness for one chain link, N*m/rad.
+
+    A discretised beam: each joint carries EI/L of the continuous section it
+    replaces. Derived rather than tuned, so the modelled wire behaves like the
+    wire on the spool instead of like whatever looked plausible.
+    """
+    return conductor_EI() / seg_len_mm * 1e-3
+
 
 # ---------------------------------------------------------------------------
 # 4d. S2 splitting wedge (Kyle 2026-07-27 — "we can run with that assumption")

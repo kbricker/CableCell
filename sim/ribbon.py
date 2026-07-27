@@ -119,7 +119,35 @@ def _chain(name: str, i: int, x0: float, n: int, z: float, theta_deg: float,
     wx = (x0 * math.cos(place) - y0 * math.sin(place)) * MM
     wy = (x0 * math.sin(place) + y0 * math.cos(place)) * MM
 
-    mass = float(L.RIBBON_MASS_PER_M) * SEG_LEN / 3000.0  # per conductor, kg
+    # MASS PER SEGMENT, AND THIS WAS 1000x TOO HEAVY.
+    #
+    # RIBBON_MASS_PER_M is 16.4 GRAMS per metre (250 g / 50 ft). The old
+    # expression was `* SEG_LEN / 3000`, which divides by 1000 mm/m and by 3
+    # conductors and then hands the result to MuJoCo as KILOGRAMS. So every
+    # 5 mm segment weighed 27.3 g instead of 27.3 mg, and a 90 mm ribbon
+    # weighed half a kilo.
+    #
+    # That is the actual reason the wire hung limp — Kyle: "it is limp hanging
+    # down the front". No bending stiffness fixes a cable a thousand times its
+    # own weight. It is also most of why the solve was so violent: a 27 g body
+    # on a 0.0007 m capsule welded to a driven arm.
+    #
+    # Written out with the unit conversions visible, because the compressed
+    # version is exactly what hid it.
+    grams_per_m_per_conductor = float(L.RIBBON_MASS_PER_M) / CONDUCTORS
+    mass = grams_per_m_per_conductor / 1000.0 * (SEG_LEN / 1000.0)  # kg
+    # Derived from the conductor's own EI rather than tuned until the fan looked
+    # right. See layout.conductor_joint_stiffness.
+    stiff = L.conductor_joint_stiffness(SEG_LEN)
+    # ARMATURE IS A NUMERICAL MEASURE, NOT PHYSICS, and it is worth saying so.
+    # A 5 mm length of 1.4 mm conductor has a real inertia around 8e-11 kg m^2.
+    # Constraint stiffness in MuJoCo scales with inertia, so an 85 mm chain of
+    # bodies that light cantilevered off ONE weld is floppy for solver reasons
+    # rather than material ones — it drooped 40 mm where the real wire droops
+    # 0.2. Armature adds effective rotor inertia to each joint and conditions
+    # the solve. 1e-6 is ~4 orders over the real figure and still small enough
+    # that the fan at S2 behaves.
+    arm = 1e-6
     lines: list[str] = []
     for k in range(n):
         ind = "    " + "  " * k
@@ -141,7 +169,8 @@ def _chain(name: str, i: int, x0: float, n: int, z: float, theta_deg: float,
             for axis, tag in (("0 0 1", "z"), ("0 1 0", "y")):
                 lines.append(
                     f'{inner}<joint name="{name}_{i}_{k}_{tag}" type="hinge" '
-                    f'axis="{axis}" stiffness="0.02" damping="0.004" armature="1e-6"/>'
+                    f'axis="{axis}" stiffness="{stiff:.6g}" '
+                    f'damping="{stiff * 0.05:.6g}" armature="{arm:.3g}"/>'
                 )
         lines.append(
             f'{inner}<geom name="{name}_{i}_{k}" type="capsule" '
@@ -197,19 +226,48 @@ def equalities() -> str:
     out.append("")
     out.append("    <!-- CUT: the guillotine. One equality per conductor joining")
     out.append("         stock to workpiece at the cut line. Releasing these three")
-    out.append("         IS the cut - there is nothing else to it. -->")
+    out.append("         IS the cut - there is nothing else to it.")
+    out.append("")
+    out.append("         WELD, NOT CONNECT, and the difference is the whole")
+    out.append("         behaviour before the cut. A connect is a pin: it holds")
+    out.append("         position and passes no moment, so the uncut workpiece")
+    out.append("         hung off the feed head like a pendulum and had swung")
+    out.append("         32 degrees down by the time the clamp closed on it. The")
+    out.append("         weld then locked that tilt in, and the wire trailed at")
+    out.append("         a fixed angle for the rest of the cycle - which reads")
+    out.append("         exactly like a limp cable and is nothing of the sort.")
+    out.append("")
+    out.append("         An uncut ribbon is not pinned to itself. It is")
+    out.append("         continuous, and continuous material carries moment. -->")
     for i in range(CONDUCTORS):
         out.append(
-            f'    <connect name="cut_{i}" body1="stock_{i}_0" '
-            f'body2="rib_{i}_0" anchor="0 0 0" solref="0.004 1"/>'
+            f'    <weld name="cut_{i}" body1="stock_{i}_0" '
+            f'body2="rib_{i}_0" solref="0.0002 1" solimp="0.995 0.9999 1e-5"/>'
         )
     out.append("")
     out.append("    <!-- GRIP: the body clamp closing. Sprung closed in reality,")
-    out.append("         so 'active' here is the resting state, not the exception. -->")
+    out.append("         so 'active' here is the resting state, not the exception.")
+    out.append("")
+    out.append("         RELPOSE IS EXPLICIT, and that is the fix for the wire")
+    out.append("         hanging at a fixed angle off the comb. A MuJoCo weld")
+    out.append("         without relpose bakes the relative pose from the MODEL'S")
+    out.append("         REFERENCE CONFIGURATION - not from the moment it is")
+    out.append("         switched on. The reference has the arm RETRACTED and the")
+    out.append("         ribbon already fed, so activating the grip at full")
+    out.append("         extension asked the clamp to drag the ribbon 40 mm back")
+    out.append("         toward the pivot. It could not, the two constraints")
+    out.append("         fought, and the chain settled bowed - then kept that")
+    out.append("         angle once the cut released the other end.")
+    out.append("")
+    out.append("         Stated properly: the conductor lies along the clamp's")
+    out.append("         grip, at its own lateral offset, turned end-for-end")
+    out.append("         because the ribbon runs inward and the wrist faces out. -->")
+    grip_x = (float(L.WRIST_HUB_WIDTH) + float(L.CLAMP_BODY_LEN) / 2.0) * MM
     for i in range(CONDUCTORS):
         out.append(
             f'    <weld name="grip_{i}" body1="wrist" body2="rib_{i}_{grip_segment()}" '
-            f'active="false" solref="0.004 1"/>'
+            f'relpose="{grip_x:.6g} {conductor_y(i) * MM:.6g} 0 0 0 0 1" '
+            f'active="false" solref="0.002 1" solimp="0.99 0.999 1e-4"/>'
         )
     return "\n".join(out)
 
