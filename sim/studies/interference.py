@@ -42,6 +42,19 @@ from sim import layout as L
 # Reporting it here would bury the structural findings under noise.
 IGNORE_PREFIX = ("rib_", "stock_")
 
+# THE PRESS IS DEFERRED, so it does not get reported as a finding.
+#
+# Every press geom is placed from PRESS_RAM_FROM_FRONT and
+# APPLICATOR_WIRE_ABOVE_BASE, both PLACEHOLDER, both unmeasured until the
+# hardware is in hand. Contacts against them are not information about the
+# design — they are a restatement of the same open measurement, and reporting
+# them every run turns a known deferral into recurring noise that has to be
+# re-explained each time.
+#
+# This is a DEFERRAL, not a clearance. The summary line below says so, and S4
+# does not get called clear on the strength of this study.
+DEFERRED = ("press_base", "press_column", "press_baseplate", "applicator")
+
 
 def geom_name(model, gid: int) -> str:
     return mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM, gid) or f"geom{gid}"
@@ -75,6 +88,7 @@ def main() -> int:
 
     worst: dict[tuple[str, str], float] = collections.defaultdict(float)
     where: dict[tuple[str, str], str] = {}
+    deferred: set[tuple[str, str]] = set()
 
     all_poses = poses()
     for p in all_poses:
@@ -92,6 +106,9 @@ def main() -> int:
             if depth <= 0.0002:  # 0.2 mm, below meshing noise
                 continue
             key = tuple(sorted((a, b)))
+            if a in DEFERRED or b in DEFERRED:
+                deferred.add(key)
+                continue
             if depth > worst[key]:
                 worst[key] = depth
                 where[key] = f"{p['label']} Z={p['Z'] * 1000:.0f} R={p['R'] * 1000:.0f}"
@@ -100,10 +117,15 @@ def main() -> int:
     print("=" * 74)
     print(f"{len(all_poses)} poses swept: {len(L.STATIONS)} stops x 2 Z x 2 R x 3 S x 2 W")
     print(f"ribbon geoms excluded ({', '.join(IGNORE_PREFIX)}) — soft, and meant to touch")
+    if deferred:
+        print(f"press DEFERRED, not clear: {len(deferred)} pair(s) held back until it is measured")
     print()
 
     if not worst:
         print("Nothing overlaps.")
+        if deferred:
+            print()
+            print("The press is still an open measurement, not a clean result.")
         return 0
 
     print(f"{'part':<26}{'part':<26}{'worst':>8}  at")
