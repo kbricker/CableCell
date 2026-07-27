@@ -242,17 +242,27 @@ STATION_TAG_SIZE = _d(25.0, ESTIMATED, "scaled from TendWright 40mm", "STATION_T
 # ---------------------------------------------------------------------------
 # 4c. Ribbon and spool
 # ---------------------------------------------------------------------------
-# CORRECTION 2026-07-26: cell-design.md gives ribbon pitch as ~2.5 mm. That is
-# the CONNECTOR cavity pitch borrowed by mistake. Derived from 22 AWG / 60 cores
-# x 0.08 mm / 1.4 mm OD, the real conductor pitch is ~1.4-1.5 mm. Consequence:
-# the webs sit at +/-0.7 mm from centreline, so S2's slitting blades are finer
-# and closer together than the doc implies. MEASURE ON ARRIVAL before cutting
-# any tooling.
-
-RIBBON_CONDUCTOR_OD = _d(1.4, ESTIMATED, "vendor spec", "RIBBON_CONDUCTOR_OD")
-RIBBON_PITCH = _d(1.45, ESTIMATED, "derived, was wrongly 2.5", "RIBBON_PITCH")
-RIBBON_WIDTH = _d(4.5, ESTIMATED, "3 x OD + webs", "RIBBON_WIDTH")
-RIBBON_THICKNESS = _d(1.4, ESTIMATED, "= conductor OD", "RIBBON_THICKNESS")
+# CONFIRMED FROM THE VENDOR SPEC 2026-07-27, not derived and not deferred.
+# The listing states: 22 AWG, 60 cores x 0.08 mm, "Outer Diameter of Cable:
+# 1.4mm", tinned copper + PVC, 50 ft weighing ~250 g.
+#
+# cell-design.md gave ribbon pitch as ~2.5 mm. That was the CONNECTOR cavity
+# pitch borrowed by mistake. Flat JR/Futaba servo wire is three PVC-insulated
+# conductors co-extruded tangent to each other, so pitch = conductor OD = 1.40 mm
+# and overall width = 3 x 1.40 = 4.20 mm.
+#
+# THE IMPORTANT ONE: this cable is designed to be SEPARATED BY HAND. That is what
+# flat servo wire is for - you zip the three conductors apart to terminate them.
+# The web between conductors is therefore deliberately thin and weak, which
+# changes S2 from a precision depth-controlled slitting die into something much
+# closer to a splitting wedge. See docs/stations.md 2.
+RIBBON_CONDUCTOR_OD = _d(1.40, COMMITTED, "vendor spec 2026-07-27", "RIBBON_CONDUCTOR_OD")
+RIBBON_PITCH = _d(1.40, COMMITTED, "= OD, tangent co-extrusion", "RIBBON_PITCH")
+RIBBON_WIDTH = _d(4.20, COMMITTED, "3 x OD", "RIBBON_WIDTH")
+RIBBON_THICKNESS = _d(1.40, COMMITTED, "= conductor OD", "RIBBON_THICKNESS")
+RIBBON_STRANDS = _d(60.0, COMMITTED, "vendor spec", "RIBBON_STRANDS")
+RIBBON_STRAND_DIA = _d(0.08, COMMITTED, "vendor spec", "RIBBON_STRAND_DIA")
+RIBBON_HAND_SEPARABLE = True  # the web is designed to zip apart
 RIBBON_LENGTH_STOCK = _d(15240.0, COMMITTED, "50 ft spool", "RIBBON_LENGTH_STOCK")
 RIBBON_MASS_PER_M = _d(16.4, COMMITTED, "250 g / 50 ft", "RIBBON_MASS_PER_M")
 

@@ -149,8 +149,10 @@ Commercial machines do this in 7–9 s per cable. We are ~15× slower and roughl
 | Part | Function |
 |---|---|
 | **Two-blade slitting die**, depth-adjustable to 0.05 mm, pneumatic | Notches both webs simultaneously to the recipe's split length (25 mm). Depth control is the whole game — too shallow and it won't zip, too deep and it nicks copper. |
-| Spreader plate — diverging slots, pneumatic | Splays the three slit tails from ribbon pitch (~2.5 mm) out to comb pitch (8 mm) and captures them in the comb channels. |
+| Spreader plate — diverging slots, pneumatic | Splays the three split tails from the ribbon's **1.40 mm** pitch out to comb pitch (8 mm) and captures them in the comb channels. **7.5° splay** — gentle enough to take no set in the insulation. |
 | Backing anvil | Supports the ribbon so the blades cut rather than push. |
+
+**Ribbon pitch is 1.40 mm, not 2.5 mm** (vendor spec 2026-07-27; the 2.5 mm was the connector cavity pitch borrowed by mistake). And the ribbon is **designed to separate by hand**, which may reduce this station to a printed splitting wedge — see `docs/stations.md` §2.
 
 **Why 8 mm and not 2.5 mm:** the fan pitch is a free parameter, and widening it is what removes the pin-to-pin collision risk at the crimp anvil. Convergence back to the connector's 2.5 mm never happens mechanically — pins are inserted one at a time, so the cross-slide handles it in software.
 

@@ -65,39 +65,74 @@ anvil clearance matter more than blade force here.
 
 ---
 
-## 2. S2 — slit + fan
+## 2. S2 — split + fan
 
-🔴 **Harder than the original design doc implied.** `cell-design.md` gave ribbon
-pitch as ~2.5 mm; the real figure is **~1.45 mm** — the 2.5 mm was the
-*connector cavity* pitch borrowed by mistake.
+**The ribbon is designed to be pulled apart by hand.** That is what flat
+JR/Futaba servo wire is *for* — you zip the three conductors apart to terminate
+them individually. Confirmed from the vendor spec, 2026-07-27.
 
-Consequences:
+That single fact reshapes this station. It was scoped as a precision
+depth-adjustable two-blade slitting die, with depth control described as "the
+whole game": too shallow and it will not zip, too deep and it nicks copper. But
+if the web is deliberately weak, we are not cutting through insulation at all —
+we are **starting a tear and then letting geometry propagate it.**
 
-- The webs sit at **±0.725 mm** from centreline, not ±1.25 mm
-- Blades are finer and closer together
-- Depth control — already called "the whole game" — gets correspondingly tighter
+### Confirmed ribbon geometry (vendor spec, not measured, not guessed)
 
-**Confirm the real cross-section on arrival before cutting any tooling.**
+| | |
+|---|---|
+| Conductor OD | **1.40 mm** — listing states "Outer Diameter of Cable: 1.4mm" |
+| Conductor pitch | **1.40 mm** — three conductors co-extruded tangent |
+| Overall width | **4.20 mm** |
+| Strands | 60 × 0.08 mm tinned copper = 0.302 mm² — genuine 22 AWG |
+| Insulation | PVC |
+| Mass | 250 g / 50 ft = 16.4 g/m |
 
-### Parts
+`cell-design.md` gave the pitch as ~2.5 mm. That was the *connector* cavity
+pitch borrowed by mistake, and it made this station look harder than it is —
+webs at ±0.7 mm from centreline, not ±1.25 mm.
+
+### Revised approach: splitting wedge, not slitting die
+
+| | Original | Revised |
+|---|---|---|
+| Mechanism | 2 blades, depth-adjustable to 0.05 mm | Fixed splitting wedge, or a pull-apart pin pair |
+| Critical control | Blade depth | Tear start and propagation length |
+| Failure if wrong | Nicked copper → crimp fails a pull test two stations later | Split wanders or runs long |
+| Actuator | Pneumatic cylinder, precise | Possibly none — the feed stroke can drive the ribbon onto a fixed wedge |
+| Cost | ~$32 | Likely printed only |
+
+**The wedge can be a fixed, printed part** that the ribbon is pushed onto by the
+feed rollers, with the split length set by how far the arm advances rather than
+by tooling geometry. If that works it removes a cylinder, a valve, two flow
+controls, and the tightest tolerance in the station.
+
+### What still genuinely needs the physical ribbon
+
+Not the pitch — that is settled. Two things:
+
+1. **Tear-start force and whether the split propagates straight** for 25 mm
+   without wandering into a conductor. This is a materials behaviour, not a
+   dimension, and no datasheet will answer it.
+2. **Web thickness at the tangent**, which sets the wedge's leading-edge radius.
+   Bounded by construction — it is thinner than the 1.40 mm conductor and thick
+   enough to survive handling — but the exact value wants a caliper.
+
+**Test it the moment the ribbon arrives, by hand, before designing tooling:**
+zip 25 mm of it apart and watch what the tear does. Five seconds of work that
+decides whether this station is a $32 pneumatic die or a printed wedge.
+
+### Fan geometry
+
+Split length 25 mm; outer conductors move `(8 − 1.40) / 2 = 3.30 mm` laterally
+each, or `atan(3.30 / 25) = 7.5°`. Gentle — no set in the insulation, no mangled
+breakout. **This answers open question 4 in `cell-design.md` §8.**
 
 | Part | Spec | Notes |
 |---|---|---|
-| Slitting blades | 2 off, at ±0.725 mm, depth-adjustable to 0.05 mm | Scalpel/#11 class in an adjustable holder |
-| Depth adjustment | M3 fine-pitch + locknut | Too shallow and the ribbon will not zip; too deep and it nicks copper |
-| Backing anvil | ground steel flat, 3 mm | Supports the ribbon so blades cut rather than push |
-| Spreader plate | diverging slots, 1.45 → 8 mm, printed | Splays the tails into the comb channels |
-
-### Fan geometry checks out
-
-Split length is 25 mm; the outer conductors move
-`(8 − 1.45) / 2 = 3.275 mm` laterally each. That is
-`atan(3.275 / 25) = 7.5°` — gentle. No strain on the conductor, no memory set in
-the insulation, and the finished cable will not look mangled at the breakout.
-
-This was open question 4 in `cell-design.md` §8. **7.5° answers it.**
-
----
+| Splitting wedge | printed, leading edge on the web line | Replaces the two-blade die pending the hand test |
+| Spreader plate | diverging slots, 1.40 → 8 mm over 25 mm, printed | 7.5° splay |
+| Backing anvil | only if the wedge route fails | Deferred |
 
 ## 3. S3 — strip
 

@@ -24,12 +24,12 @@ Sourcing rationale per category is in [`docs/sourcing-index.md`](../docs/sourcin
 | §2 Pneumatics | ~$359 | 10 of 12 ✅ |
 | §3 Main arm | ~$222 | 7 of 9 ✅ |
 | §4 Station 1 — feed / measure / cut | ~$65 | 3 of 6 ✅ |
-| §5 Station 2 — slit + fan | ~$32 | 0 of 3 ⓘ |
+| §5 Station 2 — split + fan | **$0–32** | printed; fallback only if wedge fails |
 | §6 Station 3 — strip | ~$32 | 1 of 2 ✅ |
 | §7 Printed parts — filament | **$28** | 2 of 2 ✅ |
 | §7c Consumables — ribbon, reference cables | **$28** | 4 of 4 ✅ |
 | §7b Arm camera | ~$20 | camera owned |
-| **Phase 1 total** | **~$1,025** | **~33 of 48 lines priced live** |
+| **Phase 1 total** | **~$993–1,025** | **~33 of 46 lines priced live** |
 
 Roughly **83% of the cost** now sits on lines priced off a real page, up from
 about 20% before this pass. The remaining ⓘ lines are small consumables plus the
@@ -165,21 +165,30 @@ rather than hand-set — typing it by hand caused two clashes.
 
 ---
 
-## 5. Station 2 — slit + fan
+## 5. Station 2 — split + fan
 
-🔴 **Harder than the design doc implied.** Real ribbon pitch is **~1.45 mm**, not
-the 2.5 mm in `cell-design.md` — that was the *connector* cavity pitch borrowed by
-mistake. Webs sit at **±0.725 mm** from centreline. Finer blades, closer together,
-tighter depth control. **Confirm on arrival before cutting tooling.**
+**Ribbon geometry is now confirmed from the vendor spec, not deferred.** The
+listing states conductor OD **1.40 mm**, 60 × 0.08 mm tinned copper (0.302 mm²,
+genuine 22 AWG), PVC. Three conductors co-extruded tangent, so pitch = **1.40 mm**
+and overall width = **4.20 mm**. `cell-design.md`'s 2.5 mm was the *connector*
+cavity pitch borrowed by mistake.
+
+🟢 **And the ribbon is designed to be pulled apart by hand** — that is what flat
+JR/Futaba servo wire is *for*. The web is deliberately weak, which likely
+collapses this station from a precision slitting die into a **printed splitting
+wedge**. See [`docs/stations.md`](../docs/stations.md) §2.
 
 | # | Item | Pick | Price | Qty | Notes |
 |---|---|---|---|---|---|
-| 5.1 | Slitting blades | scalpel/#11 in an adjustable holder | ⓘ ~$14 | 1 | **Unsourced** — geometry not fixed |
-| 5.2 | Depth adjustment | M3 fine-pitch + locknuts | ⓘ ~$8 | 1 | **Unsourced.** Adjustable to 0.05 mm |
-| 5.3 | Backing anvil | ground steel flat, 3 mm | ⓘ ~$10 | 1 | **Unsourced** |
-| 5.4 | Spreader plate | printed, 1.45 → 8 mm over 25 mm | — | 1 | **7.5° splay** — gentle enough to take no set in the insulation |
+| 5.1 | Splitting wedge | printed | — | 1 | **Replaces the two-blade die**, pending a 5-second hand test on the real ribbon |
+| 5.2 | Spreader plate | printed, 1.40 → 8 mm over 25 mm | — | 1 | **7.5° splay** — no set in the insulation |
+| 5.3 | Slitting blades + depth adjust + anvil | scalpel blades, M3 fine-pitch, ground flat | ⓘ ~$32 | 1 | **Only if the wedge route fails.** Held as the fallback, not the plan |
 
-**Subtotal ~$32** · all unsourced, pending geometry
+**Subtotal $0 if the wedge works, ~$32 if not** — plus, on the wedge route, one
+fewer cylinder, valve and pair of flow controls (**−$8, −1 manifold station**).
+
+**The test costs nothing:** when the ribbon arrives, zip 25 mm apart by hand and
+watch whether the tear runs straight. That decides the station.
 
 ---
 
@@ -329,9 +338,12 @@ total needs to come down:
 
 Still ⓘ **unsourced**, and why:
 
-- **S2 and S3 tooling** (7 lines) — blade and anvil geometry is not fixed. Buying
-  before the ribbon's real cross-section is measured would be buying the wrong
-  thing precisely.
+- **S3 tooling** (1 line) — the V-blade die geometry is not fixed.
+- **S2 is now resolved on paper** — the vendor spec settled the ribbon geometry
+  that was previously being deferred to "measure on arrival", and the
+  hand-separable construction points at a printed wedge rather than a bought die.
+  What remains is a materials question no datasheet answers: does the tear run
+  straight for 25 mm. Answered by hand, free, the day the ribbon lands.
 - **Consumables and hardware** (6 lines) — extrusion fasteners, wiring, dancer
   spring, drive rollers, guillotine blade, ring light, USB cable. Small, and most
   depend on the frame design.
