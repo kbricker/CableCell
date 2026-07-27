@@ -32,7 +32,9 @@ lines and no debugging.
 Frame: the ribbon is generated along +x at the S1 engagement height, running
 from the feed head's cut line INWARD toward the pivot. Segment 0 is at the cut
 line; higher indices are further in, so the free end of a cut piece is the last
-segment. The clamp grips segment 1, just inboard of the cut.
+segment. The clamp grips the segment at clamp_grip_radius(), which is where the
+clamp physically is — not segment 1, which is where it used to grip and is 33 mm
+outboard of the comb.
 """
 
 from __future__ import annotations
@@ -48,9 +50,33 @@ MM = 0.001
 # a 300 mm cable does not become a 600-body model.
 SEG_LEN = 5.0
 
-# How much ribbon exists at once: the projecting tail plus enough behind the
-# cut to look like stock being paid out.
-TAIL_SEGMENTS = 8
+# HOW LONG THE WORKPIECE CHAIN HAS TO BE, and this was wrong in a way that was
+# obvious the moment the cycle animated. Kyle 2026-07-27: "there is a flappy bit
+# of wire in the animation now, great, but its floating in space way out in from
+# of the yellow bit."
+#
+# It was a flat 8 segments = 40 mm, growing inward from the cut line at R=210.
+# That ends at R=170. The comb spans 146..172 and the body clamp grips at 130 —
+# so the ribbon stopped just short of the comb and never entered it, and the
+# grip weld held segment 1 (R=205) which is 33 mm OUTBOARD of the comb's front
+# face. The arm was holding the ribbon in mid-air by a point that is not on the
+# machine.
+#
+# Derived now: long enough to run from the cut line, through the comb, to the
+# clamp's grip, plus a few segments of free end beyond. If the arm's reach or
+# the comb's length changes, this follows.
+def tail_segments() -> int:
+    span = float(L.ARM_R0) - L.clamp_grip_radius()
+    return int(math.ceil(span / SEG_LEN)) + 4
+
+
+def grip_segment() -> int:
+    """Which segment the body clamp actually closes on — the one at the clamp's
+    grip radius, not segment 1."""
+    return int(round((float(L.ARM_R0) - L.clamp_grip_radius()) / SEG_LEN))
+
+
+TAIL_SEGMENTS = tail_segments()
 STOCK_SEGMENTS = 6
 
 CONDUCTORS = int(L.COMB_CHANNELS)
@@ -182,7 +208,7 @@ def equalities() -> str:
     out.append("         so 'active' here is the resting state, not the exception. -->")
     for i in range(CONDUCTORS):
         out.append(
-            f'    <weld name="grip_{i}" body1="wrist" body2="rib_{i}_1" '
+            f'    <weld name="grip_{i}" body1="wrist" body2="rib_{i}_{grip_segment()}" '
             f'active="false" solref="0.004 1"/>'
         )
     return "\n".join(out)

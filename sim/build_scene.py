@@ -226,7 +226,10 @@ def check_station_inner_radius() -> list[str]:
 def _ribbon_bodies() -> str:
     """The ribbon, generated at S1's presentation point."""
     engage = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z["S1_FEED"])
-    cut_x = float(L.ARM_R0) + 10.0
+    # THE CUT LINE IS THE WORK POINT. It was R0+10, which put the whole ribbon
+    # 10 mm outboard of where the arm actually presents it — small, and enough
+    # that the grip and the comb never lined up.
+    cut_x = float(L.ARM_R0)
     return RIB.bodies(engage, cut_x, float(L.STATION_ANGLES["S1_FEED"]))
 
 
@@ -431,6 +434,27 @@ def _press_body() -> str:
 
 Z_POST_RADIUS = float(L.Z_POST_CIRCLE_R)
 
+def _z_pedestal() -> str:
+    """What stands in for the Z stage while the axis is deferred.
+
+    A fixed 3030 pedestal off the frame's cross rails, holding the rotor at
+    exactly the height the platform used to. Same interface, no motion — so
+    turning Z_STAGE_ENABLED back on swaps the stand for the stage without
+    moving anything above it.
+    """
+    e = float(L.EXTRUSION)
+    h = float(L.Z_PEDESTAL_TOP)
+    out = []
+    for i, (sx, sy) in enumerate(((-1, -1), (-1, 1), (1, -1), (1, 1))):
+        out.append(
+            f'    <geom name="z_pedestal_{i}" type="box" '
+            f'pos="{_fmt(sx * 55 * MM, sy * 55 * MM, h / 2 * MM)}" '
+            f'size="{_fmt(e / 2 * MM, e / 2 * MM, h / 2 * MM)}" '
+            f'material="extrusion_mat" contype="0" conaffinity="0"/>'
+        )
+    return "\n".join(out)
+
+
 def _z_posts() -> str:
     """Three guide posts plus one off-axis leadscrew, ALL BELOW THE DECK.
 
@@ -571,7 +595,7 @@ def _spool_and_hanger() -> str:
 def build_mjcf() -> str:
     deck_z = float(L.DECK_ABOVE_BENCH)
     deck_top = deck_z + float(L.DECK_THICKNESS)
-    z_stroke = L.z_stage_choice()
+    z_stroke = L.z_stroke_active()
     r_retracted = float(L.ARM_R0) - float(L.ARM_STROKE)
     arm_len = float(L.ARM_R0) + 30.0
 
@@ -674,7 +698,7 @@ def build_mjcf() -> str:
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
     <body name="post_body">
-{_z_posts()}
+{_z_posts() if L.Z_STAGE_ENABLED else _z_pedestal()}
     </body>
 
 {_ribbon_bodies()}
@@ -683,8 +707,7 @@ def build_mjcf() -> str:
     <body name="z_carriage" pos="0 0 {_PLATFORM_BASE * MM:.6g}">
       <joint name="Z" type="slide" axis="0 0 1" range="0 {z_stroke * MM:.6g}"
         damping="40"/>
-      <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
-        material="zstage_mat" contype="0" conaffinity="0"/>
+      {'<geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0" material="zstage_mat" contype="0" conaffinity="0"/>' if L.Z_STAGE_ENABLED else '<!-- Z platform: deferred with the axis. The rotor sits on a fixed pedestal. -->'}
 
       <geom name="t_motor" type="box"
         pos="{(float(L.SPINDLE_HOUSING_OD) / 2 + 46.0) * MM:.6g} 0 {(float(L.Z_PLATFORM_T) + 22.0) * MM:.6g}"

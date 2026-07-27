@@ -335,6 +335,34 @@ Z_CLEAR_MARGIN = _d(15.0, ESTIMATED, "handling clearance", "Z_CLEAR_MARGIN")
 # apart. Bearing spacing is the lever arm that turns the cantilever moment into
 # a couple — the entire reason paired bearings replaced a slew ring. 50 -> 75 mm
 # is a 1.5x cut in bearing load for free.
+# ---------------------------------------------------------------------------
+# THE Z AXIS IS DEFERRED TO PHASE 2 (Kyle 2026-07-27)
+# ---------------------------------------------------------------------------
+# "I think we can shift all the future parts we know about including the Z
+# movement mechanics into the future phase of work, we have done a ton of prelim
+# there, and it may proove usefule when we get to adding station 4 and 5, or we
+# may find out we can level all the stations and we dont need any z axis
+# movment, so deferral."
+#
+# z_needed.py established that the prototype does not need it: the whole 270 deg
+# sweeps clear with Z pinned at zero, at every R. What Kyle adds is the forward
+# view — S4 and S5 may or may not bring a height difference back, and that is
+# not knowable until the press is measured.
+#
+# A FLAG, NOT A DELETION. Everything below stays: the platform, the post
+# geometry, the stroke selection, z_post_top(), clearance_check. Turning this
+# True puts the axis back in one line. Deleting it would throw away work that is
+# probably needed again, to save nothing.
+#
+# What False costs the prototype: nothing. What it saves: a leadscrew, a NEMA
+# 17, three ground rods, three LM8UUs, a platform, a coupling, and ~90 mm of
+# stack height. The rotor sits on a fixed pedestal on the frame's cross rails.
+Z_STAGE_ENABLED = False
+
+Z_PEDESTAL_TOP = _d(
+    100.0, COMMITTED, "fixed stand-in for the Z platform", "Z_PEDESTAL_TOP"
+)
+
 Z_PLATFORM_BASE = _d(100.0, COMMITTED, "under the deck, clears the arm", "Z_PLATFORM_BASE")
 Z_PLATFORM_T = _d(10.0, COMMITTED, "z_platform plate thickness", "Z_PLATFORM_T")
 
@@ -355,8 +383,25 @@ def z_post_top() -> float:
 # ---------------------------------------------------------------------------
 
 COMB_CHANNELS = 3
-COMB_PITCH = _d(8.0, COMMITTED, "cell-design.md 5.4", "COMB_PITCH")
-CROSS_SLIDE_STROKE = _d(20.0, COMMITTED, "cell-design.md 5.2", "CROSS_SLIDE_STROKE")
+# 8 -> 4 mm. Kyle 2026-07-27: "the yellow part seems like there are 3 wholes
+# and slots to deal with the 3 leads, but the holes seem to big and spread out."
+#
+# He is right and the reason is a stale justification. 8 mm was chosen because
+# "the extra spacing removes pin-to-pin collision risk at the applicator throat"
+# — a CRIMP station argument, and crimp is deferred. What actually needs the
+# conductors separated in the prototype is the strip die's three V-blade pairs,
+# and 4 mm is comfortable for those.
+#
+# It costs nothing to widen again when the applicator arrives; the spreader
+# plate fans to whatever this says. Meanwhile the comb goes from 32 mm wide to
+# 16, which is a smaller print, a smaller flip envelope and a part that looks
+# like what it does.
+COMB_PITCH = _d(4.0, ESTIMATED, "strip die blade spacing; was 8 for the deferred applicator", "COMB_PITCH")
+# Exactly two comb pitches, so S indexes conductor 1 -> 2 -> 3 and nothing else.
+# Was a flat 20 mm, which stopped being two pitches when the pitch changed.
+CROSS_SLIDE_STROKE = _d(
+    2.0 * float(COMB_PITCH), COMMITTED, "derived: 2 x COMB_PITCH", "CROSS_SLIDE_STROKE"
+)
 TAIL_PROJECTION = _d(28.0, COMMITTED, "cell-design.md 3 step 2", "TAIL_PROJECTION")
 SPLIT_LENGTH = _d(25.0, COMMITTED, "recipe SPOX-3P", "SPLIT_LENGTH")
 STRIP_LENGTH = _d(2.75, COMMITTED, "recipe SPOX-3P", "STRIP_LENGTH")
@@ -1614,6 +1659,17 @@ def z_travel_required() -> float:
     """Z stroke the machine actually needs, before choosing a stock stage."""
     lo = min(STATION_Z.values())
     return (z_clear() - lo) + Z_STAGE_MARGIN
+
+
+def z_stroke_active() -> float:
+    """The stroke the machine ACTUALLY has. Zero while Z is deferred.
+
+    Everything that asks "how far can Z move" goes through here; everything that
+    asks "what would we buy if we fitted it" goes through z_stage_choice(). Two
+    different questions, and conflating them is how a deferred axis quietly
+    keeps costing motion.
+    """
+    return z_stage_choice() if Z_STAGE_ENABLED else 0.0
 
 
 def z_stage_choice() -> float:

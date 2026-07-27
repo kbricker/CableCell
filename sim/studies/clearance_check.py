@@ -49,7 +49,7 @@ def z_band() -> tuple[float, float]:
         L.arm_beam_bottom(), float(L.STATION_TOOLING_HEIGHT) - L.wrist_flip_r()
     )
     high = float(L.DECK_ABOVE_BENCH) + L.arm_stack_top()
-    return low, high + L.z_stage_choice()
+    return low, high + L.z_stroke_active()
 
 
 def obstacles() -> list[tuple[str, float, float, float]]:

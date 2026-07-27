@@ -62,7 +62,7 @@ def geom_name(model, gid: int) -> str:
 
 def poses() -> list[dict[str, float]]:
     """Every pose the machine is actually commanded into."""
-    stroke = L.z_stage_choice() * 0.001
+    stroke = L.z_stroke_active() * 0.001
     r_max = float(L.ARM_STROKE) * 0.001
     s_half = float(L.CROSS_SLIDE_STROKE) / 2.0 * 0.001
 

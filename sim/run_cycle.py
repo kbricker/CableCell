@@ -30,6 +30,10 @@ from sim import ribbon as RIB
 
 MM = 0.001
 
+# Indexing rate. Slow enough that a limp cable trails rather than whips, which
+# is the whole reason the cycle is watched with contacts on.
+INDEX_DEG_PER_S = 45.0
+
 # Actuator order in the model.
 ACTS = ("Z_act", "T_act", "R_act", "S_act", "W_act")
 
@@ -223,8 +227,24 @@ def timeline(model):
     def at(name: str) -> float:
         return math.radians(float(L.STATION_ANGLES[name]))
 
+    # HOW LONG AN INDEX TAKES, from how far it actually turns.
+    #
+    # Kyle 2026-07-27: "the arm movment is not smooth, especially from, 3 to bin
+    # and back to zero." Both of those are the long moves — S3 to the drop is
+    # 71 deg and the reset back to S1 is 199 deg — and every index was running
+    # on a flat 1.4-1.8 s regardless. So the short hops crawled and the long
+    # ones were flung, which reads as jerk even though each move is individually
+    # smoothed.
+    #
+    # A constant angular rate fixes it: same degrees per second everywhere, with
+    # a floor so a tiny move still eases rather than snapping.
+    def index_time(frm: float, to: float) -> float:
+        deg = abs(math.degrees(to - frm))
+        return max(0.7, deg / INDEX_DEG_PER_S)
+
     # --- S1: take the ribbon, cut it free of the stock -------------------
-    steps.append(("S1 feed: index", {"T_act": at("S1_FEED"), "R_act": 0.0}, 1.4, []))
+    steps.append(("S1 feed: index", {"T_act": at("S1_FEED"), "R_act": 0.0},
+                  index_time(at("S6_DROP"), at("S1_FEED")), []))
     steps.append(("S1 feed: engage", {"R_act": stroke}, 0.8, []))
     steps.append(("S1 feed: clamp closes", {}, 0.6, [(g, 1) for g in grips]))
     steps.append(("S1 feed: GUILLOTINE", {}, 0.5, [(c, 0) for c in cuts]))
@@ -239,7 +259,8 @@ def timeline(model):
     steps.append(("wrist: settle", {}, 0.8, []))
 
     # --- S2: split ---------------------------------------------------------
-    steps.append(("S2 slit: index", {"T_act": at("S2_SLIT")}, 1.6, []))
+    steps.append(("S2 slit: index", {"T_act": at("S2_SLIT")},
+                  index_time(at("S1_FEED"), at("S2_SLIT")), []))
     steps.append(("S2 slit: present tail", {"R_act": stroke}, 0.8, []))
     steps.append(("S2 slit: WEDGE SPLITS", {}, 0.6, [(w, 0) for w in webs]))
     steps.append(("S2 slit: fan out", {"S_act": s_half}, 0.6, []))
@@ -247,7 +268,8 @@ def timeline(model):
     steps.append(("S2 slit: withdraw", {"R_act": 0.0}, 0.7, []))
 
     # --- S3: strip ---------------------------------------------------------
-    steps.append(("S3 strip: index", {"T_act": at("S3_STRIP")}, 1.6, []))
+    steps.append(("S3 strip: index", {"T_act": at("S3_STRIP")},
+                  index_time(at("S2_SLIT"), at("S3_STRIP")), []))
     steps.append(("S3 strip: engage", {"R_act": stroke}, 0.8, []))
     for i, y in enumerate((-1.0, 0.0, 1.0)):
         steps.append((f"S3 strip: conductor {i + 1}", {"S_act": y * s_half}, 0.5, []))
@@ -255,13 +277,15 @@ def timeline(model):
     steps.append(("S3 strip: withdraw", {"R_act": 0.0, "S_act": 0.0}, 0.7, []))
 
     # --- S4: drop ----------------------------------------------------------
-    steps.append(("S4 drop: index", {"T_act": at("S6_DROP")}, 1.8, []))
+    steps.append(("S4 drop: index", {"T_act": at("S6_DROP")},
+                  index_time(at("S3_STRIP"), at("S6_DROP")), []))
     steps.append(("S4 drop: RELEASE", {}, 0.5, [(g, 0) for g in grips]))
     steps.append(("S4 drop: cable falls", {}, 1.4, []))
 
     # --- reset for the next cable -----------------------------------------
     steps.append((
-        "reset: rejoin stock, re-web", {"T_act": 0.0, "W_act": 0.0}, 1.8,
+        "reset: rejoin stock, re-web", {"T_act": 0.0, "W_act": 0.0},
+        index_time(at("S6_DROP"), 0.0),
         [(c, 1) for c in cuts] + [(w, 1) for w in webs] + [(g, 0) for g in grips],
     ))
 
