@@ -114,10 +114,55 @@ CRIMP_POINT_ABOVE_BENCH = _d(
     "CRIMP_POINT_ABOVE_BENCH",
 )
 
-# Typical tooling height for the short stations (guillotine, slit die, strip
-# die, nest) measured from the deck they bolt to.
+# 1/2" nominal plywood, which is what Kyle is actually cutting — NOT the 10 mm
+# aluminium tooling plate cell-design.md originally assumed. Defined here rather
+# than down with the stock sizes because the engagement plane is derived from
+# it, and deck_cut_sheet.py reads it so the shop drawing cannot drift.
+DECK_THICKNESS = _d(12.0, COMMITTED, '1/2" ply, Kyle supplies and cuts', "DECK_THICKNESS")
+
+# Every station bolts to the same printed base, so its thickness is part of the
+# stack between the deck and the ribbon.
+STATION_MOUNT_T = _d(10.0, COMMITTED, "station_mount base", "STATION_MOUNT_T")
+
+# How far each station part's RIBBON PASSAGE sits above that part's own base.
+# Read straight off the CAD in cad/build_parts.py, which imports these back so
+# the printed part and this table cannot disagree.
+STATION_PART_PASSAGE: dict[str, Dim] = {
+    "drive_roller_block": _d(29.3, COMMITTED, "nip line, build_parts", "PASS_rollers"),
+    "measuring_wheel": _d(15.9, COMMITTED, "= wheel radius", "PASS_wheel"),
+    "guide_tube_mount": _d(20.0, COMMITTED, "PTFE bore, build_parts", "PASS_tube"),
+    "guillotine_holder": _d(34.0, COMMITTED, "cut line, build_parts", "PASS_guillotine"),
+    "splitting_wedge": _d(18.0, COMMITTED, "channel floor, build_parts", "PASS_wedge"),
+    "spreader_plate": _d(4.0, COMMITTED, "mid-plate, build_parts", "PASS_spreader"),
+}
+
+
+def tallest_passage() -> float:
+    """The part that forces the engagement plane. Currently the guillotine."""
+    return max(float(v) for v in STATION_PART_PASSAGE.values())
+
+
+# THE ENGAGEMENT PLANE, and why there is only one of it.
+#
+# Kyle 2026-07-27, asked whether to derive this per station: "yes ... we want to
+# make the travel needed as minimal as possible." Those two goals pull against
+# each other — deriving a height per station from that station's tallest part
+# gives every stop a DIFFERENT height, and the spread between them is Z travel
+# the machine then has to have.
+#
+# So it is derived, but derived ONCE, from the tallest part anywhere on the
+# dial. Every station meets the ribbon on the same plane; the difference between
+# a part's own passage height and this plane is taken up by a printed standoff
+# under that part, which costs grams. Z travel is then needed only to lift clear
+# during rotation, not to chase stations up and down.
+#
+# That is the minimum travel this architecture can have, and it is the right
+# trade: standoffs are free and stiffness falls off with stroke.
 STATION_TOOLING_HEIGHT = _d(
-    60.0, ESTIMATED, "printed station class", "STATION_TOOLING_HEIGHT"
+    float(DECK_THICKNESS) + float(STATION_MOUNT_T) + tallest_passage(),
+    COMMITTED,
+    "derived: deck + mount + tallest part passage",
+    "STATION_TOOLING_HEIGHT",
 )
 
 DECK_ABOVE_BENCH = _d(
@@ -165,17 +210,22 @@ STATION_ANGLES: dict[str, Dim] = {
     "S6_REJECT": _d(265.0, PLACEHOLDER, "even spread", "theta_S6r"),
 }
 
-# Per-station engagement heights above the deck (Datum C). These are CONFIG,
-# calibrated by touching off at commissioning — the whole point of the Z axis.
-# Values here only need to be close enough for the rough-in to be meaningful.
+# Per-station engagement heights above Datum A. These are still CONFIG — each
+# is touched off at commissioning, which is the whole point of having a Z axis —
+# but they are now all the SAME derived plane rather than seven guesses.
+#
+# S6 drop and reject used to sit 20 mm high, to clear a bin rim. That was 20 mm
+# of Z travel bought to solve a problem the chute can solve for free: put the
+# chute MOUTH on the engagement plane and let the cable fall through it to a bin
+# under the deck. The arm never lifts to drop. See docs/decisions.md.
 STATION_Z: dict[str, Dim] = {
-    "S1_FEED": _d(60.0, PLACEHOLDER, "station tooling class", "Z_S1"),
-    "S2_SLIT": _d(60.0, PLACEHOLDER, "station tooling class", "Z_S2"),
-    "S3_STRIP": _d(60.0, PLACEHOLDER, "station tooling class", "Z_S3"),
-    "S4_CRIMP": _d(60.0, PLACEHOLDER, "= crimp point by construction", "Z_S4"),
-    "S5_INSERT": _d(60.0, PLACEHOLDER, "station tooling class", "Z_S5"),
-    "S6_DROP": _d(80.0, PLACEHOLDER, "drop clear of bin rim", "Z_S6"),
-    "S6_REJECT": _d(80.0, PLACEHOLDER, "drop clear of bin rim", "Z_S6r"),
+    name: _d(
+        float(STATION_TOOLING_HEIGHT),
+        COMMITTED,
+        "single derived engagement plane",
+        f"Z_{name}",
+    )
+    for name in STATIONS
 }
 
 # Clearance height for rotation. Must sit above the tallest station tooling
@@ -459,12 +509,8 @@ Z_STAGE_STOCK_STROKES = (50.0, 100.0, 150.0, 200.0, 300.0, 400.0)
 # ---------------------------------------------------------------------------
 
 EXTRUSION = _d(30.0, COMMITTED, "3030, cell-design.md 5.1", "EXTRUSION")
-# 1/2" nominal plywood, which is what Kyle is actually cutting — NOT the 10 mm
-# aluminium tooling plate cell-design.md originally assumed. The cut sheet was
-# already quoting 1/2" while layout.py still said 10 mm; two sources of truth
-# for the one part that gets made on a saw, which is exactly the drift the
-# single-source rule exists to prevent. deck_cut_sheet.py now reads this value.
-DECK_THICKNESS = _d(12.0, COMMITTED, '1/2" ply, Kyle supplies and cuts', "DECK_THICKNESS")
+# DECK_THICKNESS is defined up in section 2 — the engagement plane derives from
+# it, so it has to exist before that calculation runs.
 DECK_RADIUS = _d(
     float(ARM_R0 + STATION_WIDTH), ESTIMATED, "R0 + station depth", "DECK_RADIUS"
 )

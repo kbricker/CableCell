@@ -94,7 +94,7 @@ def _mesh_assets() -> str:
 # must land just inboard of the bolt circle, so the mount centre goes 35 mm
 # outboard of R0.
 STATION_MOUNT_R = float(L.ARM_R0) + 35.0
-STATION_MOUNT_T = 10.0  # station_mount base thickness — parts bolt to its top
+STATION_MOUNT_T = float(L.STATION_MOUNT_T)
 
 # Which real parts stand at each stop, as
 #   (mesh, radial offset from R0, tangential offset, height of the part's
@@ -107,16 +107,18 @@ STATION_MOUNT_T = 10.0  # station_mount base thickness — parts bolt to its top
 # presentation point, with the guillotine cutting AT the presentation point.
 # The first cut of this table had the guillotine outboard of the guide tube,
 # which would have cut the ribbon before it was ever guided.
+# Passage heights are NOT repeated here — they come from
+# layout.STATION_PART_PASSAGE, which build_parts.py also reads.
 STATION_PARTS: dict[str, tuple] = {
     "S1_FEED": (
-        ("drive_roller_block", 78.0, 0.0, 29.3, True, None),
-        ("measuring_wheel", 56.0, 0.0, 4.5, False, "1.5708 0 {t}"),
-        ("guide_tube_mount", 30.0, 0.0, 20.0, True, None),
-        ("guillotine_holder", 8.0, 0.0, 34.0, True, None),
+        ("drive_roller_block", 78.0, 0.0, True, None),
+        ("measuring_wheel", 56.0, 0.0, False, "1.5708 0 {t}"),
+        ("guide_tube_mount", 30.0, 0.0, True, None),
+        ("guillotine_holder", 8.0, 0.0, True, None),
     ),
     "S2_SLIT": (
-        ("splitting_wedge", 30.0, 0.0, 18.0, True, None),
-        ("spreader_plate", 2.0, 0.0, 4.0, True, None),
+        ("splitting_wedge", 30.0, 0.0, True, None),
+        ("spreader_plate", 2.0, 0.0, True, None),
     ),
 }
 
@@ -154,7 +156,8 @@ def _station_bodies() -> str:
             f'euler="0 0 {rot:.6g}" material="mount_mat" contype="0" conaffinity="0"/>'
         )
 
-        for mesh, r_off, t_off, passage_h, reversed_, euler_tpl in STATION_PARTS.get(name, ()):
+        for mesh, r_off, t_off, reversed_, euler_tpl in STATION_PARTS.get(name, ()):
+            passage_h = float(L.STATION_PART_PASSAGE[mesh])
             r = float(L.ARM_R0) + r_off
             px = r * math.cos(rot) - t_off * math.sin(rot)
             py = r * math.sin(rot) + t_off * math.cos(rot)
@@ -610,25 +613,25 @@ def render(views: tuple[str, ...] | None = None) -> list[pathlib.Path]:
 def pedestal_heights() -> list[tuple[str, str, float]]:
     """Standoff each station part needs under it, in mm.
 
-    These are real printed parts nobody has costed yet. They exist because
-    STATION_Z is still a flat PLACEHOLDER 60 mm for every stop while the parts
-    underneath have passage heights from 4.5 to 34 mm — so the engagement plane
-    and the tooling do not currently agree, and the difference has to go
-    somewhere. The honest options are:
+    These are real printed parts and they belong in the BOM. They exist because
+    every station now meets the ribbon on ONE derived engagement plane, set by
+    the tallest part anywhere on the dial (the guillotine). Every shorter part
+    is packed up to that plane by a standoff.
 
-      a) derive STATION_Z per stop from its tallest part (pedestals shrink to
-         the WITHIN-station spread only), or
-      b) keep a common engagement height and print these standoffs.
+    That is the deliberate trade behind minimum Z travel: the alternative —
+    a height per station — would push the spread between stations into the Z
+    stage, and stroke costs stiffness. Standoffs cost grams.
 
-    (a) is better and is the open decision. Either way the within-station
-    spread is real: at S1 the guillotine passage sits 29.5 mm above the
-    measuring wheel's, so something is packing that difference.
+    The tallest part's standoff is 0 by construction. If any value here goes
+    negative, a part is trying to sink through its own mount and the plane is
+    wrong.
     """
     deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
     rows: list[tuple[str, str, float]] = []
     for name, parts in STATION_PARTS.items():
         engage_z = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name])
-        for mesh, _r, _t, passage_h, _rev, _e in parts:
+        for mesh, _r, _t, _rev, _e in parts:
+            passage_h = float(L.STATION_PART_PASSAGE[mesh])
             rows.append((name, mesh, engage_z - passage_h - (deck_top + STATION_MOUNT_T)))
     return rows
 

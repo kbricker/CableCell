@@ -144,3 +144,41 @@ decision.
 **2026-07-26 — Cable length envelope confirmed at ~1000 mm.** Kyle: "3.3 ft is
 perfectly fine for now, way larger than any early prototype I have planned." The
 figure in `cell-design.md` stands; the payout trough is sized to it.
+
+**2026-07-27 — One engagement plane, derived from the tallest part. Z stroke
+halves.** Kyle, asked whether to derive `STATION_Z` per stop: *"yes on the
+station z question, we want to make the travel needed as minimal as possible."*
+
+Those two things pull against each other, and the resolution is the interesting
+part. Deriving a height *per station* from that station's tallest part gives
+every stop a different height — and the spread between stops becomes Z travel
+the machine is then obliged to have. Derivation alone would have made travel
+*worse*.
+
+So it is derived, but derived **once**: `STATION_TOOLING_HEIGHT = DECK_THICKNESS
++ STATION_MOUNT_T + max(STATION_PART_PASSAGE)`. Every station meets the ribbon on
+that one plane. The difference between a part's own passage height and the plane
+is taken up by a printed standoff under that part.
+
+Two consequences worth recording:
+
+1. **S6 drop and reject came down to the plane.** They previously sat 20 mm high
+   to clear a bin rim — 20 mm of Z travel bought to solve a problem the chute
+   solves for free. Put the chute *mouth* on the engagement plane and let the
+   cable fall through it to a bin under the deck; the arm never lifts to drop.
+2. **Z travel is now only what rotation clearance demands.** Required travel
+   55 → 35 mm, and the stock stage drops 100 → 50 mm. Stiffness falls off with
+   stroke, so this is the single cheapest stiffness improvement available, and it
+   cost six printed standoffs weighing grams.
+
+The guillotine's standoff computes to exactly 0.0 mm, which is the check that
+the derivation closes: the part that sets the plane needs no packing.
+
+Side effects: `DECK_ABOVE_BENCH` 170 → 174 mm (the deck rises as the tooling
+stack shortens), and seven PLACEHOLDER dimensions became COMMITTED — 19/110 down
+to 12/117.
+
+**Also 2026-07-27 — `DECK_THICKNESS` corrected 10 → 12 mm.** layout.py carried
+10 mm (an aluminium tooling plate from `cell-design.md`) while the generated cut
+sheet quoted 1/2" ply. Two sources of truth for the one part that gets made on a
+saw. `deck_cut_sheet.py` now reads the value instead of hard-coding it.

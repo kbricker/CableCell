@@ -227,13 +227,14 @@ def guide_tube_mount():
     The presentation point has to be repeatable regardless of what the roll is
     doing — this is the part that makes it so.
     """
+    tube_z = float(L.STATION_PART_PASSAGE["guide_tube_mount"])
     base = Part.makeBox(34.0, 24.0, 8.0, V(-17, -12, 0))
-    boss = Part.makeCylinder(9.0, 26.0, V(-17, 0, 20.0), V(1, 0, 0))
+    boss = Part.makeCylinder(9.0, 26.0, V(-17, 0, tube_z), V(1, 0, 0))
     part = base.fuse(boss)
-    part = part.fuse(Part.makeBox(10.0, 24.0, 22.0, V(-5, -12, 0)))
+    part = part.fuse(Part.makeBox(10.0, 24.0, tube_z + 2.0, V(-5, -12, 0)))
     # 4 mm OD PTFE tube, press fit.
     part = part.cut(
-        Part.makeCylinder(2.05, 40.0, V(-20, 0, 20.0), V(1, 0, 0))
+        Part.makeCylinder(2.05, 40.0, V(-20, 0, tube_z), V(1, 0, 0))
     )
     for x in (-12.0, 12.0):
         part = part.cut(_z_cyl(1.7, 10.0, -1.0, x, 0.0))
@@ -359,7 +360,9 @@ def splitting_wedge():
 
     base_x, base_y, base_t = 50.0, 50.0, 8.0
     blk_y, blk_z = 30.0, 24.0
-    ch_z = base_t + 10.0
+    # Passage height comes from layout.py, which the scene also reads — so the
+    # printed channel and the engagement plane cannot drift apart.
+    ch_z = float(L.STATION_PART_PASSAGE["splitting_wedge"])
 
     part = Part.makeBox(base_x, base_y, base_t, V(-base_x / 2, -base_y / 2, 0))
     part = part.fuse(
@@ -658,7 +661,7 @@ def guillotine_holder():
     body_x, body_y, body_z = 44.0, 34.0, 54.0
     body = Part.makeBox(body_x, body_y, body_z, V(-body_x / 2, -body_y / 2, 0))
 
-    cut_z = 34.0
+    cut_z = float(L.STATION_PART_PASSAGE["guillotine_holder"])
 
     # Ribbon passage through the anvil.
     body = body.cut(
