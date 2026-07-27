@@ -1037,7 +1037,44 @@ def write_collide() -> pathlib.Path:
             "station placement contradicts the layout:\n  " + "\n  ".join(failures)
         )
     ASSETS.mkdir(parents=True, exist_ok=True)
-    xml = build_mjcf().replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
+
+    # CONTACT CLASSES, not one blanket flag flip.
+    #
+    # This used to be a single string replace turning every contype="0" into
+    # contype="1" — which switched contacts on for the RIBBON too. An 18-link
+    # chain of capsules whose neighbours overlap by construction then fought
+    # itself: rib_0_1 against rib_0_14, rib_0_3 against rib_0_6, and the whole
+    # solve diverged 0.15 s in. MuJoCo auto-resets on divergence, which threw
+    # the cycle back to t=0 — Kyle saw it as "tripping at the wire station only
+    # running in a fast loop". The loop was the reset, not the timeline.
+    #
+    # Bitmasks: two geoms collide if (contype1 & conaffinity2) or the reverse.
+    #
+    #   machine  1 / 1   collides with machine and with the deck
+    #   ribbon   2 / 4   collides with the deck ONLY — not itself, not tooling
+    #   deck     5 / 3   collides with both
+    #
+    # The ribbon is deliberately blind to station tooling. Not laziness: MuJoCo
+    # collides meshes as convex hulls, so the feed head's channel — the hole the
+    # ribbon is supposed to thread THROUGH — does not exist as far as contacts
+    # are concerned. A ribbon that collided with it would be wrong in the other
+    # direction, and more convincingly.
+    import re
+
+    def classify(m: re.Match) -> str:
+        head, name, mid, tail = m.groups()
+        if name.startswith(("rib_", "stock_")):
+            ct, ca = 2, 4
+        elif name == "deck":
+            ct, ca = 5, 3
+        else:
+            ct, ca = 1, 1
+        return f'{head}{name}{mid}contype="{ct}" conaffinity="{ca}"{tail}'
+
+    xml = re.sub(
+        r'(<geom name=")([^"]+)("[^>]*?)contype="0" conaffinity="0"([^>]*?/>)',
+        classify, build_mjcf(), flags=re.S,
+    )
     COLLIDE_PATH.write_text(xml, encoding="utf-8")
     return COLLIDE_PATH
 
