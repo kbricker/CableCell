@@ -92,19 +92,19 @@
     <geom name="press_base" type="box"
       pos="-0.112457 0.206345 0.03"
       size="0.105 0.105 0.03"
-      euler="0 0 2.06979" material="press_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="press_mat" contype="1" conaffinity="1"/>
     <geom name="press_column" type="box"
       pos="-0.140093 0.257054 0.29"
       size="0.04725 0.105 0.29"
-      euler="0 0 2.06979" material="press_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="press_mat" contype="1" conaffinity="1"/>
     <geom name="press_baseplate" type="box"
       pos="-0.112457 0.206345 0.2"
       size="0.105 0.105 0.008"
-      euler="0 0 2.06979" material="press_plate_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="press_plate_mat" contype="1" conaffinity="1"/>
     <geom name="applicator" type="box"
       pos="-0.130403 0.239273 0.2825"
       size="0.1125 0.04 0.0825"
-      euler="0 0 2.06979" material="applicator_mat" contype="0" conaffinity="0"/>
+      euler="0 0 2.06979" material="applicator_mat" contype="1" conaffinity="1"/>
     <site name="crimp_point" pos="-0.0957083 0.175613 0.23"
       size="0.006" rgba="1 0.25 0.2 1"/>
 
@@ -113,48 +113,48 @@
     <geom name="deck" type="cylinder"
       pos="0 0 0.18"
       size="0.28 0.006"
-      material="deck_mat" contype="0" conaffinity="0"/>
+      material="deck_mat" contype="1" conaffinity="1"/>
     </body>
     <body name="frame_body">
     <geom name="frame_ring" type="cylinder"
       pos="0 0 0.087"
       size="0.24 0.087"
-      material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
+      material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="1" conaffinity="1"/>
     </body>
 
-    <geom name="s1_feed_mount" type="mesh" mesh="station_mount_mesh" pos="0.235 0 0.186" euler="0 0 0" material="mount_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_feed_head" type="mesh" mesh="feed_head_mesh" pos="0.21 0 0.196" euler="0 0 0" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_mount" type="mesh" mesh="station_mount_mesh" pos="0.19749 0.127369 0.186" euler="0 0 0.572811" material="mount_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.189086 0.121949 0.212" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.189086 0.121949 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.224382 0.144713 0.226" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.224382 0.144713 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="0" conaffinity="0"/>
-    <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="0" conaffinity="0"/>
-    <geom name="s3_strip_strip_die" type="mesh" mesh="strip_die_mesh" pos="0.0915706 0.202235 0.196" euler="0 0 1.14562" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s3_strip_tag" type="box" pos="0.0812586 0.17946 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.14562" material="tag_mat" contype="0" conaffinity="0"/>
-    <geom name="s5_insert_mount" type="mesh" mesh="station_mount_mesh" pos="-0.232444 0.0345685 0.186" euler="0 0 2.99396" material="mount_mat" contype="0" conaffinity="0"/>
+    <geom name="s1_feed_mount" type="mesh" mesh="station_mount_mesh" pos="0.235 0 0.186" euler="0 0 0" material="mount_mat" contype="1" conaffinity="1"/>
+    <geom name="s1_feed_feed_head" type="mesh" mesh="feed_head_mesh" pos="0.21 0 0.196" euler="0 0 0" material="printed_mat" contype="1" conaffinity="1"/>
+    <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_mount" type="mesh" mesh="station_mount_mesh" pos="0.19749 0.127369 0.186" euler="0 0 0.572811" material="mount_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.189086 0.121949 0.212" euler="0 0 0.572811" material="printed_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.189086 0.121949 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.224382 0.144713 0.226" euler="0 0 0.572811" material="printed_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.224382 0.144713 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="1" conaffinity="1"/>
+    <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="1" conaffinity="1"/>
+    <geom name="s3_strip_strip_die" type="mesh" mesh="strip_die_mesh" pos="0.0915706 0.202235 0.196" euler="0 0 1.14562" material="printed_mat" contype="1" conaffinity="1"/>
+    <geom name="s3_strip_tag" type="box" pos="0.0812586 0.17946 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.14562" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s5_insert_mount" type="mesh" mesh="station_mount_mesh" pos="-0.232444 0.0345685 0.186" euler="0 0 2.99396" material="mount_mat" contype="1" conaffinity="1"/>
     <!-- S5_INSERT: greybox - out of Phase 1 scope -->
-    <geom name="s5_insert" type="box" pos="-0.232444 0.0345685 0.224" size="0.035 0.04 0.028" euler="0 0 2.99396" material="unknown_mat" contype="0" conaffinity="0"/>
-    <geom name="s5_insert_tag" type="box" pos="-0.194857 0.0289787 0.24" size="0.0015 0.0125 0.0125" euler="0 0 2.99396" material="tag_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_drop_mount" type="mesh" mesh="station_mount_mesh" pos="-0.214077 -0.0969329 0.186" euler="0 0 3.56677" material="mount_mat" contype="0" conaffinity="0"/>
+    <geom name="s5_insert" type="box" pos="-0.232444 0.0345685 0.224" size="0.035 0.04 0.028" euler="0 0 2.99396" material="unknown_mat" contype="1" conaffinity="1"/>
+    <geom name="s5_insert_tag" type="box" pos="-0.194857 0.0289787 0.24" size="0.0015 0.0125 0.0125" euler="0 0 2.99396" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s6_drop_mount" type="mesh" mesh="station_mount_mesh" pos="-0.214077 -0.0969329 0.186" euler="0 0 3.56677" material="mount_mat" contype="1" conaffinity="1"/>
     <!-- S6_DROP: greybox - chute not designed -->
-    <geom name="s6_drop" type="box" pos="-0.214077 -0.0969329 0.224" size="0.035 0.04 0.028" euler="0 0 3.56677" material="unknown_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_drop_tag" type="box" pos="-0.17946 -0.0812586 0.24" size="0.0015 0.0125 0.0125" euler="0 0 3.56677" material="tag_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_reject_mount" type="mesh" mesh="station_mount_mesh" pos="-0.127369 -0.19749 0.186" euler="0 0 4.13958" material="mount_mat" contype="0" conaffinity="0"/>
+    <geom name="s6_drop" type="box" pos="-0.214077 -0.0969329 0.224" size="0.035 0.04 0.028" euler="0 0 3.56677" material="unknown_mat" contype="1" conaffinity="1"/>
+    <geom name="s6_drop_tag" type="box" pos="-0.17946 -0.0812586 0.24" size="0.0015 0.0125 0.0125" euler="0 0 3.56677" material="tag_mat" contype="1" conaffinity="1"/>
+    <geom name="s6_reject_mount" type="mesh" mesh="station_mount_mesh" pos="-0.127369 -0.19749 0.186" euler="0 0 4.13958" material="mount_mat" contype="1" conaffinity="1"/>
     <!-- S6_REJECT: greybox - chute not designed -->
-    <geom name="s6_reject" type="box" pos="-0.127369 -0.19749 0.224" size="0.035 0.04 0.028" euler="0 0 4.13958" material="reject_mat" contype="0" conaffinity="0"/>
-    <geom name="s6_reject_tag" type="box" pos="-0.106773 -0.165555 0.24" size="0.0015 0.0125 0.0125" euler="0 0 4.13958" material="tag_mat" contype="0" conaffinity="0"/>
+    <geom name="s6_reject" type="box" pos="-0.127369 -0.19749 0.224" size="0.035 0.04 0.028" euler="0 0 4.13958" material="reject_mat" contype="1" conaffinity="1"/>
+    <geom name="s6_reject_tag" type="box" pos="-0.106773 -0.165555 0.24" size="0.0015 0.0125 0.0125" euler="0 0 4.13958" material="tag_mat" contype="1" conaffinity="1"/>
 
     <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
-    <geom name="spool" type="mesh" mesh="spool_mesh" pos="0.29 0.0155 0.336" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
-    <geom name="spool_ribbon" type="cylinder" pos="0.29 0 0.336" size="0.051 0.0115" euler="1.5708 0 0" material="ribbon_mat" contype="0" conaffinity="0"/>
-    <geom name="spool_post" type="box" pos="0.324 0 0.093" size="0.015 0.015 0.093" material="frame_mat" contype="0" conaffinity="0"/>
-    <geom name="spool_hanger" type="mesh" mesh="spool_hanger_mesh" pos="0.324 0 0.186" euler="0 0 1.5708" material="hanger_mat" contype="0" conaffinity="0"/>
-    <geom name="dancer_arm" type="mesh" mesh="dancer_arm_mesh" pos="0.324 0 0.282" euler="0 0 3.14159" material="hanger_mat" contype="0" conaffinity="0"/>
-    <geom name="drive_roller_block" type="mesh" mesh="drive_roller_block_mesh" pos="0.324 0 0.192" euler="0 0 3.14159" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="measuring_wheel" type="mesh" mesh="measuring_wheel_mesh" pos="0.294 0 0.232" euler="1.5708 0 0" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="spool" type="mesh" mesh="spool_mesh" pos="0.29 0.0155 0.336" euler="1.5708 0 0" material="spool_mat" contype="1" conaffinity="1"/>
+    <geom name="spool_ribbon" type="cylinder" pos="0.29 0 0.336" size="0.051 0.0115" euler="1.5708 0 0" material="ribbon_mat" contype="1" conaffinity="1"/>
+    <geom name="spool_post" type="box" pos="0.324 0 0.093" size="0.015 0.015 0.093" material="frame_mat" contype="1" conaffinity="1"/>
+    <geom name="spool_hanger" type="mesh" mesh="spool_hanger_mesh" pos="0.324 0 0.186" euler="0 0 1.5708" material="hanger_mat" contype="1" conaffinity="1"/>
+    <geom name="dancer_arm" type="mesh" mesh="dancer_arm_mesh" pos="0.324 0 0.282" euler="0 0 3.14159" material="hanger_mat" contype="1" conaffinity="1"/>
+    <geom name="drive_roller_block" type="mesh" mesh="drive_roller_block_mesh" pos="0.324 0 0.192" euler="0 0 3.14159" material="printed_mat" contype="1" conaffinity="1"/>
+    <geom name="measuring_wheel" type="mesh" mesh="measuring_wheel_mesh" pos="0.294 0 0.232" euler="1.5708 0 0" material="printed_mat" contype="1" conaffinity="1"/>
 
     <!-- Z stage: platform on three guide posts, driven by ONE OFF-AXIS
          leadscrew. The off-axis screw is the whole trick — it leaves the
@@ -162,11 +162,11 @@
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
     <body name="post_body">
-    <geom name="z_post_0" type="cylinder" pos="3.45963e-18 0.0565 0.102" size="0.004 0.082" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_1" type="cylinder" pos="-0.0489304 -0.02825 0.102" size="0.004 0.082" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_2" type="cylinder" pos="0.0489304 -0.02825 0.102" size="0.004 0.082" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_leadscrew" type="cylinder" pos="-1.03789e-17 -0.0565 0.102" size="0.005 0.082" material="screw_mat" contype="0" conaffinity="0"/>
-    <geom name="z_motor" type="box" pos="-1.03789e-17 -0.0565 -0.002" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_0" type="cylinder" pos="3.45963e-18 0.0565 0.102" size="0.004 0.082" material="zstage_mat" contype="1" conaffinity="1"/>
+    <geom name="z_post_1" type="cylinder" pos="-0.0489304 -0.02825 0.102" size="0.004 0.082" material="zstage_mat" contype="1" conaffinity="1"/>
+    <geom name="z_post_2" type="cylinder" pos="0.0489304 -0.02825 0.102" size="0.004 0.082" material="zstage_mat" contype="1" conaffinity="1"/>
+    <geom name="z_leadscrew" type="cylinder" pos="-1.03789e-17 -0.0565 0.102" size="0.005 0.082" material="screw_mat" contype="1" conaffinity="1"/>
+    <geom name="z_motor" type="box" pos="-1.03789e-17 -0.0565 -0.002" size="0.021 0.021 0.020" material="motor_mat" contype="1" conaffinity="1"/>
     </body>
 
     <!-- ===== the ribbon =====
@@ -176,27 +176,27 @@
     <body name="stock_0_0" pos="0.21 -0.0014 0.23" euler="0 0 0">
       <joint name="stock_0_0_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
       <joint name="stock_0_0_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-      <geom name="stock_0_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+      <geom name="stock_0_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
       <body name="stock_0_1" pos="0.005 0 0">
         <joint name="stock_0_1_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
         <joint name="stock_0_1_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-        <geom name="stock_0_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+        <geom name="stock_0_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
         <body name="stock_0_2" pos="0.005 0 0">
           <joint name="stock_0_2_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
           <joint name="stock_0_2_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-          <geom name="stock_0_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+          <geom name="stock_0_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
           <body name="stock_0_3" pos="0.005 0 0">
             <joint name="stock_0_3_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
             <joint name="stock_0_3_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-            <geom name="stock_0_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+            <geom name="stock_0_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
             <body name="stock_0_4" pos="0.005 0 0">
               <joint name="stock_0_4_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
               <joint name="stock_0_4_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-              <geom name="stock_0_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+              <geom name="stock_0_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               <body name="stock_0_5" pos="0.005 0 0">
                 <joint name="stock_0_5_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                 <joint name="stock_0_5_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                <geom name="stock_0_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                <geom name="stock_0_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               </body>
             </body>
           </body>
@@ -205,35 +205,35 @@
     </body>
     <body name="rib_0_0" pos="0.21 -0.0014 0.23" euler="0 0 3.14159">
       <freejoint name="rib_0_free"/>
-      <geom name="rib_0_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+      <geom name="rib_0_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
       <body name="rib_0_1" pos="0.005 0 0">
         <joint name="rib_0_1_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
         <joint name="rib_0_1_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-        <geom name="rib_0_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+        <geom name="rib_0_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
         <body name="rib_0_2" pos="0.005 0 0">
           <joint name="rib_0_2_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
           <joint name="rib_0_2_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-          <geom name="rib_0_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+          <geom name="rib_0_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
           <body name="rib_0_3" pos="0.005 0 0">
             <joint name="rib_0_3_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
             <joint name="rib_0_3_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-            <geom name="rib_0_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+            <geom name="rib_0_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
             <body name="rib_0_4" pos="0.005 0 0">
               <joint name="rib_0_4_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
               <joint name="rib_0_4_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-              <geom name="rib_0_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+              <geom name="rib_0_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               <body name="rib_0_5" pos="0.005 0 0">
                 <joint name="rib_0_5_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                 <joint name="rib_0_5_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                <geom name="rib_0_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                <geom name="rib_0_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                 <body name="rib_0_6" pos="0.005 0 0">
                   <joint name="rib_0_6_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                   <joint name="rib_0_6_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                  <geom name="rib_0_6" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                  <geom name="rib_0_6" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                   <body name="rib_0_7" pos="0.005 0 0">
                     <joint name="rib_0_7_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                     <joint name="rib_0_7_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                    <geom name="rib_0_7" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                    <geom name="rib_0_7" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                   </body>
                 </body>
               </body>
@@ -245,27 +245,27 @@
     <body name="stock_1_0" pos="0.21 0 0.23" euler="0 0 0">
       <joint name="stock_1_0_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
       <joint name="stock_1_0_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-      <geom name="stock_1_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+      <geom name="stock_1_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
       <body name="stock_1_1" pos="0.005 0 0">
         <joint name="stock_1_1_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
         <joint name="stock_1_1_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-        <geom name="stock_1_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+        <geom name="stock_1_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
         <body name="stock_1_2" pos="0.005 0 0">
           <joint name="stock_1_2_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
           <joint name="stock_1_2_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-          <geom name="stock_1_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+          <geom name="stock_1_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
           <body name="stock_1_3" pos="0.005 0 0">
             <joint name="stock_1_3_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
             <joint name="stock_1_3_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-            <geom name="stock_1_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+            <geom name="stock_1_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
             <body name="stock_1_4" pos="0.005 0 0">
               <joint name="stock_1_4_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
               <joint name="stock_1_4_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-              <geom name="stock_1_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+              <geom name="stock_1_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               <body name="stock_1_5" pos="0.005 0 0">
                 <joint name="stock_1_5_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                 <joint name="stock_1_5_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                <geom name="stock_1_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                <geom name="stock_1_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               </body>
             </body>
           </body>
@@ -274,35 +274,35 @@
     </body>
     <body name="rib_1_0" pos="0.21 0 0.23" euler="0 0 3.14159">
       <freejoint name="rib_1_free"/>
-      <geom name="rib_1_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+      <geom name="rib_1_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
       <body name="rib_1_1" pos="0.005 0 0">
         <joint name="rib_1_1_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
         <joint name="rib_1_1_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-        <geom name="rib_1_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+        <geom name="rib_1_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
         <body name="rib_1_2" pos="0.005 0 0">
           <joint name="rib_1_2_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
           <joint name="rib_1_2_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-          <geom name="rib_1_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+          <geom name="rib_1_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
           <body name="rib_1_3" pos="0.005 0 0">
             <joint name="rib_1_3_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
             <joint name="rib_1_3_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-            <geom name="rib_1_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+            <geom name="rib_1_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
             <body name="rib_1_4" pos="0.005 0 0">
               <joint name="rib_1_4_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
               <joint name="rib_1_4_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-              <geom name="rib_1_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+              <geom name="rib_1_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               <body name="rib_1_5" pos="0.005 0 0">
                 <joint name="rib_1_5_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                 <joint name="rib_1_5_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                <geom name="rib_1_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                <geom name="rib_1_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                 <body name="rib_1_6" pos="0.005 0 0">
                   <joint name="rib_1_6_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                   <joint name="rib_1_6_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                  <geom name="rib_1_6" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                  <geom name="rib_1_6" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                   <body name="rib_1_7" pos="0.005 0 0">
                     <joint name="rib_1_7_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                     <joint name="rib_1_7_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                    <geom name="rib_1_7" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                    <geom name="rib_1_7" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                   </body>
                 </body>
               </body>
@@ -314,27 +314,27 @@
     <body name="stock_2_0" pos="0.21 0.0014 0.23" euler="0 0 0">
       <joint name="stock_2_0_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
       <joint name="stock_2_0_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-      <geom name="stock_2_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+      <geom name="stock_2_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
       <body name="stock_2_1" pos="0.005 0 0">
         <joint name="stock_2_1_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
         <joint name="stock_2_1_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-        <geom name="stock_2_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+        <geom name="stock_2_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
         <body name="stock_2_2" pos="0.005 0 0">
           <joint name="stock_2_2_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
           <joint name="stock_2_2_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-          <geom name="stock_2_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+          <geom name="stock_2_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
           <body name="stock_2_3" pos="0.005 0 0">
             <joint name="stock_2_3_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
             <joint name="stock_2_3_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-            <geom name="stock_2_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+            <geom name="stock_2_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
             <body name="stock_2_4" pos="0.005 0 0">
               <joint name="stock_2_4_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
               <joint name="stock_2_4_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-              <geom name="stock_2_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+              <geom name="stock_2_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               <body name="stock_2_5" pos="0.005 0 0">
                 <joint name="stock_2_5_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                 <joint name="stock_2_5_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                <geom name="stock_2_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                <geom name="stock_2_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               </body>
             </body>
           </body>
@@ -343,35 +343,35 @@
     </body>
     <body name="rib_2_0" pos="0.21 0.0014 0.23" euler="0 0 3.14159">
       <freejoint name="rib_2_free"/>
-      <geom name="rib_2_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+      <geom name="rib_2_0" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
       <body name="rib_2_1" pos="0.005 0 0">
         <joint name="rib_2_1_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
         <joint name="rib_2_1_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-        <geom name="rib_2_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+        <geom name="rib_2_1" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
         <body name="rib_2_2" pos="0.005 0 0">
           <joint name="rib_2_2_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
           <joint name="rib_2_2_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-          <geom name="rib_2_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+          <geom name="rib_2_2" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
           <body name="rib_2_3" pos="0.005 0 0">
             <joint name="rib_2_3_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
             <joint name="rib_2_3_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-            <geom name="rib_2_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+            <geom name="rib_2_3" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
             <body name="rib_2_4" pos="0.005 0 0">
               <joint name="rib_2_4_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
               <joint name="rib_2_4_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-              <geom name="rib_2_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+              <geom name="rib_2_4" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
               <body name="rib_2_5" pos="0.005 0 0">
                 <joint name="rib_2_5_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                 <joint name="rib_2_5_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                <geom name="rib_2_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                <geom name="rib_2_5" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                 <body name="rib_2_6" pos="0.005 0 0">
                   <joint name="rib_2_6_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                   <joint name="rib_2_6_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                  <geom name="rib_2_6" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                  <geom name="rib_2_6" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                   <body name="rib_2_7" pos="0.005 0 0">
                     <joint name="rib_2_7_z" type="hinge" axis="0 0 1" stiffness="0.02" damping="0.004" armature="1e-6"/>
                     <joint name="rib_2_7_y" type="hinge" axis="0 1 0" stiffness="0.02" damping="0.004" armature="1e-6"/>
-                    <geom name="rib_2_7" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="0" conaffinity="0" mass="0.0273333"/>
+                    <geom name="rib_2_7" type="capsule" fromto="0 0 0 0.005 0 0" size="0.0007" material="ribbon_mat" contype="1" conaffinity="1" mass="0.0273333"/>
                   </body>
                 </body>
               </body>
@@ -386,7 +386,7 @@
       <joint name="Z" type="slide" axis="0 0 1" range="0 0.05"
         damping="40"/>
       <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
-        material="zstage_mat" contype="0" conaffinity="0"/>
+        material="zstage_mat" contype="1" conaffinity="1"/>
 
       <body name="rotor" pos="0 0 0.028">
         <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
@@ -400,7 +400,7 @@
              replaced the slew ring. Moment becomes a couple and the lever arm
              is SPINDLE_SPACING rather than a bought diameter. -->
         <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
-          material="rotor_mat" contype="0" conaffinity="0"/>
+          material="rotor_mat" contype="1" conaffinity="1"/>
 
         <body name="arm" pos="0 0 0.102">
           <!-- THREE parts, not one. This was a single 230x60x25 box - the
@@ -410,22 +410,22 @@
                24 um of tip droop against a
                300 um strip tolerance. -->
           <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
-            pos="0 0 -0.014" material="arm_mat" contype="0" conaffinity="0"/>
+            pos="0 0 -0.014" material="arm_mat" contype="1" conaffinity="1"/>
           <geom name="arm_beam" type="box"
             pos="0.13725 0 0"
             size="0.09275 0.01 0.01"
-            material="extrusion_mat" contype="0" conaffinity="0"/>
+            material="extrusion_mat" contype="1" conaffinity="1"/>
           <geom name="mgn12_rail" type="box"
             pos="0.13725 0 0.014"
             size="0.09275 0.006 0.004"
-            material="rail_mat" contype="0" conaffinity="0"/>
+            material="rail_mat" contype="1" conaffinity="1"/>
 
           <body name="radial" pos="0.12 0 0">
             <joint name="R" type="slide" axis="1 0 0"
               range="0 0.08" damping="20"/>
             <geom name="radial_carriage" type="mesh" mesh="radial_carriage_mesh"
               pos="0 0 0.004" material="arm_mat"
-              contype="0" conaffinity="0"/>
+              contype="1" conaffinity="1"/>
             <!-- Arm camera. Rides the RADIAL carriage, deliberately NOT the
                  wrist — the wrist flips 180 degrees and the camera must not.
                  Looks radially outward and down at the station work point;
@@ -433,7 +433,7 @@
             <geom name="arm_camera" type="mesh" mesh="camera_mount_mesh"
               pos="-0.062 0 0.048"
               euler="0 0.575959 0"
-              material="camera_mat" contype="0" conaffinity="0"/>
+              material="camera_mat" contype="1" conaffinity="1"/>
             <camera name="arm_cam"
               pos="-0.062 0 0.048"
               euler="0 -0.994838 0"
@@ -448,7 +448,7 @@
                    been the obvious mistake. -->
               <geom name="cross_carriage" type="mesh" mesh="cross_slide_carrier_mesh"
                 pos="0 0 -0.021" material="arm_mat"
-                contype="0" conaffinity="0"/>
+                contype="1" conaffinity="1"/>
 
               <body name="wrist" pos="0 0 0">
                 <joint name="W" type="hinge" axis="1 0 0" range="0 3.14159"
@@ -458,11 +458,11 @@
                      radial, so the cable turns end-for-end. -->
                 <geom name="wrist_hub" type="mesh" mesh="wrist_mount_mesh"
                   pos="-0.014 0 -0.009" material="arm_mat"
-                  contype="0" conaffinity="0"/>
+                  contype="1" conaffinity="1"/>
                 <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
                 <geom name="comb_body" type="mesh" mesh="comb_mesh"
                   pos="-0.004 0 -0.006" material="comb_mat"
-                  contype="0" conaffinity="0"/>
+                  contype="1" conaffinity="1"/>
                 <!-- Body clamp, inboard of the comb and flipping with it.
                      Sprung closed, air opens it: losing pressure fails to
                      GRIPPING rather than dropping a part mid-cycle. If the
@@ -470,7 +470,7 @@
                      which makes this the most critical printed part we have. -->
                 <geom name="body_clamp" type="mesh" mesh="body_clamp_mesh"
                   pos="-0.030 0 -0.014" material="clamp_mat"
-                  contype="0" conaffinity="0"/>
+                  contype="1" conaffinity="1"/>
                 <site name="comb_tip" pos="0.028 0 0"
                   size="0.003" rgba="0.2 1 0.4 1"/>
               </body>

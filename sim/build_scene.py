@@ -236,13 +236,6 @@ def _station_bodies() -> str:
             f'euler="0 0 {math.radians(theta):.6g}" material="tag_mat" '
             f'contype="0" conaffinity="0"/>'
         )
-        # A short marker at the actual work point on the bolt circle.
-        wx, wy = _polar(float(L.ARM_R0), theta)
-        out.append(
-            f'    <site name="{name.lower()}_wp" '
-            f'pos="{_fmt(wx * MM, wy * MM, (deck_top + COMB_ABOVE_ROTOR) * MM)}" '
-            f'size="0.004" rgba="1 0.85 0.2 1"/>'
-        )
     return "\n".join(out)
 
 
@@ -510,14 +503,18 @@ def build_mjcf() -> str:
 {_press_body()}
 
     <!-- Frame and deck. Deck raised deliberately to collapse Z travel. -->
+    <body name="deck_body">
     <geom name="deck" type="cylinder"
       pos="0 0 {(deck_z + float(L.DECK_THICKNESS) / 2) * MM:.6g}"
       size="{float(L.DECK_RADIUS) * MM:.6g} {float(L.DECK_THICKNESS) / 2 * MM:.6g}"
       material="deck_mat" contype="0" conaffinity="0"/>
+    </body>
+    <body name="frame_body">
     <geom name="frame_ring" type="cylinder"
       pos="0 0 {deck_z / 2 * MM:.6g}"
       size="{(float(L.DECK_RADIUS) - 40) * MM:.6g} {deck_z / 2 * MM:.6g}"
       material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
+    </body>
 
 {_station_bodies()}
 
@@ -529,7 +526,9 @@ def build_mjcf() -> str:
          rotary axis at the platform centre unobstructed, which a single
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
+    <body name="post_body">
 {_z_posts()}
+    </body>
 
 {_ribbon_bodies()}
 
@@ -633,6 +632,18 @@ def build_mjcf() -> str:
     </body>
   </worldbody>
 
+  <!-- BY-DESIGN pass-throughs. Declared, not silently tolerated: each of
+       these is two solids that share space because that is the mechanism.
+       The deck is drawn as a full disc because MuJoCo has no annulus
+       primitive, but it really has a 7" centre hole - hence the first two. -->
+  <contact>
+    <exclude body1="deck_body" body2="z_carriage"/>
+    <exclude body1="deck_body" body2="rotor"/>
+    <exclude body1="frame_body" body2="z_carriage"/>
+    <exclude body1="frame_body" body2="rotor"/>
+    <exclude body1="post_body" body2="z_carriage"/>
+  </contact>
+
   <equality>
 {RIB.equalities()}
   </equality>
@@ -654,6 +665,28 @@ def write() -> pathlib.Path:
     ASSETS.mkdir(parents=True, exist_ok=True)
     MJCF_PATH.write_text(build_mjcf(), encoding="utf-8")
     return MJCF_PATH
+
+
+COLLIDE_PATH = ASSETS / "cell.collide.xml"
+
+
+def write_collide() -> pathlib.Path:
+    """The same scene with contacts ENABLED, for interference checking.
+
+    Every geom in the display scene carries contype="0" conaffinity="0" so it
+    renders fast and nothing ever pushes anything. That is fine for looking at
+    and useless for telling the truth: bodies pass through each other in
+    silence, which is how the arm came to sweep through the Z posts with three
+    studies reporting clear.
+
+    Rather than hand-rolling more radius arithmetic, flip the flags and let
+    MuJoCo's own collision engine answer. It knows about every geom, not just
+    the ones a study author remembered.
+    """
+    ASSETS.mkdir(parents=True, exist_ok=True)
+    xml = build_mjcf().replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
+    COLLIDE_PATH.write_text(xml, encoding="utf-8")
+    return COLLIDE_PATH
 
 
 # Views as (azimuth, elevation, distance, lookat). Driven programmatically
