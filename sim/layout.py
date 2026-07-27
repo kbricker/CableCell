@@ -205,6 +205,73 @@ ARM_WIDTH = _d(60.0, ESTIMATED, "MGN12 carriage width", "ARM_WIDTH")
 
 
 # ---------------------------------------------------------------------------
+# 4b. Arm-mounted camera (Kyle 2026-07-26)
+# ---------------------------------------------------------------------------
+# One camera rides the arm and looks at whichever station it faces. Two jobs:
+#   1. Step-readiness / operation verification (did the slit happen, is the
+#      ribbon gripped, are the conductors fanned).
+#   2. Station registration against an AprilTag at each stop — which turns
+#      droop, detent error and belt backlash from assumed-repeatable into
+#      measured-and-corrected.
+#
+# Realistic accuracy for tag36h11 pose at this working distance with a 3.6 mm
+# lens is ~+/-0.5-1 mm. Good enough for registration and presence; NOT good
+# enough for insertion. Sub-mm still comes from mechanical repeatability plus
+# the funnel capture window.
+#
+# Hardware reuses TendWright's fleet: ELP-USBFHD01M-L36, 1920x1080, and the
+# cameras.py / camserve.py stack (identity by USB port path).
+
+CAMERA_BOARD = _d(38.0, ESTIMATED, "ELP-USBFHD01M board", "CAMERA_BOARD")
+CAMERA_DEPTH = _d(30.0, ESTIMATED, "board + M12 lens", "CAMERA_DEPTH")
+CAMERA_MASS_G = _d(28.0, ESTIMATED, "ELP board + lens", "CAMERA_MASS_G")
+
+# Mounted behind and above the comb, looking radially outward and down at the
+# station work point. Offsets are from the comb.
+CAMERA_BACK_OFFSET = _d(55.0, PLACEHOLDER, "unvalidated framing", "CAMERA_BACK_OFFSET")
+CAMERA_UP_OFFSET = _d(45.0, PLACEHOLDER, "unvalidated framing", "CAMERA_UP_OFFSET")
+CAMERA_TILT = _d(-30.0, PLACEHOLDER, "unvalidated framing", "CAMERA_TILT")
+
+# AprilTag at each station, tag36h11. TendWright prints these at 40 mm.
+STATION_TAG_SIZE = _d(25.0, ESTIMATED, "scaled from TendWright 40mm", "STATION_TAG_SIZE")
+
+
+# ---------------------------------------------------------------------------
+# 4c. Ribbon and spool
+# ---------------------------------------------------------------------------
+# CORRECTION 2026-07-26: cell-design.md gives ribbon pitch as ~2.5 mm. That is
+# the CONNECTOR cavity pitch borrowed by mistake. Derived from 22 AWG / 60 cores
+# x 0.08 mm / 1.4 mm OD, the real conductor pitch is ~1.4-1.5 mm. Consequence:
+# the webs sit at +/-0.7 mm from centreline, so S2's slitting blades are finer
+# and closer together than the doc implies. MEASURE ON ARRIVAL before cutting
+# any tooling.
+
+RIBBON_CONDUCTOR_OD = _d(1.4, ESTIMATED, "vendor spec", "RIBBON_CONDUCTOR_OD")
+RIBBON_PITCH = _d(1.45, ESTIMATED, "derived, was wrongly 2.5", "RIBBON_PITCH")
+RIBBON_WIDTH = _d(4.5, ESTIMATED, "3 x OD + webs", "RIBBON_WIDTH")
+RIBBON_THICKNESS = _d(1.4, ESTIMATED, "= conductor OD", "RIBBON_THICKNESS")
+RIBBON_LENGTH_STOCK = _d(15240.0, COMMITTED, "50 ft spool", "RIBBON_LENGTH_STOCK")
+RIBBON_MASS_PER_M = _d(16.4, COMMITTED, "250 g / 50 ft", "RIBBON_MASS_PER_M")
+
+# The wire ships as a LOOSE ROLL, not on a rigid spool — so the spool is ours
+# to design. Sized in spool_capacity_m() below; printed, 8 mm bore to match the
+# hardened rod stock already on the BOM for the Z stage.
+SPOOL_HUB_R = _d(30.0, ESTIMATED, "printable, min bend radius", "SPOOL_HUB_R")
+SPOOL_FLANGE_R = _d(55.0, ESTIMATED, "capacity + margin", "SPOOL_FLANGE_R")
+SPOOL_INNER_WIDTH = _d(25.0, ESTIMATED, "5 wraps of 4.5mm ribbon", "SPOOL_INNER_WIDTH")
+SPOOL_FLANGE_T = _d(3.0, ESTIMATED, "printed stiffness", "SPOOL_FLANGE_T")
+SPOOL_BORE = _d(8.0, COMMITTED, "matches Z-stage rod stock", "SPOOL_BORE")
+
+# The spool hangs outboard of S1, off-deck, on a printed bracket.
+SPOOL_AXLE_HEIGHT = _d(150.0, PLACEHOLDER, "above deck", "SPOOL_AXLE_HEIGHT")
+SPOOL_RADIAL_OFFSET = _d(90.0, PLACEHOLDER, "outboard of S1", "SPOOL_RADIAL_OFFSET")
+
+# Dancer arm: passive payoff at constant light tension; its flag doubles as the
+# spool-empty detect.
+DANCER_ARM_LENGTH = _d(70.0, ESTIMATED, "sets tension travel", "DANCER_ARM_LENGTH")
+
+
+# ---------------------------------------------------------------------------
 # 5. The Z stage
 # ---------------------------------------------------------------------------
 # Commodity ballscrew linear module (SFU1605 + dual rails + NEMA 17/23).
@@ -281,6 +348,33 @@ def z_stage_choice() -> float:
         if stroke >= need:
             return stroke
     return Z_STAGE_STOCK_STROKES[-1]
+
+
+def spool_capacity_m(packing: float = 0.80) -> float:
+    """How much ribbon the printed spool holds, in metres.
+
+    Wound flat: each wrap builds RIBBON_THICKNESS radially, and
+    SPOOL_INNER_WIDTH / RIBBON_WIDTH wraps sit side by side per layer.
+    """
+    wraps_per_layer = math.floor(float(SPOOL_INNER_WIDTH) / float(RIBBON_WIDTH))
+    layers = math.floor(
+        (float(SPOOL_FLANGE_R) - float(SPOOL_HUB_R)) / float(RIBBON_THICKNESS)
+    )
+    total_mm = 0.0
+    for i in range(layers):
+        r = float(SPOOL_HUB_R) + (i + 0.5) * float(RIBBON_THICKNESS)
+        total_mm += wraps_per_layer * 2.0 * math.pi * r
+    return total_mm * packing / 1000.0
+
+
+def spool_holds_stock() -> bool:
+    """Does the spool take a whole 50 ft roll?"""
+    return spool_capacity_m() >= float(RIBBON_LENGTH_STOCK) / 1000.0
+
+
+def cable_mass_g(length_mm: float) -> float:
+    """Mass of a finished cable — the arm's actual payload."""
+    return float(RIBBON_MASS_PER_M) * length_mm / 1000.0
 
 
 def press_centre_distance() -> float:

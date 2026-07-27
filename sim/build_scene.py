@@ -75,6 +75,16 @@ def _station_bodies() -> str:
             f'euler="0 0 {math.radians(theta):.6g}" material="{mat}" '
             f'contype="0" conaffinity="0"/>'
         )
+        # AprilTag facing the pivot — what the arm camera registers against.
+        tx, ty = _polar(float(L.ARM_R0) - 3.0, theta)
+        tz = deck_top + STATION_BODY_HEIGHT * 0.78
+        out.append(
+            f'    <geom name="{name.lower()}_tag" type="box" '
+            f'pos="{_fmt(tx * MM, ty * MM, tz * MM)}" '
+            f'size="{_fmt(0.0015, float(L.STATION_TAG_SIZE) / 2 * MM, float(L.STATION_TAG_SIZE) / 2 * MM)}" '
+            f'euler="0 0 {math.radians(theta):.6g}" material="tag_mat" '
+            f'contype="0" conaffinity="0"/>'
+        )
         # A short marker at the actual work point on the bolt circle.
         wx, wy = _polar(float(L.ARM_R0), theta)
         out.append(
@@ -125,6 +135,103 @@ def _press_body() -> str:
       size="0.006" rgba="1 0.25 0.2 1"/>"""
 
 
+Z_POST_RADIUS = 46.0  # posts sit on this circle around the pivot
+
+
+def _z_posts(deck_top: float, z_stroke: float) -> str:
+    """Three guide posts plus one off-axis leadscrew.
+
+    A single coaxial rail cannot work — the rotary axis needs the space the
+    rail wants. Moving the screw off-axis and guiding on posts leaves the
+    platform centre clear.
+    """
+    top = deck_top + z_stroke + 30.0
+    parts: list[str] = []
+    for i, angle in enumerate((90.0, 210.0, 330.0)):
+        px, py = _polar(Z_POST_RADIUS, angle)
+        parts.append(
+            f'    <geom name="z_post_{i}" type="cylinder" '
+            f'pos="{_fmt(px * MM, py * MM, (deck_top + (top - deck_top) / 2) * MM)}" '
+            f'size="0.004 {(top - deck_top) / 2 * MM:.6g}" '
+            f'material="zstage_mat" contype="0" conaffinity="0"/>'
+        )
+    sx, sy = _polar(Z_POST_RADIUS, 270.0)
+    parts.append(
+        f'    <geom name="z_leadscrew" type="cylinder" '
+        f'pos="{_fmt(sx * MM, sy * MM, (deck_top + (top - deck_top) / 2) * MM)}" '
+        f'size="0.005 {(top - deck_top) / 2 * MM:.6g}" '
+        f'material="screw_mat" contype="0" conaffinity="0"/>'
+    )
+    parts.append(
+        f'    <geom name="z_motor" type="box" '
+        f'pos="{_fmt(sx * MM, sy * MM, (deck_top - 22) * MM)}" '
+        f'size="0.021 0.021 0.020" material="motor_mat" '
+        f'contype="0" conaffinity="0"/>'
+    )
+    return "\n".join(parts)
+
+
+def _spool_and_hanger() -> str:
+    """S1's printed spool + hanger, off-deck outboard of station 1.
+
+    The ribbon ships as a loose roll, so the spool is our design: 8 mm bore to
+    match the Z-stage rod stock, sized to take a whole 50 ft roll.
+    """
+    deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
+    theta = float(L.STATION_ANGLES["S1_FEED"])
+    r = float(L.ARM_R0) + float(L.SPOOL_RADIAL_OFFSET)
+    x, y = _polar(r, theta)
+    z = deck_top + float(L.SPOOL_AXLE_HEIGHT)
+
+    # Spool axis is tangential, so ribbon pays off radially toward the pivot.
+    axis_euler = f"{math.pi / 2:.6g} 0 {math.radians(theta):.6g}"
+    half_w = float(L.SPOOL_INNER_WIDTH) / 2.0
+    fl = float(L.SPOOL_FLANGE_T)
+
+    parts: list[str] = []
+    parts.append(
+        f'    <geom name="spool_hub" type="cylinder" pos="{_fmt(x * MM, y * MM, z * MM)}" '
+        f'size="{_fmt(float(L.SPOOL_HUB_R) * MM, half_w * MM)}" euler="{axis_euler}" '
+        f'material="spool_mat" contype="0" conaffinity="0"/>'
+    )
+    # Wound ribbon, shown at full stock.
+    parts.append(
+        f'    <geom name="spool_ribbon" type="cylinder" pos="{_fmt(x * MM, y * MM, z * MM)}" '
+        f'size="{_fmt((float(L.SPOOL_FLANGE_R) - 4.0) * MM, (half_w - 1.0) * MM)}" '
+        f'euler="{axis_euler}" material="ribbon_mat" contype="0" conaffinity="0"/>'
+    )
+    for sign, tag in ((1.0, "a"), (-1.0, "b")):
+        ox, oy = _polar(r, theta)
+        # offset along the spool axis (tangential direction)
+        ax, ay = -math.sin(math.radians(theta)), math.cos(math.radians(theta))
+        px = ox + ax * sign * (half_w + fl / 2.0)
+        py = oy + ay * sign * (half_w + fl / 2.0)
+        parts.append(
+            f'    <geom name="spool_flange_{tag}" type="cylinder" '
+            f'pos="{_fmt(px * MM, py * MM, z * MM)}" '
+            f'size="{_fmt(float(L.SPOOL_FLANGE_R) * MM, fl / 2 * MM)}" euler="{axis_euler}" '
+            f'material="spool_mat" contype="0" conaffinity="0"/>'
+        )
+    # Hanger upright carrying the 8 mm axle.
+    hx, hy = _polar(r + 20.0, theta)
+    parts.append(
+        f'    <geom name="spool_hanger" type="box" '
+        f'pos="{_fmt(hx * MM, hy * MM, (deck_top + float(L.SPOOL_AXLE_HEIGHT) / 2) * MM)}" '
+        f'size="{_fmt(0.008, 0.030, float(L.SPOOL_AXLE_HEIGHT) / 2 * MM)}" '
+        f'euler="0 0 {math.radians(theta):.6g}" material="hanger_mat" '
+        f'contype="0" conaffinity="0"/>'
+    )
+    # Dancer arm — passive tension, and its flag is the spool-empty detect.
+    dx, dy = _polar(r - 40.0, theta)
+    parts.append(
+        f'    <geom name="dancer_arm" type="capsule" '
+        f'fromto="{_fmt(dx * MM, dy * MM, (deck_top + 40) * MM)} '
+        f'{_fmt((dx - float(L.DANCER_ARM_LENGTH) * 0.7) * MM, dy * MM, (deck_top + 95) * MM)}" '
+        f'size="0.005" material="hanger_mat" contype="0" conaffinity="0"/>'
+    )
+    return "\n".join(parts)
+
+
 def build_mjcf() -> str:
     deck_z = float(L.DECK_ABOVE_BENCH)
     deck_top = deck_z + float(L.DECK_THICKNESS)
@@ -167,6 +274,13 @@ def build_mjcf() -> str:
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
     <material name="arm_mat" rgba="0.72 0.74 0.78 1"/>
     <material name="comb_mat" rgba="0.90 0.85 0.30 1"/>
+    <material name="spool_mat" rgba="0.85 0.86 0.88 1"/>
+    <material name="ribbon_mat" rgba="0.20 0.20 0.22 1"/>
+    <material name="hanger_mat" rgba="0.45 0.48 0.52 1"/>
+    <material name="camera_mat" rgba="0.15 0.15 0.17 1"/>
+    <material name="tag_mat" rgba="0.97 0.97 0.97 1"/>
+    <material name="screw_mat" rgba="0.72 0.68 0.45 1"/>
+    <material name="motor_mat" rgba="0.20 0.22 0.26 1"/>
   </asset>
 
   <worldbody>
@@ -189,16 +303,22 @@ def build_mjcf() -> str:
 
 {_station_bodies()}
 
-    <!-- Z stage: fixed column. Carries the whole rotating assembly. -->
-    <geom name="z_column" type="box" pos="0 0 {(deck_top + z_stroke / 2) * MM:.6g}"
-      size="0.035 0.035 {(deck_top + z_stroke) / 2 * MM:.6g}"
-      material="zstage_mat" contype="0" conaffinity="0"/>
+    <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
+{_spool_and_hanger()}
+
+    <!-- Z stage: platform on three guide posts, driven by ONE OFF-AXIS
+         leadscrew. The off-axis screw is the whole trick — it leaves the
+         rotary axis at the platform centre unobstructed, which a single
+         coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
+         E-stop will not drop the arm. -->
+{_z_posts(deck_top, z_stroke)}
 
     <!-- ============ the moving assembly ============ -->
     <body name="z_carriage" pos="0 0 {deck_top * MM:.6g}">
       <joint name="Z" type="slide" axis="0 0 1" range="0 {z_stroke * MM:.6g}"
         damping="40"/>
-      <geom name="z_carriage_g" type="box" pos="0 0 0" size="0.05 0.05 0.018"
+      <geom name="z_platform" type="cylinder" pos="0 0 0"
+        size="{Z_POST_RADIUS * 1.45 * MM:.6g} 0.008"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">
@@ -221,6 +341,19 @@ def build_mjcf() -> str:
             <geom name="radial_carriage" type="box" pos="0 0 0.014"
               size="0.020 0.028 0.010" material="arm_mat"
               contype="0" conaffinity="0"/>
+            <!-- Arm camera. Rides the RADIAL carriage, deliberately NOT the
+                 wrist — the wrist flips 180 degrees and the camera must not.
+                 Looks radially outward and down at the station work point;
+                 registers against each station's AprilTag. -->
+            <geom name="arm_camera" type="box"
+              pos="{-float(L.CAMERA_BACK_OFFSET) * MM:.6g} 0 {float(L.CAMERA_UP_OFFSET) * MM:.6g}"
+              size="{_fmt(float(L.CAMERA_DEPTH) / 2 * MM, float(L.CAMERA_BOARD) / 2 * MM, float(L.CAMERA_BOARD) / 2 * MM)}"
+              euler="0 {math.radians(float(L.CAMERA_TILT)):.6g} 0"
+              material="camera_mat" contype="0" conaffinity="0"/>
+            <camera name="arm_cam"
+              pos="{-float(L.CAMERA_BACK_OFFSET) * MM:.6g} 0 {float(L.CAMERA_UP_OFFSET) * MM:.6g}"
+              euler="0 {math.radians(90.0 + float(L.CAMERA_TILT)):.6g} {-math.pi / 2:.6g}"
+              fovy="48"/>
 
             <body name="cross" pos="0 0 0">
               <joint name="S" type="slide" axis="0 1 0"

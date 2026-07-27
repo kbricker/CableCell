@@ -33,6 +33,13 @@
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
     <material name="arm_mat" rgba="0.72 0.74 0.78 1"/>
     <material name="comb_mat" rgba="0.90 0.85 0.30 1"/>
+    <material name="spool_mat" rgba="0.85 0.86 0.88 1"/>
+    <material name="ribbon_mat" rgba="0.20 0.20 0.22 1"/>
+    <material name="hanger_mat" rgba="0.45 0.48 0.52 1"/>
+    <material name="camera_mat" rgba="0.15 0.15 0.17 1"/>
+    <material name="tag_mat" rgba="0.97 0.97 0.97 1"/>
+    <material name="screw_mat" rgba="0.72 0.68 0.45 1"/>
+    <material name="motor_mat" rgba="0.20 0.22 0.26 1"/>
   </asset>
 
   <worldbody>
@@ -72,28 +79,49 @@
       material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
 
     <geom name="s1_feed" type="box" pos="0.235 0 0.21" size="0.035 0.04 0.03" euler="0 0 0" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s1_feed_tag" type="box" pos="0.197 0 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s1_feed_wp" pos="0.2 0 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s2_slit" type="box" pos="0.192501 0.13479 0.21" size="0.035 0.04 0.03" euler="0 0 0.610865" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_tag" type="box" pos="0.161373 0.112995 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 0.610865" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s2_slit_wp" pos="0.16383 0.114715 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s3_strip" type="box" pos="0.0803747 0.220828 0.21" size="0.035 0.04 0.03" euler="0 0 1.22173" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s3_strip_tag" type="box" pos="0.067378 0.185119 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 1.22173" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s3_strip_wp" pos="0.068404 0.187939 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s5_insert" type="box" pos="-0.220828 -0.0803747 0.21" size="0.035 0.04 0.03" euler="0 0 3.49066" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s5_insert_tag" type="box" pos="-0.185119 -0.067378 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 3.49066" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s5_insert_wp" pos="-0.187939 -0.068404 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s6_drop" type="box" pos="-0.1175 -0.203516 0.21" size="0.035 0.04 0.03" euler="0 0 4.18879" material="station_mat" contype="0" conaffinity="0"/>
+    <geom name="s6_drop_tag" type="box" pos="-0.0985 -0.170607 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 4.18879" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s6_drop_wp" pos="-0.1 -0.173205 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s6_reject" type="box" pos="-0.0204816 -0.234106 0.21" size="0.035 0.04 0.03" euler="0 0 4.62512" material="reject_mat" contype="0" conaffinity="0"/>
+    <geom name="s6_reject_tag" type="box" pos="-0.0171697 -0.19625 0.2268" size="0.0015 0.0125 0.0125" euler="0 0 4.62512" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s6_reject_wp" pos="-0.0174311 -0.199239 0.24" size="0.004" rgba="1 0.85 0.2 1"/>
 
-    <!-- Z stage: fixed column. Carries the whole rotating assembly. -->
-    <geom name="z_column" type="box" pos="0 0 0.23"
-      size="0.035 0.035 0.14"
-      material="zstage_mat" contype="0" conaffinity="0"/>
+    <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
+    <geom name="spool_hub" type="cylinder" pos="0.29 0 0.33" size="0.03 0.0125" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
+    <geom name="spool_ribbon" type="cylinder" pos="0.29 0 0.33" size="0.051 0.0115" euler="1.5708 0 0" material="ribbon_mat" contype="0" conaffinity="0"/>
+    <geom name="spool_flange_a" type="cylinder" pos="0.29 0.014 0.33" size="0.055 0.0015" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
+    <geom name="spool_flange_b" type="cylinder" pos="0.29 -0.014 0.33" size="0.055 0.0015" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
+    <geom name="spool_hanger" type="box" pos="0.31 0 0.255" size="0.008 0.03 0.075" euler="0 0 0" material="hanger_mat" contype="0" conaffinity="0"/>
+    <geom name="dancer_arm" type="capsule" fromto="0.25 0 0.22 0.201 0 0.275" size="0.005" material="hanger_mat" contype="0" conaffinity="0"/>
+
+    <!-- Z stage: platform on three guide posts, driven by ONE OFF-AXIS
+         leadscrew. The off-axis screw is the whole trick — it leaves the
+         rotary axis at the platform centre unobstructed, which a single
+         coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
+         E-stop will not drop the arm. -->
+    <geom name="z_post_0" type="cylinder" pos="2.81669e-18 0.046 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_1" type="cylinder" pos="-0.0398372 -0.023 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_2" type="cylinder" pos="0.0398372 -0.023 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_leadscrew" type="cylinder" pos="-8.45006e-18 -0.046 0.245" size="0.005 0.065" material="screw_mat" contype="0" conaffinity="0"/>
+    <geom name="z_motor" type="box" pos="-8.45006e-18 -0.046 0.158" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
 
     <!-- ============ the moving assembly ============ -->
     <body name="z_carriage" pos="0 0 0.18">
       <joint name="Z" type="slide" axis="0 0 1" range="0 0.1"
         damping="40"/>
-      <geom name="z_carriage_g" type="box" pos="0 0 0" size="0.05 0.05 0.018"
+      <geom name="z_platform" type="cylinder" pos="0 0 0"
+        size="0.0667 0.008"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">
@@ -116,6 +144,19 @@
             <geom name="radial_carriage" type="box" pos="0 0 0.014"
               size="0.020 0.028 0.010" material="arm_mat"
               contype="0" conaffinity="0"/>
+            <!-- Arm camera. Rides the RADIAL carriage, deliberately NOT the
+                 wrist — the wrist flips 180 degrees and the camera must not.
+                 Looks radially outward and down at the station work point;
+                 registers against each station's AprilTag. -->
+            <geom name="arm_camera" type="box"
+              pos="-0.055 0 0.045"
+              size="0.015 0.019 0.019"
+              euler="0 -0.523599 0"
+              material="camera_mat" contype="0" conaffinity="0"/>
+            <camera name="arm_cam"
+              pos="-0.055 0 0.045"
+              euler="0 1.0472 -1.5708"
+              fovy="48"/>
 
             <body name="cross" pos="0 0 0">
               <joint name="S" type="slide" axis="0 1 0"
