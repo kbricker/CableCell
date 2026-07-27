@@ -12,7 +12,7 @@ have it - the station bolts land near the top face.
 feature                                   inches           mm
 --------------------------------------------------------------
 Outside diameter                        22-1/16"     560.0 mm
-Thickness                                 0-1/2"      12.0 mm
+Thickness                                   1/2"      12.0 mm
 Centre clearance hole                         7"     177.8 mm
 Station bolt circle diameter             15-3/4"     400.0 mm
 Mounts above bench top                  6-11/16"     170.0 mm

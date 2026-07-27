@@ -34,6 +34,8 @@ def frac(inches: float, denom: int = 16) -> str:
     if num == denom:
         return f'{whole + 1}"'
     g = math.gcd(num, denom)
+    if whole == 0:
+        return f'{num // g}/{denom // g}"'  # 1/2", not 0-1/2"
     return f'{whole}-{num // g}/{denom // g}"'
 
 
