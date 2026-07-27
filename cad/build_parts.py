@@ -586,19 +586,36 @@ def radial_carriage():
                        sy * float(L.MGN12_BOLT_Y) / 2.0)
             )
 
-    # T8 nut boss, standing proud so the screw clears the rail. On the AWAY side
-    # from the wrist: this plate now sits ARM_BEAM_Y off the ribbon centreline
-    # and the boss was the part of it reaching back toward the comb.
-    boss_y = -(w / 2.0 + 6.0) + 16.0
-    body = body.fuse(Part.makeBox(30.0, 16.0, 22.0, V(-15, boss_y - 16.0, 0)))
-    nut_y = boss_y - 8.0
-    body = body.cut(_z_cyl(5.5, 30.0, -1.0, 0.0, nut_y))
+    # T8 NUT BOSS — AND ITS BORE RUNS ALONG X, WHICH IS THE R AXIS.
+    #
+    # It was bored along Z. The R axis moves radially; a vertical leadscrew hole
+    # on the carriage that drives R is simply the wrong axis, and it is the
+    # THIRD time this exact mistake has turned up in this file — the wrist hub
+    # was built about Y when the joint is about X, and the cross-slide's nut is
+    # bored along X when S moves along Y. The pattern is bores taking the
+    # part-builder's default axis instead of the axis of the joint they serve.
+    #
+    # The boss also hangs DOWN on the far side from the wrist, so the screw runs
+    # alongside the beam rather than through it: at local y it clears the beam's
+    # 20 mm width, and at local z it sits level with the beam's centre.
+    boss_y = -(w / 2.0 + 8.0)
+    boss_z = -float(L.MGN12_BLOCK_H) - float(L.ARM_THICKNESS) / 2.0
+    body = body.fuse(
+        Part.makeBox(34.0, 18.0, 26.0, V(-17.0, boss_y - 9.0, boss_z - 13.0))
+    )
+    nut_y = boss_y
+    body = body.cut(
+        Part.makeCylinder(5.5, 40.0, V(-20.0, nut_y, boss_z), V(1, 0, 0))
+    )
     for i in range(4):
         a = math.radians(45.0 + 90.0 * i)
         body = body.cut(
-            _z_cyl(1.7, 30.0, -1.0,
-                   float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.cos(a),
-                   nut_y + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.sin(a))
+            Part.makeCylinder(
+                1.7, 40.0,
+                V(-20.0,
+                  nut_y + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.cos(a),
+                  boss_z + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.sin(a)),
+                V(1, 0, 0))
         )
 
     # Cross-slide rail mounting face on top.
@@ -974,12 +991,19 @@ def cross_slide_carrier():
                      V(-w / 2, reach + hub_r - 7.0, -drop - hub_r - 5.0))
     )
 
-    # Leadscrew nut boss, offset clear of the rail. Stroke is stamped into the
-    # part as a witness slot so a mis-cut carrier is visible, not silent.
+    # Leadscrew nut boss — BORED ALONG Y, WHICH IS THE S AXIS.
+    #
+    # It was bored along X. S moves tangentially; a radial screw hole on the
+    # part S drives cannot turn into motion along S. Same mistake as the R
+    # carriage's nut (bored along Z) and the wrist hub (built about Y): the bore
+    # took the builder's default axis rather than the axis of its own joint.
+    #
+    # Stroke is stamped into the part as a witness slot so a mis-cut carrier is
+    # visible rather than silent.
     boss_y = y0 + 6.0
-    body = body.fuse(Part.makeBox(18.0, 12.0, 14.0, V(-9.0, boss_y, t)))
+    body = body.fuse(Part.makeBox(18.0, 20.0, 14.0, V(-9.0, boss_y - 4.0, t)))
     body = body.cut(
-        Part.makeCylinder(2.1, 40.0, V(-20.0, boss_y + 6.0, t + 7.0), V(1, 0, 0))
+        Part.makeCylinder(2.1, 40.0, V(0.0, boss_y - 14.0, t + 7.0), V(0, 1, 0))
     )
     body = body.cut(
         Part.makeBox(stroke, 2.0, 1.0, V(-stroke / 2, y0 + 1.0, t - 1.0))
@@ -1247,6 +1271,51 @@ def station_mount():
     return base
 
 
+def _extrusion(size: float, length: float):
+    """A real T-slot bar. NOT PRINTED — this is bought stock, modelled so the
+    scene stops drawing it as a featureless box.
+
+    Kyle 2026-07-27: "the arm is a grey rectangle, but I think its ment to be
+    the stock metal, we should fix that shape."
+
+    Built along +x and CENTRED on the origin in all three axes. Centred
+    matters: MuJoCo recentres a mesh on its centre of mass, so a bar modelled
+    from one end would place itself half a length away from where the scene put
+    it. Symmetric geometry makes that a no-op.
+    """
+    outer, opening, chan_w, chan_d, bore = L.TSLOT_PROFILE[size]
+    h = outer / 2.0
+    bar = Part.makeBox(length, outer, outer, V(-length / 2.0, -h, -h))
+
+    # Four T-slots, one per face. Each is the narrow opening plus the wider
+    # channel behind it — that inner undercut is what a T-nut grips.
+    for ax, ay in ((0, 1), (0, -1), (1, 0), (-1, 0)):
+        for w, d, off in ((opening, chan_d + 2.0, h - (chan_d + 2.0) / 2.0),
+                          (chan_w, chan_d, h - chan_d - chan_d / 2.0 + 1.0)):
+            x0 = -length / 2.0 - 1.0
+            if ax:  # slot on a +/-y face
+                bar = bar.cut(Part.makeBox(length + 2.0, d, w,
+                                           V(x0, ax * off - d / 2.0, -w / 2.0)))
+            else:
+                bar = bar.cut(Part.makeBox(length + 2.0, w, d,
+                                           V(x0, -w / 2.0, ay * off - d / 2.0)))
+
+    # Centre bore, for end-tapping.
+    bar = bar.cut(
+        Part.makeCylinder(bore / 2.0, length + 2.0, V(-length / 2.0 - 1.0, 0, 0), V(1, 0, 0))
+    )
+    return bar
+
+
+def _extrusion_parts() -> dict:
+    """One builder per distinct bar, named from layout so the scene, the cut
+    list and the mesh cannot disagree about what got cut."""
+    out = {}
+    for name, (size, length) in L.extrusion_meshes().items():
+        out[name] = (lambda s=size, ln=length: _extrusion(s, ln))
+    return out
+
+
 PARTS = {
     "spool": spool,
     "spool_hanger": spool_hanger,
@@ -1269,6 +1338,10 @@ PARTS = {
     "station_mount": station_mount,
     "drop_chute": drop_chute,
 }
+
+# Bought T-slot stock, modelled so the viewer shows a profile instead of a
+# slab. Kept OUT of the printed list by build_scene.BOUGHT_MESHES.
+PARTS.update(_extrusion_parts())
 
 
 LOG = REPO / "cad" / "build.log"

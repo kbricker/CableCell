@@ -61,6 +61,13 @@ _ROTOR_BASE = _PLATFORM_BASE + float(L.Z_PLATFORM_T) + ROTOR_SEAT_T
 # below goes through _REL(); none of them is typed.
 _ARM_BEAM_BOTTOM = float(L.DECK_ABOVE_BENCH) + L.arm_beam_bottom()
 _BEAM_TIP = L.arm_beam_tip()
+_BEAM_LEN_MM = int(round(_BEAM_TIP - (float(L.SPINDLE_HOUSING_OD) / 2.0 + 6.0)))
+# The R leadscrew sits where radial_carriage's nut boss puts it: outboard of the
+# beam tangentially, level with the beam's centre vertically. Both derived from
+# the same numbers the part is built from, so the screw and its nut cannot end
+# up in different places.
+_R_SCREW_Y = -float(L.ARM_BEAM_Y) - (float(L.MGN12_CARRIAGE_W) + 12.0) / 2.0 - 8.0
+_R_SCREW_Z = float(L.ARM_THICKNESS) / 2.0
 
 
 def _REL(h_above_deck_underside: float) -> float:
@@ -97,6 +104,12 @@ MESHES = (
 )
 
 
+# BOUGHT stock, modelled as real T-slot profile rather than drawn as a slab.
+# Separate from MESHES on purpose: these are not printed, and cut_list must not
+# count them as filament.
+BOUGHT_MESHES = tuple(sorted(L.extrusion_meshes()))
+
+
 def _mesh_assets() -> str:
     """Real CAD geometry from cad/build_parts.py.
 
@@ -105,7 +118,7 @@ def _mesh_assets() -> str:
     """
     return "\n".join(
         f'    <mesh name="{n}_mesh" file="{n}.stl" scale="0.001 0.001 0.001"/>'
-        for n in MESHES
+        for n in MESHES + BOUGHT_MESHES
     )
 
 
@@ -236,34 +249,38 @@ def _frame_members() -> str:
 
     out: list[str] = []
 
-    def bar(name: str, pos: tuple[float, float, float],
-            size: tuple[float, float, float]) -> None:
+    def bar(name: str, pos: tuple[float, float, float], length: float,
+            axis: str) -> None:
+        """A real 3030 bar. Built along its own +x, so a vertical leg turns
+        about y and a y-running rail turns about z."""
+        euler = {"x": "0 0 0", "y": f"0 0 {math.pi / 2:.6g}",
+                 "z": f"0 {math.pi / 2:.6g} 0"}[axis]
         out.append(
-            f'    <geom name="{name}" type="box" '
+            f'    <geom name="{name}" type="mesh" '
+            f'mesh="ext3030_{int(round(length))}_mesh" '
             f'pos="{_fmt(pos[0] * MM, pos[1] * MM, pos[2] * MM)}" '
-            f'size="{_fmt(size[0] / 2 * MM, size[1] / 2 * MM, size[2] / 2 * MM)}" '
-            f'material="extrusion_mat" contype="0" conaffinity="0"/>'
+            f'euler="{euler}" material="extrusion_mat" contype="0" conaffinity="0"/>'
         )
 
     # Legs, bench top to the deck's underside minus the top rail.
     for i, (sx, sy) in enumerate(((-1, -1), (-1, 1), (1, -1), (1, 1))):
-        bar(f"frame_leg_{i}", (sx * half, sy * half, e + leg / 2.0), (e, e, leg))
+        bar(f"frame_leg_{i}", (sx * half, sy * half, e + leg / 2.0), leg, "z")
 
     # Bottom perimeter, on the bench. Two run in x, two in y.
     for i, sy in enumerate((-1, 1)):
-        bar(f"frame_bot_x_{i}", (0.0, sy * half, e / 2.0), (rail, e, e))
-        bar(f"frame_bot_y_{i}", (sy * half, 0.0, e / 2.0), (e, rail, e))
+        bar(f"frame_bot_x_{i}", (0.0, sy * half, e / 2.0), rail, "x")
+        bar(f"frame_bot_y_{i}", (sy * half, 0.0, e / 2.0), rail, "y")
 
     # Top perimeter, directly under the deck.
     top_z = deck_under - e / 2.0
     for i, sy in enumerate((-1, 1)):
-        bar(f"frame_top_x_{i}", (0.0, sy * half, top_z), (rail, e, e))
-        bar(f"frame_top_y_{i}", (sy * half, 0.0, top_z), (e, rail, e))
+        bar(f"frame_top_x_{i}", (0.0, sy * half, top_z), rail, "x")
+        bar(f"frame_top_y_{i}", (sy * half, 0.0, top_z), rail, "y")
 
     # Cross rails, top and bottom, straddling the Z platform.
     for i, sy in enumerate((-1, 1)):
-        bar(f"frame_cross_top_{i}", (0.0, sy * cross_y, top_z), (rail, e, e))
-        bar(f"frame_cross_bot_{i}", (0.0, sy * cross_y, e / 2.0), (rail, e, e))
+        bar(f"frame_cross_top_{i}", (0.0, sy * cross_y, top_z), rail, "x")
+        bar(f"frame_cross_bot_{i}", (0.0, sy * cross_y, e / 2.0), rail, "x")
 
     return "\n".join(out)
 
@@ -707,6 +724,11 @@ def build_mjcf() -> str:
       <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
+      <geom name="t_motor" type="box"
+        pos="{(float(L.SPINDLE_HOUSING_OD) / 2 + 46.0) * MM:.6g} 0 {(float(L.Z_PLATFORM_T) + 22.0) * MM:.6g}"
+        size="{float(L.NEMA17_SQUARE) / 2 * MM:.6g} {float(L.NEMA17_SQUARE) / 2 * MM:.6g} 0.021"
+        material="motor_mat" contype="0" conaffinity="0"/>
+
       <body name="rotor" pos="0 0 {(float(L.Z_PLATFORM_T) + ROTOR_SEAT_T) * MM:.6g}">
         <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
              from there, so the range is 0..SWEEP_ARC. It was previously
@@ -719,6 +741,14 @@ def build_mjcf() -> str:
              replaced the slew ring. Moment becomes a couple and the lever arm
              is SPINDLE_SPACING rather than a bought diameter. -->
         <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
+          material="rotor_mat" contype="0" conaffinity="0"/>
+        <!-- THE T DRIVE: a toothed pulley on the spindle, belt-driven from a
+             NEMA 17 on the platform below. Belt rather than a direct-drive
+             gearbox because the arc is 270 degrees, not continuous — no slip
+             ring, no rotary union, and the reduction comes free with the
+             pulley ratio. -->
+        <geom name="t_pulley" type="cylinder" pos="0 0 0.004"
+          size="{(float(L.SPINDLE_HOUSING_OD) / 2 + 8.0) * MM:.6g} 0.008"
           material="rotor_mat" contype="0" conaffinity="0"/>
 
         <body name="arm" pos="0 0 {(_ARM_BEAM_BOTTOM - _ROTOR_BASE) * MM:.6g}">
@@ -736,9 +766,8 @@ def build_mjcf() -> str:
                300 um strip tolerance. -->
           <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
             pos="0 0 0" material="arm_mat" contype="0" conaffinity="0"/>
-          <geom name="arm_beam" type="box"
+          <geom name="arm_beam" type="mesh" mesh="ext2020_{_BEAM_LEN_MM}_mesh"
             pos="{(_BEAM_X0 + _BEAM_TIP) / 2 * MM:.6g} {-float(L.ARM_BEAM_Y) * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
-            size="{(_BEAM_TIP - _BEAM_X0) / 2 * MM:.6g} {float(L.ARM_WIDTH) / 2 * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
             material="extrusion_mat" contype="0" conaffinity="0"/>
           <!-- The beam stops at R={_BEAM_TIP:.0f}. It used to run to R0+30={float(L.ARM_R0) + 30:.0f} —
                a 20 mm bar driven through all seven stations at exactly the
@@ -747,6 +776,31 @@ def build_mjcf() -> str:
             pos="{(_BEAM_X0 + _BEAM_TIP) / 2 * MM:.6g} {-float(L.ARM_BEAM_Y) * MM:.6g} {(float(L.ARM_THICKNESS) + float(L.MGN12_RAIL_H) / 2) * MM:.6g}"
             size="{(_BEAM_TIP - _BEAM_X0) / 2 * MM:.6g} 0.006 {float(L.MGN12_RAIL_H) / 2 * MM:.6g}"
             material="rail_mat" contype="0" conaffinity="0"/>
+
+          <!-- ============ THE R DRIVE ============
+               Kyle 2026-07-27: "I think we have a plan for a specific part
+               right, some sort of linear gear and motor to run up and down the
+               arm? I dont see that at all."
+
+               He was right — there was nothing there. Z was the only axis with
+               a screw and a motor drawn; R, S and the rotation all moved by
+               magic. The parts were in the cut list and in the printed carriers
+               (radial_carriage has had a T8 nut boss all along) and simply were
+               not in the scene.
+
+               T8 trapezoidal, driven by a NEMA 17 at the inboard end, running
+               alongside the beam rather than through it. Trapezoidal because it
+               self-locks: the arm carries a 50 N pull-off at S3 and must not
+               back-drive when the motor is unpowered. -->
+          <geom name="r_leadscrew" type="cylinder"
+            pos="{(_BEAM_X0 + _BEAM_TIP) / 2 * MM:.6g} {_R_SCREW_Y * MM:.6g} {_R_SCREW_Z * MM:.6g}"
+            euler="0 {math.pi / 2:.6g} 0"
+            size="0.004 {(_BEAM_TIP - _BEAM_X0) / 2 * MM:.6g}"
+            material="screw_mat" contype="0" conaffinity="0"/>
+          <geom name="r_motor" type="box"
+            pos="{(_BEAM_X0 - float(L.NEMA17_SQUARE) / 2 - 4) * MM:.6g} {_R_SCREW_Y * MM:.6g} {_R_SCREW_Z * MM:.6g}"
+            size="{float(L.NEMA17_SQUARE) / 2 * MM:.6g} {float(L.NEMA17_SQUARE) / 2 * MM:.6g} {float(L.NEMA17_SQUARE) / 2 * MM:.6g}"
+            material="motor_mat" contype="0" conaffinity="0"/>
 
           <body name="radial" pos="{L.arm_r_retracted() * MM:.6g} 0 0">
             <joint name="R" type="slide" axis="1 0 0"
@@ -781,6 +835,20 @@ def build_mjcf() -> str:
               pos="{(L.arm_tool_reach() - float(L.CAMERA_BACK_OFFSET)) * MM:.6g} 0 {(_REL(float(L.STATION_TOOLING_HEIGHT)) + float(L.CAMERA_UP_OFFSET)) * MM:.6g}"
               euler="0 {math.radians(float(L.CAMERA_TILT) - 90.0):.6g} 0"
               fovy="48"/>
+
+            <!-- THE S DRIVE. Rides the R carriage, so it moves with R and
+                 not with S — the screw has to stay still relative to the nut it
+                 turns in. Tiny: the 50 N pull-off runs along R, and S only ever
+                 shifts the comb by one conductor pitch. -->
+            <geom name="s_leadscrew" type="cylinder"
+              pos="0 {(-float(L.ARM_BEAM_Y) - 5.0) * MM:.6g} {(_REL(L.arm_carriage_plate_top()) + float(L.MGN9_RAIL_H) + 12.0) * MM:.6g}"
+              euler="{math.pi / 2:.6g} 0 0"
+              size="0.002 {(float(L.CROSS_SLIDE_STROKE) / 2 + 16.0) * MM:.6g}"
+              material="screw_mat" contype="0" conaffinity="0"/>
+            <geom name="s_motor" type="box"
+              pos="0 {(-float(L.ARM_BEAM_Y) - float(L.CROSS_SLIDE_STROKE) / 2 - 32.0) * MM:.6g} {(_REL(L.arm_carriage_plate_top()) + float(L.MGN9_RAIL_H) + 12.0) * MM:.6g}"
+              size="0.014 0.014 0.014"
+              material="motor_mat" contype="0" conaffinity="0"/>
 
             <body name="cross" pos="0 0 0">
               <joint name="S" type="slide" axis="0 1 0"

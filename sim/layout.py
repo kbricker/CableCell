@@ -1363,6 +1363,36 @@ def cut_stock() -> list[tuple[str, str, int, float, str]]:
     return rows
 
 
+# T-slot profile dimensions, per size. (outer, slot opening, channel width,
+# channel depth, centre bore). Standard European T-slot, which is what every
+# vendor of 2020/3030 actually ships.
+TSLOT_PROFILE = {
+    20.0: (20.0, 6.2, 11.5, 4.0, 4.2),
+    30.0: (30.0, 8.2, 16.5, 5.0, 6.8),
+}
+
+
+def extrusion_meshes() -> dict[str, tuple[float, float]]:
+    """name -> (profile size, cut length) for every distinct bar in the machine.
+
+    THE BEAM WAS A PLAIN BOX. Kyle 2026-07-27: "the arm is a grey rectangle,
+    but I think its ment to be the stock metal, we should fix that shape."
+    Right, and it mattered beyond looks: a solid 20 x 20 box is not what gets
+    bolted to, and a viewer that draws bought stock as a featureless slab is
+    the same lie as drawing the frame as a cylinder.
+
+    One mesh per distinct (profile, length), so four bars cover the machine
+    rather than eighteen meshes.
+    """
+    out: dict[str, tuple[float, float]] = {}
+    for stock, _what, _qty, length, _why in cut_stock():
+        if "extrusion" not in stock:
+            continue
+        size = float(stock.split()[0][:2])
+        out[f"ext{int(size)}{int(size)}_{int(round(length))}"] = (size, length)
+    return out
+
+
 def stock_totals() -> dict[str, tuple[float, int]]:
     """Per stock type: total mm needed, and bars to buy."""
     out: dict[str, tuple[float, int]] = {}

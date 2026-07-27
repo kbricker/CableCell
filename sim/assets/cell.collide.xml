@@ -84,6 +84,10 @@
     <mesh name="strip_die_mesh" file="strip_die.stl" scale="0.001 0.001 0.001"/>
     <mesh name="rotor_plate_mesh" file="rotor_plate.stl" scale="0.001 0.001 0.001"/>
     <mesh name="drop_chute_mesh" file="drop_chute.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="ext2020_104_mesh" file="ext2020_104.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="ext3030_144_mesh" file="ext3030_144.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="ext3030_190_mesh" file="ext3030_190.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="ext3030_340_mesh" file="ext3030_340.stl" scale="0.001 0.001 0.001"/>
   </asset>
 
   <worldbody>
@@ -128,22 +132,22 @@
       material="deck_mat" contype="1" conaffinity="1"/>
     </body>
     <body name="frame_body">
-    <geom name="frame_leg_0" type="box" pos="-0.185 -0.185 0.102" size="0.015 0.015 0.072" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_leg_1" type="box" pos="-0.185 0.185 0.102" size="0.015 0.015 0.072" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_leg_2" type="box" pos="0.185 -0.185 0.102" size="0.015 0.015 0.072" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_leg_3" type="box" pos="0.185 0.185 0.102" size="0.015 0.015 0.072" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_bot_x_0" type="box" pos="0 -0.185 0.015" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_bot_y_0" type="box" pos="-0.185 0 0.015" size="0.015 0.17 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_bot_x_1" type="box" pos="0 0.185 0.015" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_bot_y_1" type="box" pos="0.185 0 0.015" size="0.015 0.17 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_top_x_0" type="box" pos="0 -0.185 0.159" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_top_y_0" type="box" pos="-0.185 0 0.159" size="0.015 0.17 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_top_x_1" type="box" pos="0 0.185 0.159" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_top_y_1" type="box" pos="0.185 0 0.159" size="0.015 0.17 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_cross_top_0" type="box" pos="0 -0.11 0.159" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_cross_bot_0" type="box" pos="0 -0.11 0.015" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_cross_top_1" type="box" pos="0 0.11 0.159" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
-    <geom name="frame_cross_bot_1" type="box" pos="0 0.11 0.015" size="0.17 0.015 0.015" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_leg_0" type="mesh" mesh="ext3030_144_mesh" pos="-0.185 -0.185 0.102" euler="0 1.5708 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_leg_1" type="mesh" mesh="ext3030_144_mesh" pos="-0.185 0.185 0.102" euler="0 1.5708 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_leg_2" type="mesh" mesh="ext3030_144_mesh" pos="0.185 -0.185 0.102" euler="0 1.5708 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_leg_3" type="mesh" mesh="ext3030_144_mesh" pos="0.185 0.185 0.102" euler="0 1.5708 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_bot_x_0" type="mesh" mesh="ext3030_340_mesh" pos="0 -0.185 0.015" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_bot_y_0" type="mesh" mesh="ext3030_340_mesh" pos="-0.185 0 0.015" euler="0 0 1.5708" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_bot_x_1" type="mesh" mesh="ext3030_340_mesh" pos="0 0.185 0.015" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_bot_y_1" type="mesh" mesh="ext3030_340_mesh" pos="0.185 0 0.015" euler="0 0 1.5708" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_top_x_0" type="mesh" mesh="ext3030_340_mesh" pos="0 -0.185 0.159" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_top_y_0" type="mesh" mesh="ext3030_340_mesh" pos="-0.185 0 0.159" euler="0 0 1.5708" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_top_x_1" type="mesh" mesh="ext3030_340_mesh" pos="0 0.185 0.159" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_top_y_1" type="mesh" mesh="ext3030_340_mesh" pos="0.185 0 0.159" euler="0 0 1.5708" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_cross_top_0" type="mesh" mesh="ext3030_340_mesh" pos="0 -0.11 0.159" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_cross_bot_0" type="mesh" mesh="ext3030_340_mesh" pos="0 -0.11 0.015" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_cross_top_1" type="mesh" mesh="ext3030_340_mesh" pos="0 0.11 0.159" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
+    <geom name="frame_cross_bot_1" type="mesh" mesh="ext3030_340_mesh" pos="0 0.11 0.015" euler="0 0 0" material="extrusion_mat" contype="1" conaffinity="1"/>
     </body>
 
     <geom name="s1_feed_mount" type="mesh" mesh="station_mount_mesh" pos="0.215 0 0.186" euler="0 0 0" material="mount_mat" contype="1" conaffinity="1"/>
@@ -410,6 +414,11 @@
       <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
         material="zstage_mat" contype="1" conaffinity="1"/>
 
+      <geom name="t_motor" type="box"
+        pos="0.0845 0 0.032"
+        size="0.02115 0.02115 0.021"
+        material="motor_mat" contype="1" conaffinity="1"/>
+
       <body name="rotor" pos="0 0 0.028">
         <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
              from there, so the range is 0..SWEEP_ARC. It was previously
@@ -422,6 +431,14 @@
              replaced the slew ring. Moment becomes a couple and the lever arm
              is SPINDLE_SPACING rather than a bought diameter. -->
         <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
+          material="rotor_mat" contype="1" conaffinity="1"/>
+        <!-- THE T DRIVE: a toothed pulley on the spindle, belt-driven from a
+             NEMA 17 on the platform below. Belt rather than a direct-drive
+             gearbox because the arc is 270 degrees, not continuous — no slip
+             ring, no rotary union, and the reduction comes free with the
+             pulley ratio. -->
+        <geom name="t_pulley" type="cylinder" pos="0 0 0.004"
+          size="0.0465 0.008"
           material="rotor_mat" contype="1" conaffinity="1"/>
 
         <body name="arm" pos="0 0 0.076">
@@ -439,9 +456,8 @@
                300 um strip tolerance. -->
           <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
             pos="0 0 0" material="arm_mat" contype="1" conaffinity="1"/>
-          <geom name="arm_beam" type="box"
+          <geom name="arm_beam" type="mesh" mesh="ext2020_104_mesh"
             pos="0.09625 -0.0562 0.01"
-            size="0.05175 0.01 0.01"
             material="extrusion_mat" contype="1" conaffinity="1"/>
           <!-- The beam stops at R=148. It used to run to R0+30=230 —
                a 20 mm bar driven through all seven stations at exactly the
@@ -450,6 +466,31 @@
             pos="0.09625 -0.0562 0.024"
             size="0.05175 0.006 0.004"
             material="rail_mat" contype="1" conaffinity="1"/>
+
+          <!-- ============ THE R DRIVE ============
+               Kyle 2026-07-27: "I think we have a plan for a specific part
+               right, some sort of linear gear and motor to run up and down the
+               arm? I dont see that at all."
+
+               He was right — there was nothing there. Z was the only axis with
+               a screw and a motor drawn; R, S and the rotation all moved by
+               magic. The parts were in the cut list and in the printed carriers
+               (radial_carriage has had a T8 nut boss all along) and simply were
+               not in the scene.
+
+               T8 trapezoidal, driven by a NEMA 17 at the inboard end, running
+               alongside the beam rather than through it. Trapezoidal because it
+               self-locks: the arm carries a 50 N pull-off at S3 and must not
+               back-drive when the motor is unpowered. -->
+          <geom name="r_leadscrew" type="cylinder"
+            pos="0.09625 -0.0837 0.01"
+            euler="0 1.5708 0"
+            size="0.004 0.05175"
+            material="screw_mat" contype="1" conaffinity="1"/>
+          <geom name="r_motor" type="box"
+            pos="0.01935 -0.0837 0.01"
+            size="0.02115 0.02115 0.02115"
+            material="motor_mat" contype="1" conaffinity="1"/>
 
           <body name="radial" pos="0.078 0 0">
             <joint name="R" type="slide" axis="1 0 0"
@@ -484,6 +525,20 @@
               pos="0.04 0 0.081"
               euler="0 -0.652753 0"
               fovy="48"/>
+
+            <!-- THE S DRIVE. Rides the R carriage, so it moves with R and
+                 not with S — the screw has to stay still relative to the nut it
+                 turns in. Tiny: the 50 N pull-off runs along R, and S only ever
+                 shifts the comb by one conductor pitch. -->
+            <geom name="s_leadscrew" type="cylinder"
+              pos="0 -0.0612 0.0595"
+              euler="1.5708 0 0"
+              size="0.002 0.026"
+              material="screw_mat" contype="1" conaffinity="1"/>
+            <geom name="s_motor" type="box"
+              pos="0 -0.0982 0.0595"
+              size="0.014 0.014 0.014"
+              material="motor_mat" contype="1" conaffinity="1"/>
 
             <body name="cross" pos="0 0 0">
               <joint name="S" type="slide" axis="0 1 0"
