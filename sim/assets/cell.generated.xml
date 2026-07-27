@@ -116,18 +116,18 @@
          rotary axis at the platform centre unobstructed, which a single
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
-    <geom name="z_post_0" type="cylinder" pos="2.81669e-18 0.046 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_1" type="cylinder" pos="-0.0398372 -0.023 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_2" type="cylinder" pos="0.0398372 -0.023 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_leadscrew" type="cylinder" pos="-8.45006e-18 -0.046 0.245" size="0.005 0.065" material="screw_mat" contype="0" conaffinity="0"/>
-    <geom name="z_motor" type="box" pos="-8.45006e-18 -0.046 0.158" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_0" type="cylinder" pos="4.77612e-18 0.078 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_1" type="cylinder" pos="-0.06755 -0.039 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_2" type="cylinder" pos="0.06755 -0.039 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_leadscrew" type="cylinder" pos="-1.43284e-17 -0.078 0.245" size="0.005 0.065" material="screw_mat" contype="0" conaffinity="0"/>
+    <geom name="z_motor" type="box" pos="-1.43284e-17 -0.078 0.158" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
 
     <!-- ============ the moving assembly ============ -->
     <body name="z_carriage" pos="0 0 0.18">
       <joint name="Z" type="slide" axis="0 0 1" range="0 0.1"
         damping="40"/>
       <geom name="z_platform" type="cylinder" pos="0 0 0"
-        size="0.0667 0.008"
+        size="0.1131 0.008"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">

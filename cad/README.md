@@ -31,6 +31,10 @@ re-run both.
 | `guide_tube_mount` | 34 × 24 × 29 | 14.4 cm³ | Holds the PTFE tube that sets S1's presentation point |
 | `measuring_wheel` | 31.8 × 31.8 × 9 | 5.3 cm³ | **Owns cable length accuracy.** 31.83 mm dia = 100.00 mm circumference |
 | `spreader_plate` | 25 × 32 × 8 | 6.0 cm³ | S2's fan — diverging slots, 1.45 → 8 mm pitch over 25 mm |
+| `z_platform` | 208 × 208 × 24 | 295.1 cm³ | Rides three posts, driven by one **off-axis** screw. Resolves the coaxial conflict |
+| `radial_carriage` | 52 × 45 × 22 | 21.2 cm³ | MGN12 carriage + T8 nut. Takes the ~50 N pull-off thrust |
+| `wrist_mount` | 50 × 32 × 26 | 12.0 cm³ | Carries the comb, flips 180° on mechanical hard stops |
+| `camera_mount` | 60 × 48 × 34 | 29.5 cm³ | ELP board on the radial carriage — **not** the wrist, which flips |
 
 ---
 

@@ -135,7 +135,9 @@ def _press_body() -> str:
       size="0.006" rgba="1 0.25 0.2 1"/>"""
 
 
-Z_POST_RADIUS = 46.0  # posts sit on this circle around the pivot
+# Posts sit on this circle around the pivot. From layout.py — nothing in this
+# file may hard-code a dimension.
+Z_POST_RADIUS = float(L.Z_POST_CIRCLE_R)
 
 
 def _z_posts(deck_top: float, z_stroke: float) -> str:

@@ -300,6 +300,43 @@ PRESENTATION_GAP = _d(8.0, ESTIMATED, "buckle vs collision", "PRESENTATION_GAP")
 
 Z_STAGE_MARGIN = _d(20.0, ESTIMATED, "commissioning headroom", "Z_STAGE_MARGIN")
 
+# Guide posts on a circle around the pivot, with the leadscrew OFF-AXIS so the
+# rotary axis at the platform centre stays clear. This is the arrangement a
+# single coaxial rail cannot give us.
+# Posts must clear the main bearing's OUTER diameter, not its bore. A 90 mm-bore
+# slew ring runs ~120 mm OD, so anything inside r=60 fouls it. 78 mm gives the
+# bearing 18 mm of radial room and still keeps the platform compact.
+# (Caught 2026-07-26: the first value, 46 mm, put the posts inside the bearing.)
+Z_POST_CIRCLE_R = _d(78.0, ESTIMATED, "clears bearing OD + margin", "Z_POST_CIRCLE_R")
+MAIN_BEARING_OD = _d(120.0, ESTIMATED, "90mm-bore slew ring class", "MAIN_BEARING_OD")
+Z_POST_DIA = _d(8.0, COMMITTED, "hardened rod stock", "Z_POST_DIA")
+
+
+# ---------------------------------------------------------------------------
+# 5b. Bought-hardware interface dimensions
+# ---------------------------------------------------------------------------
+# Industry-standard footprints the printed parts must mate to. These are stable
+# across vendors, which is why designing against them now is safe even though
+# the specific parts are not ordered.
+
+LM8UU_OD = _d(15.0, COMMITTED, "LM8UU standard", "LM8UU_OD")
+LM8UU_LEN = _d(24.0, COMMITTED, "LM8UU standard", "LM8UU_LEN")
+
+MGN12_CARRIAGE_W = _d(27.0, COMMITTED, "MGN12H standard", "MGN12_CARRIAGE_W")
+MGN12_BOLT_X = _d(20.0, COMMITTED, "MGN12H M3 pattern", "MGN12_BOLT_X")
+MGN12_BOLT_Y = _d(20.0, COMMITTED, "MGN12H M3 pattern", "MGN12_BOLT_Y")
+
+MGN9_CARRIAGE_W = _d(20.0, COMMITTED, "MGN9C standard", "MGN9_CARRIAGE_W")
+MGN9_BOLT_X = _d(20.0, COMMITTED, "MGN9C M3 pattern", "MGN9_BOLT_X")
+MGN9_BOLT_Y = _d(10.0, COMMITTED, "MGN9C M3 pattern", "MGN9_BOLT_Y")
+
+NEMA17_SQUARE = _d(42.3, COMMITTED, "NEMA 17 standard", "NEMA17_SQUARE")
+NEMA17_BOLT = _d(31.0, COMMITTED, "NEMA 17 M3 pattern", "NEMA17_BOLT")
+NEMA17_BOSS_DIA = _d(22.0, COMMITTED, "NEMA 17 standard", "NEMA17_BOSS_DIA")
+
+T8_NUT_FLANGE_DIA = _d(22.0, COMMITTED, "T8 POM/brass nut", "T8_NUT_FLANGE_DIA")
+T8_NUT_BOLT_CIRCLE = _d(16.0, COMMITTED, "T8 nut M3 pattern", "T8_NUT_BOLT_CIRCLE")
+
 # Standard commodity stroke options, mm.
 Z_STAGE_STOCK_STROKES = (50.0, 100.0, 150.0, 200.0, 300.0, 400.0)
 

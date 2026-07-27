@@ -321,6 +321,145 @@ def spreader_plate():
     return plate
 
 
+def z_platform():
+    """The Z platform — rides three guide posts, driven by one off-axis screw.
+
+    This is the part that resolves the coaxial conflict: a rotary axis cannot
+    pass through a linear rail, so the screw moves off-axis and the platform
+    centre is left clear for the main bearing. Stiffness comes from the post
+    triangle rather than a cantilever.
+    """
+    import math
+
+    pc = float(L.Z_POST_CIRCLE_R)
+    plate_r = pc + 26.0
+    plate_t = 10.0
+    lm_r = float(L.LM8UU_OD) / 2.0
+
+    plate = _z_cyl(plate_r, plate_t)
+
+    # Three LM8UU housings, one per post.
+    for angle in (90.0, 210.0, 330.0):
+        x, y = pc * math.cos(math.radians(angle)), pc * math.sin(math.radians(angle))
+        plate = plate.fuse(_z_cyl(lm_r + 3.0, float(L.LM8UU_LEN), 0.0, x, y))
+        plate = plate.cut(_z_cyl(lm_r + 0.1, float(L.LM8UU_LEN) + 2.0, -1.0, x, y))
+
+    # Off-axis leadscrew nut boss at 270 degrees.
+    sx = pc * math.cos(math.radians(270.0))
+    sy = pc * math.sin(math.radians(270.0))
+    plate = plate.fuse(_z_cyl(float(L.T8_NUT_FLANGE_DIA) / 2.0 + 3.0, plate_t + 8.0, 0.0, sx, sy))
+    plate = plate.cut(_z_cyl(5.5, plate_t + 12.0, -1.0, sx, sy))
+    for i in range(4):
+        a = math.radians(45.0 + 90.0 * i)
+        bx = sx + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.cos(a)
+        by = sy + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.sin(a)
+        plate = plate.cut(_z_cyl(1.7, plate_t + 12.0, -1.0, bx, by))
+
+    # Central bore + bolt ring for the main rotary bearing.
+    bearing_r = float(L.MAIN_BEARING_BORE) / 2.0
+    plate = plate.cut(_z_cyl(bearing_r - 6.0, plate_t + 2.0, -1.0))
+    for i in range(6):
+        a = 2.0 * math.pi * i / 6.0
+        plate = plate.cut(
+            _z_cyl(2.2, plate_t + 2.0, -1.0, bearing_r * math.cos(a), bearing_r * math.sin(a))
+        )
+    return plate
+
+
+def radial_carriage():
+    """Rides the MGN12 rail; carries the cross-slide and takes the R thrust.
+
+    R is the axis that pulls insulation slugs off three conductors at once —
+    the largest force the arm ever applies, ~50 N. Hence a T8 leadscrew nut
+    rather than a belt clamp.
+    """
+    import math
+
+    w = float(L.MGN12_CARRIAGE_W) + 12.0
+    ln, t = 52.0, 8.0
+    body = Part.makeBox(ln, w, t, V(-ln / 2, -w / 2, 0))
+
+    # MGN12H mounting pattern.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(
+                _z_cyl(1.7, t + 2.0, -1.0, sx * float(L.MGN12_BOLT_X) / 2.0,
+                       sy * float(L.MGN12_BOLT_Y) / 2.0)
+            )
+
+    # T8 nut boss, standing proud so the screw clears the rail.
+    boss_y = w / 2.0 + 6.0
+    body = body.fuse(Part.makeBox(30.0, 16.0, 22.0, V(-15, boss_y - 16.0, 0)))
+    nut_y = boss_y - 8.0
+    body = body.cut(_z_cyl(5.5, 30.0, -1.0, 0.0, nut_y))
+    for i in range(4):
+        a = math.radians(45.0 + 90.0 * i)
+        body = body.cut(
+            _z_cyl(1.7, 30.0, -1.0,
+                   float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.cos(a),
+                   nut_y + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.sin(a))
+        )
+
+    # Cross-slide rail mounting face on top.
+    for x in (-float(L.MGN9_BOLT_X) / 2.0, float(L.MGN9_BOLT_X) / 2.0):
+        body = body.cut(_z_cyl(1.7, t + 2.0, -1.0, x, -w / 2.0 + 6.0))
+    return body
+
+
+def wrist_mount():
+    """Carries the comb and flips it 180 degrees between cable ends.
+
+    Two positions only, set by mechanical hard stops — the motor just has to
+    reach them. The pneumatic rotary actuator originally specified here was
+    dropped at $220 against ~$20 for a stepper and belt.
+    """
+    hub_r, hub_w = 13.0, 14.0
+    part = Part.makeCylinder(hub_r, hub_w, V(0, -hub_w / 2, 0), V(0, 1, 0))
+    part = part.cut(Part.makeCylinder(2.6, hub_w + 4.0, V(0, -hub_w / 2 - 2, 0), V(0, 1, 0)))
+
+    # Comb mounting pad.
+    pad = Part.makeBox(26.0, 32.0, 6.0, V(hub_r - 4.0, -16.0, -3.0))
+    part = part.fuse(pad)
+    for y in (-11.0, 11.0):
+        part = part.cut(
+            Part.makeCylinder(1.7, 12.0, V(hub_r + 2.0, y, -6.0), V(0, 0, 1))
+        )
+
+    # Hard-stop lugs — the two positions are mechanical, not commanded.
+    for sign in (1.0, -1.0):
+        part = part.fuse(
+            Part.makeBox(8.0, 6.0, 10.0, V(-hub_r - 2.0, sign * 4.0 - 3.0, -5.0))
+        )
+    return part
+
+
+def camera_mount():
+    """Holds the ELP board on the RADIAL carriage — deliberately not the wrist.
+
+    The wrist flips 180 degrees between cable ends; the camera must not. Tilted
+    down at the station work point so it can read that station's AprilTag.
+    """
+    board = float(L.CAMERA_BOARD)
+    plate_t = 5.0
+    face = Part.makeBox(board + 10.0, board + 10.0, plate_t, V(-(board + 10) / 2, -(board + 10) / 2, 0))
+
+    # ELP boards use a 30 mm M2 pattern.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            face = face.cut(_z_cyl(1.15, plate_t + 2.0, -1.0, sx * 15.0, sy * 15.0))
+    face = face.cut(_z_cyl(9.0, plate_t + 2.0, -1.0))  # lens clearance
+
+    # Angled leg setting CAMERA_TILT, with a slot so the angle can be trimmed
+    # once we see what the camera actually frames.
+    leg = Part.makeBox(12.0, board + 10.0, 34.0, V(-(board + 10) / 2 - 12.0, -(board + 10) / 2, 0))
+    part = face.fuse(leg)
+    for z in (10.0, 24.0):
+        part = part.cut(
+            Part.makeCylinder(1.7, 20.0, V(-(board + 10) / 2 - 16.0, 0, z), V(1, 0, 0))
+        )
+    return part
+
+
 PARTS = {
     "spool": spool,
     "spool_hanger": spool_hanger,
@@ -329,6 +468,10 @@ PARTS = {
     "guide_tube_mount": guide_tube_mount,
     "measuring_wheel": measuring_wheel,
     "spreader_plate": spreader_plate,
+    "z_platform": z_platform,
+    "radial_carriage": radial_carriage,
+    "wrist_mount": wrist_mount,
+    "camera_mount": camera_mount,
 }
 
 
