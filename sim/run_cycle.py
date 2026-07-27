@@ -26,6 +26,7 @@ import numpy as np
 from sim import build_scene
 from sim import imaging
 from sim import layout as L
+from sim import ribbon as RIB
 
 MM = 0.001
 
@@ -174,33 +175,152 @@ def gif(count: int = 84, fps: int = 16, scale: float = 0.46) -> pathlib.Path:
     return path
 
 
+def timeline(model):
+    """The whole cycle as a function of TIME, not as a loop that steps physics.
+
+    Rewritten for two reasons, both from Kyle 2026-07-27.
+
+    "the pause in the UI is greyed out, that should work" — it was greyed out
+    because the old viewer was PASSIVE: our code owned the stepping, so the
+    viewer's own pause, step and speed controls had nothing to control. Making
+    the cycle a pure function of data.time hands stepping back to the managed
+    viewer, and every one of those buttons starts working for free. Pausing now
+    genuinely freezes the cycle, because data.time stops advancing.
+
+    "the animation still does some wild /spastic rotation and flipping at the
+    station zero and no cable moves at all" — both were real. The flip ran in
+    0.9 s with no settle either side, which with contacts on whips the ribbon.
+    And the cycle never touched the ribbon's equalities at all, so the material
+    just sat there while the machine mimed around it.
+
+    Returns (segments, total_seconds). A segment is
+        (t0, t1, label, {actuator: (from, to)}, [(equality_id, active), ...])
+    """
+    ids = _act_ids(model)
+
+    def eq(name: str) -> int:
+        i = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_EQUALITY, name)
+        if i < 0:
+            raise KeyError(f"no equality {name!r} — the scene and the cycle disagree")
+        return i
+
+    cuts = [eq(f"cut_{i}") for i in range(RIB.CONDUCTORS)]
+    grips = [eq(f"grip_{i}") for i in range(RIB.CONDUCTORS)]
+    split_n = RIB.split_segments()
+    webs = [
+        eq(f"web_{i}_{k}")
+        for i in range(RIB.CONDUCTORS - 1)
+        for k in range(RIB.TAIL_SEGMENTS - split_n, RIB.TAIL_SEGMENTS)
+    ]
+
+    clear = _z_ctrl(L.z_clear())
+    stroke = float(L.ARM_STROKE) * MM
+    s_half = float(L.CROSS_SLIDE_STROKE) / 2.0 * MM
+
+    # (label, targets, seconds, equality changes)
+    steps: list[tuple[str, dict, float, list]] = []
+
+    def at(name: str) -> float:
+        return math.radians(float(L.STATION_ANGLES[name]))
+
+    # --- S1: take the ribbon, cut it free of the stock -------------------
+    steps.append(("S1 feed: index", {"T_act": at("S1_FEED"), "R_act": 0.0}, 1.4, []))
+    steps.append(("S1 feed: engage", {"R_act": stroke}, 0.8, []))
+    steps.append(("S1 feed: clamp closes", {}, 0.6, [(g, 1) for g in grips]))
+    steps.append(("S1 feed: GUILLOTINE", {}, 0.5, [(c, 0) for c in cuts]))
+    steps.append(("S1 feed: settle", {}, 0.6, []))
+    steps.append(("S1 feed: withdraw", {"R_act": 0.0}, 0.8, []))
+
+    # The flip. Slow, and with a settle either side — this is a limp cable
+    # being turned over, not a servo hitting a stop.
+    steps.append(("wrist: flip 180", {"W_act": math.pi}, 2.2, []))
+    steps.append(("wrist: settle", {}, 0.8, []))
+    steps.append(("wrist: flip back", {"W_act": 0.0}, 2.2, []))
+    steps.append(("wrist: settle", {}, 0.8, []))
+
+    # --- S2: split ---------------------------------------------------------
+    steps.append(("S2 slit: index", {"T_act": at("S2_SLIT")}, 1.6, []))
+    steps.append(("S2 slit: present tail", {"R_act": stroke}, 0.8, []))
+    steps.append(("S2 slit: WEDGE SPLITS", {}, 0.6, [(w, 0) for w in webs]))
+    steps.append(("S2 slit: fan out", {"S_act": s_half}, 0.6, []))
+    steps.append(("S2 slit: centre", {"S_act": 0.0}, 0.5, []))
+    steps.append(("S2 slit: withdraw", {"R_act": 0.0}, 0.7, []))
+
+    # --- S3: strip ---------------------------------------------------------
+    steps.append(("S3 strip: index", {"T_act": at("S3_STRIP")}, 1.6, []))
+    steps.append(("S3 strip: engage", {"R_act": stroke}, 0.8, []))
+    for i, y in enumerate((-1.0, 0.0, 1.0)):
+        steps.append((f"S3 strip: conductor {i + 1}", {"S_act": y * s_half}, 0.5, []))
+    steps.append(("S3 strip: PULL OFF slugs", {"R_act": stroke * 0.6}, 0.5, []))
+    steps.append(("S3 strip: withdraw", {"R_act": 0.0, "S_act": 0.0}, 0.7, []))
+
+    # --- S4: drop ----------------------------------------------------------
+    steps.append(("S4 drop: index", {"T_act": at("S6_DROP")}, 1.8, []))
+    steps.append(("S4 drop: RELEASE", {}, 0.5, [(g, 0) for g in grips]))
+    steps.append(("S4 drop: cable falls", {}, 1.4, []))
+
+    # --- reset for the next cable -----------------------------------------
+    steps.append((
+        "reset: rejoin stock, re-web", {"T_act": 0.0, "W_act": 0.0}, 1.8,
+        [(c, 1) for c in cuts] + [(w, 1) for w in webs] + [(g, 0) for g in grips],
+    ))
+
+    # Absolute ctrl values, resolved forward so each segment knows both ends.
+    cur = {name: 0.0 for name in ACTS}
+    cur["Z_act"] = clear
+    segs = []
+    t = 0.0
+    for label, targets, secs, eqs in steps:
+        frm = dict(cur)
+        to = dict(cur)
+        to.update(targets)
+        segs.append((t, t + secs, label, {k: (frm[k], to[k]) for k in ACTS}, eqs))
+        cur = to
+        t += secs
+    return segs, t
+
+
 def viewer() -> None:
+    """Managed viewer, so pause / step / speed all work."""
     import mujoco.viewer
 
-    # THE COLLIDE SCENE, so the ribbon rests on things instead of falling
-    # through them. The display scene disables contacts everywhere for render
-    # speed, which is fine for a still and wrong for a cycle: the workpiece is
-    # the one thing here that is supposed to touch the machine.
     build_scene.write()
-    path = build_scene.write_collide()
-    model = mujoco.MjModel.from_xml_path(str(path))
+    model = mujoco.MjModel.from_xml_path(str(build_scene.write_collide()))
     data = mujoco.MjData(model)
 
+    segs, total = timeline(model)
+    ids = _act_ids(model)
+    state = {"label": "", "lap": -1}
+
+    def control(m, d) -> None:
+        t = d.time % total
+        lap = int(d.time // total)
+        if lap != state["lap"]:
+            # New cable: put every equality back the way it started.
+            d.eq_active[:] = m.eq_active0
+            state["lap"] = lap
+        for t0, t1, label, ctrl, eqs in segs:
+            if t0 <= t < t1:
+                f = _smooth((t - t0) / (t1 - t0))
+                for name, (a, b) in ctrl.items():
+                    d.ctrl[ids[name]] = a + (b - a) * f
+                if label != state["label"]:
+                    for e, active in eqs:
+                        d.eq_active[e] = active
+                    print(f"  {label}")
+                    state["label"] = label
+                return
+
     print(f"CableCell cycle — R0 {float(L.ARM_R0):.0f} mm, "
-          f"{len(L.STATIONS)} stops, Z stroke {L.z_stage_choice():.0f} mm")
-    print("Looping. Ctrl-C or close the window to stop.\n")
+          f"{len(L.STATIONS)} stops, {total:.0f} s per cable")
+    print("Looping. Pause / step / speed all work — the cycle is a function of")
+    print("simulation time, so the viewer owns the clock.\n")
 
-    with mujoco.viewer.launch_passive(model, data) as v:
-        last = {"label": ""}
-
-        def on_frame(label: str, _p: float) -> None:
-            if label != last["label"]:
-                print(f"  {label}")
-                last["label"] = label
-            v.sync()
-
-        while v.is_running():
-            play(model, data, on_frame=on_frame)
+    mujoco.set_mjcb_control(control)
+    try:
+        mujoco.viewer.launch(model, data)
+    finally:
+        mujoco.set_mjcb_control(None)
 
 
 def main() -> int:

@@ -23,12 +23,9 @@ Angles from S1, positive counter-clockwise viewed from above.
 stop              angle     chord from S1
 --------------------------------------------------------------
 s1 feed            0.0 deg             0"
-s2 slit           32.8 deg        4-7/16"
-s3 strip          65.6 deg        8-9/16"
-s4 crimp         118.6 deg       13-9/16"
-s5 insert        171.5 deg      15-11/16"
-s6 drop          204.4 deg        15-3/8"
-s6 reject        237.2 deg      13-13/16"
+s2 slit           63.8 deg        8-5/16"
+s3 strip         127.6 deg        14-1/8"
+s6 drop          198.8 deg       15-9/16"
 
 Chord = straight-line distance from the S1 hole across the face.
 Easier to lay out with a tape than to protract an angle.
@@ -40,22 +37,24 @@ PER-STATION HOLES - 4 per stop
   The printed station mounts are slotted radially, so a little
   drift is absorbed at assembly.
 
-S6 DROP AND REJECT HOLES - 2 of them, and they are NOT on the bolt circle
-  At the S6 drop (204.4 deg) and S6 reject (237.2 deg) angles.
+S6 DROP HOLE - NOT on the bolt circle
+  At the S6 drop angle (198.8 deg).
+  A reject chute is DEFERRED - if it comes back it is a second
+  slot of the same size at its own angle.
   Slot 2-3/4" radial x 2-1/2" tangential (69 x 64 mm),
   running from 4-13/16" to 7-9/16" from centre (123 to 192 mm).
-  These stops get NO station mount - the mount would roof over
+  This stop gets NO station mount - the mount would roof over
   the hole. The printed collar bolts around each slot instead.
   Inboard edge is set by the Z platform's CORNERS passing
   underneath at 117 mm - the platform is square,
   so its corners reach further than its edges.
 
-PRESS SCALLOP
-  The press body crosses the disc at the S4 stop (118.6 deg).
-  Cut a scallop 8-1/4" wide, inward from the
-  rim to roughly 5-7/8" from centre.
-  Cut it OVERSIZE and fit to the real press when it arrives - the
-  ram-axis depth is still unmeasured.
+PRESS SCALLOP - NOT CUT YET
+  The press is stashed for the prototype. Leave the rim whole.
+  When it comes back it wants a scallop cut IN FROM THE RIM at
+  its stop angle, oversize and fitted to the real machine - the
+  ram-axis depth is still unmeasured. Cutting it now would be
+  removing wood to fit a number nobody has.
 
 TOLERANCE
   Bolt-circle diameter within +/- 1/16" is fine. The station mounts are

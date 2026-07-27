@@ -167,9 +167,10 @@ STATION_PARTS: dict[str, tuple] = {
 
 # Stops with no modelled tooling yet. These stay grey ON PURPOSE and say why —
 # a detailed guess is worse than an obvious blank.
-UNMODELLED = {
-    "S5_INSERT": "out of Phase 1 scope",
-}
+# Nothing is greyboxed any more. S4_CRIMP and S5_INSERT were the last two and
+# they are stashed (see layout.STATIONS) rather than drawn as blocks the arm has
+# to dodge. Every stop that exists now has real geometry.
+UNMODELLED: dict[str, str] = {}
 
 # The two stops that are a hole in the deck rather than a piece of tooling.
 # Same printed collar at both; SEPARATE bins, because good work and rejects
@@ -417,57 +418,18 @@ def _station_bodies() -> str:
 
 
 def _press_body() -> str:
-    """The press — placed first, because it is the layout datum."""
-    theta = float(L.STATION_ANGLES["S4_CRIMP"])
-    d = L.press_centre_distance()
-    cx, cy = _polar(d, theta)
-    rot = math.radians(theta)
+    """The press is STASHED for the prototype, so it is not drawn.
 
-    # Column occupies the rear portion of the footprint; the throat is open
-    # toward the dial so the arm can enter it.
-    col_depth = float(L.PRESS_DEPTH) * 0.45
-    col_offset = float(L.PRESS_DEPTH) / 2.0 - col_depth / 2.0  # toward the rear
-    ox, oy = _polar(d + col_offset, theta)
-
-    plate_z = float(L.PRESS_BASEPLATE_ABOVE_BENCH)
-    crimp_z = float(L.CRIMP_POINT_ABOVE_BENCH)
-
-    # Applicator sits on the base plate, under the ram, its long axis radial.
-    ax, ay = _polar(float(L.ARM_R0) + float(L.APPLICATOR_LENGTH) / 2.0 - 40.0, theta)
-
-    return f"""    <!-- S4 CRIMP: the press. Placed first; everything else is derived from it.
-
-         THIS ONE STAYS A BOX ON PURPOSE (Kyle 2026-07-27, "sure press is still
-         a box"). We have footprint, height and weight from the vendor and
-         nothing else - ram-axis depth and base-plate height are unmeasured.
-         Drawing a detailed press would be INVENTING detail, and
-         detailed-but-wrong is worse than obviously-blank. Greybox where we are
-         ignorant is honest; greybox where the part is already designed is just
-         undone work. Every other station here is real geometry. -->
-    <geom name="press_base" type="box"
-      pos="{_fmt(cx * MM, cy * MM, 0.030)}"
-      size="{_fmt(float(L.PRESS_DEPTH) / 2 * MM, float(L.PRESS_WIDTH) / 2 * MM, 0.030)}"
-      euler="0 0 {rot:.6g}" material="press_mat" contype="0" conaffinity="0"/>
-    <geom name="press_column" type="box"
-      pos="{_fmt(ox * MM, oy * MM, float(L.PRESS_HEIGHT) / 2 * MM)}"
-      size="{_fmt(col_depth / 2 * MM, float(L.PRESS_WIDTH) / 2 * MM, float(L.PRESS_HEIGHT) / 2 * MM)}"
-      euler="0 0 {rot:.6g}" material="press_mat" contype="0" conaffinity="0"/>
-    <geom name="press_baseplate" type="box"
-      pos="{_fmt(cx * MM, cy * MM, plate_z * MM)}"
-      size="{_fmt(float(L.PRESS_DEPTH) / 2 * MM, float(L.PRESS_WIDTH) / 2 * MM, 0.008)}"
-      euler="0 0 {rot:.6g}" material="press_plate_mat" contype="0" conaffinity="0"/>
-    <geom name="applicator" type="box"
-      pos="{_fmt(ax * MM, ay * MM, (plate_z + float(L.APPLICATOR_HEIGHT) / 2) * MM)}"
-      size="{_fmt(float(L.APPLICATOR_LENGTH) / 2 * MM, float(L.APPLICATOR_WIDTH) / 2 * MM, float(L.APPLICATOR_HEIGHT) / 2 * MM)}"
-      euler="0 0 {rot:.6g}" material="applicator_mat" contype="0" conaffinity="0"/>
-    <site name="crimp_point" pos="{_fmt(*[v * MM for v in _polar(float(L.ARM_R0), theta)], crimp_z * MM)}"
-      size="0.006" rgba="1 0.25 0.2 1"/>"""
+    It stays the deck-height datum in layout.py — DECK_ABOVE_BENCH is still
+    derived from its crimp point, so Phase 2 bolts onto this deck rather than
+    starting a new one. What it no longer does is stand in the scene as a
+    greybox the arm has to dodge, or hold a third of the sweep arc for a
+    station that does not exist yet.
+    """
+    return "    <!-- S4 press: stashed for the prototype. Still the deck-height datum. -->"
 
 
-# Posts sit on this circle around the pivot. From layout.py — nothing in this
-# file may hard-code a dimension.
 Z_POST_RADIUS = float(L.Z_POST_CIRCLE_R)
-
 
 def _z_posts() -> str:
     """Three guide posts plus one off-axis leadscrew, ALL BELOW THE DECK.
@@ -797,8 +759,19 @@ def build_mjcf() -> str:
             euler="0 {math.pi / 2:.6g} 0"
             size="0.004 {(_BEAM_TIP - _BEAM_X0) / 2 * MM:.6g}"
             material="screw_mat" contype="0" conaffinity="0"/>
+          <!-- The motor sits ABOVE the beam near the pivot and drives the
+               screw through a short belt, rather than sitting on the screw's
+               axis at its inboard end. Inline was the obvious build and
+               z_needed.py rejected it: on the screw's axis the motor sweeps a
+               116 mm circle at deck height and clipped the drop chute's collar
+               by 8.7 mm between stops. Up here it sweeps 61 mm and clears
+               everything on the deck. -->
+          <geom name="r_belt" type="box"
+            pos="{(_BEAM_X0 / 2) * MM:.6g} {_R_SCREW_Y * MM:.6g} {(_R_SCREW_Z + 16.0) * MM:.6g}"
+            size="{(_BEAM_X0 / 2) * MM:.6g} 0.003 0.018"
+            material="rail_mat" contype="0" conaffinity="0"/>
           <geom name="r_motor" type="box"
-            pos="{(_BEAM_X0 - float(L.NEMA17_SQUARE) / 2 - 4) * MM:.6g} {_R_SCREW_Y * MM:.6g} {_R_SCREW_Z * MM:.6g}"
+            pos="0 {_R_SCREW_Y * MM:.6g} {(_R_SCREW_Z + 44.0) * MM:.6g}"
             size="{float(L.NEMA17_SQUARE) / 2 * MM:.6g} {float(L.NEMA17_SQUARE) / 2 * MM:.6g} {float(L.NEMA17_SQUARE) / 2 * MM:.6g}"
             material="motor_mat" contype="0" conaffinity="0"/>
 
@@ -1128,8 +1101,7 @@ def main() -> int:
     print(f"  deck        {float(L.DECK_ABOVE_BENCH):.0f} mm above bench")
     print(f"  bolt circle R0 = {float(L.ARM_R0):.0f} mm")
     print(f"  Z stroke    {L.z_stage_choice():.0f} mm (needs {L.z_travel_required():.0f})")
-    print(f"  press at    theta {float(L.STATION_ANGLES['S4_CRIMP']):.0f} deg, "
-          f"{L.press_centre_distance():.0f} mm from pivot")
+    print("  press       stashed for the prototype (still the deck datum)")
 
     rows = pedestal_heights()
     print("\n  station part standoffs (mm above the station mount):")

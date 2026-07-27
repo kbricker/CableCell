@@ -264,7 +264,24 @@ ARM_STROKE = _d(40.0, ESTIMATED, "longest working motion = SPLIT_LENGTH + approa
 # and the cycle's fault path is written. Adding the stop back is one entry here
 # and one angle. What it costs to keep is arc and a second hole in the deck, and
 # a prototype does not need either yet.
-STATIONS = ("S1_FEED", "S2_SLIT", "S3_STRIP", "S4_CRIMP", "S5_INSERT", "S6_DROP")
+# FOUR STOPS FOR THE PROTOTYPE. Kyle 2026-07-27: "the late stage greyboxed
+# stations 4 and 5 are now out of alignment with the movement and colliding
+# with te arm, maybe we should just stash those for now and move the collect
+# bin to spot 4."
+#
+# S4_CRIMP and S5_INSERT are both blocked on hardware nobody has measured (the
+# press) or scoped (the insert nest). They were holding a third of the arc as
+# greyboxes that the arm then had to dodge — paying real geometry for imagined
+# stations.
+#
+# The prototype cycle is complete without them: feed, split, strip, drop. It
+# makes a stripped and fanned lead rather than a finished cable, and that is
+# the honest scope of a first machine.
+#
+# The deck height is still derived from the press's crimp point, deliberately,
+# so Phase 2 bolts on rather than starting a new deck. Angles are derived and
+# commissioned, so re-adding stops re-spreads them without a redesign.
+STATIONS = ("S1_FEED", "S2_SLIT", "S3_STRIP", "S6_DROP")
 
 # Angular positions. S1 is 0 by definition; S4 (crimp) is anchored by where the
 # press physically goes; the rest are spread across the remaining arc.
@@ -273,8 +290,6 @@ STATION_ANGLES: dict[str, Dim] = {
     "S1_FEED": _d(0.0, COMMITTED, "assigned by definition", "theta_S1"),
     "S2_SLIT": _d(35.0, PLACEHOLDER, "even spread", "theta_S2"),
     "S3_STRIP": _d(70.0, PLACEHOLDER, "even spread", "theta_S3"),
-    "S4_CRIMP": _d(135.0, PLACEHOLDER, "press placement not fixed", "theta_S4"),
-    "S5_INSERT": _d(200.0, PLACEHOLDER, "even spread", "theta_S5"),
     "S6_DROP": _d(240.0, PLACEHOLDER, "even spread", "theta_S6"),
 }
 
@@ -1188,7 +1203,12 @@ DROP_HOLE_R_OUT = _d(
     "DROP_HOLE_R_OUT",
 )
 DROP_HOLE_W = _d(64.0, ESTIMATED, "cable curl, unvalidated", "DROP_HOLE_W")
-CHUTE_COLLAR_H = _d(16.0, ESTIMATED, "gathers a cable that lands off-centre", "CHUTE_COLLAR_H")
+# 16 -> 12. The collar stands on the deck INSIDE the arm's swept circle, so its
+# height is bounded by the lowest thing that rotates over it — the R leadscrew's
+# nut boss. z_needed.py found the 16 mm version by sweeping the arc; the
+# station-stop poses in interference.py never saw it, because the collision is
+# BETWEEN stops.
+CHUTE_COLLAR_H = _d(12.0, COMMITTED, "bounded by the R nut boss sweeping over", "CHUTE_COLLAR_H")
 CHUTE_COLLAR_WALL = _d(3.0, COMMITTED, "printed wall", "CHUTE_COLLAR_WALL")
 
 # The bin hangs under the deck. Depth is what stops a 127 mm cable bridging the
@@ -1196,8 +1216,25 @@ CHUTE_COLLAR_WALL = _d(3.0, COMMITTED, "printed wall", "CHUTE_COLLAR_WALL")
 BIN_DEPTH = _d(90.0, ESTIMATED, "clears a nominal cable end-on", "BIN_DEPTH")
 
 
+def arm_lowest_rotating() -> float:
+    """Lowest point on the rotating assembly, above the deck's underside.
+
+    The R leadscrew's nut boss, which hangs off the carriage level with the
+    beam's centre. Everything else on the arm is higher. This is what any fixed
+    thing standing on the deck inside the sweep circle has to duck under.
+    """
+    return arm_beam_bottom() + float(ARM_THICKNESS) / 2.0 - 13.0
+
+
 def check_drop_station() -> list[str]:
     bad: list[str] = []
+    collar_top = float(DECK_THICKNESS) + float(CHUTE_COLLAR_H)
+    if collar_top >= arm_lowest_rotating():
+        bad.append(
+            f"chute collar tops out at {collar_top:.1f}, into the rotating "
+            f"assembly's lowest point at {arm_lowest_rotating():.1f} — the arm "
+            f"sweeps over this collar between stops"
+        )
     if DROP_HOLE_R_IN >= DROP_HOLE_R_OUT:
         bad.append(
             f"drop hole has no width: inboard {float(DROP_HOLE_R_IN):.1f} is not "
