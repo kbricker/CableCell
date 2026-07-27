@@ -10,3 +10,6 @@ Thumbs.db
 # FreeCAD build log is regenerated every run
 cad/build.log
 cad/_diag.txt
+
+# Regenerable and large; rebuild with `uv run python -m sim.run_cycle --gif`
+sim/studies/renders/cycle.gif

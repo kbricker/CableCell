@@ -199,7 +199,7 @@ CAVITY_PITCH = _d(2.5, COMMITTED, "Molex 5264 TRUE 2.5mm", "CAVITY_PITCH")
 INSERT_DEPTH = _d(6.0, COMMITTED, "recipe SPOX-3P", "INSERT_DEPTH")
 PULLBACK = _d(1.5, COMMITTED, "recipe SPOX-3P", "PULLBACK")
 
-MAIN_BEARING_BORE = _d(90.0, ESTIMATED, "80-100mm range, cell-design.md", "MAIN_BEARING_BORE")
+MAIN_BEARING_BORE = _d(60.0, ESTIMATED, "PBC SRB selection, see below", "MAIN_BEARING_BORE")
 ARM_THICKNESS = _d(25.0, ESTIMATED, "stiffness guess", "ARM_THICKNESS")
 ARM_WIDTH = _d(60.0, ESTIMATED, "MGN12 carriage width", "ARM_WIDTH")
 
@@ -306,12 +306,58 @@ Z_STAGE_MARGIN = _d(20.0, ESTIMATED, "commissioning headroom", "Z_STAGE_MARGIN")
 # Guide posts on a circle around the pivot, with the leadscrew OFF-AXIS so the
 # rotary axis at the platform centre stays clear. This is the arrangement a
 # single coaxial rail cannot give us.
-# Posts must clear the main bearing's OUTER diameter, not its bore. A 90 mm-bore
-# slew ring runs ~120 mm OD, so anything inside r=60 fouls it. 78 mm gives the
-# bearing 18 mm of radial room and still keeps the platform compact.
-# (Caught 2026-07-26: the first value, 46 mm, put the posts inside the bearing.)
-Z_POST_CIRCLE_R = _d(78.0, ESTIMATED, "clears bearing OD + margin", "Z_POST_CIRCLE_R")
-MAIN_BEARING_OD = _d(120.0, ESTIMATED, "90mm-bore slew ring class", "MAIN_BEARING_OD")
+# Real PBC Linear SRB plain slew ring catalogue, fetched 2026-07-26. Bore/OD
+# pairs are NOT freely chosen — OD is much larger than intuition suggests, which
+# is what caused two successive post-circle clashes.
+#
+#   ID    OD   cheapest
+#   20    80    $93.69
+#   30   100   $127.23
+#   50   150   $164.19
+#   60   160   $199.35
+#  100   185   $289.65
+#  150   250   $509.94
+#  200   300   $692.46
+#
+# The earlier $40 estimate was 3-7x low, and the assumed 120 mm OD for a 90 mm
+# bore does not exist — a 100 mm bore comes with a 185 mm OD.
+PBC_SLEW_RINGS = {
+    20: (80.0, 93.69),
+    30: (100.0, 127.23),
+    50: (150.0, 164.19),
+    60: (160.0, 199.35),
+    100: (185.0, 289.65),
+    150: (250.0, 509.94),
+    200: (300.0, 692.46),
+}
+
+# Production pick is still open — it needs PBC's moment ratings, which are in the
+# datasheet rather than the catalogue listing. 60 mm bore is the working
+# assumption: the arm applies roughly 12 N*m of moment (50 N insertion reaction
+# at R0 = 200 mm, plus ~2 kg of self-weight at ~100 mm), and a 160 mm ring is
+# comfortably into that class without paying for 185 mm.
+#
+# PHASE 1 DOES NOT BUY THIS. A ~$15 turntable bearing stands in, because Phase 1
+# has no insertion step whose accuracy the bearing would have to hold.
+MAIN_BEARING_BORE_SEL = 60
+MAIN_BEARING_OD = _d(
+    PBC_SLEW_RINGS[MAIN_BEARING_BORE_SEL][0], COMMITTED, "PBC catalogue 2026-07-26", "MAIN_BEARING_OD"
+)
+MAIN_BEARING_PRICE = _d(
+    PBC_SLEW_RINGS[MAIN_BEARING_BORE_SEL][1], COMMITTED, "PBC catalogue 2026-07-26", "MAIN_BEARING_PRICE"
+)
+
+# Radial room between the bearing OD and the guide posts.
+Z_POST_CLEARANCE = _d(14.0, ESTIMATED, "assembly access", "Z_POST_CLEARANCE")
+
+# DERIVED, never hand-set. Two clashes came from typing a number here that was
+# not checked against the bearing it had to surround.
+Z_POST_CIRCLE_R = _d(
+    float(MAIN_BEARING_OD) / 2.0 + float(Z_POST_CLEARANCE) + 8.0 / 2.0,
+    ESTIMATED,
+    "derived from bearing OD",
+    "Z_POST_CIRCLE_R",
+)
 Z_POST_DIA = _d(8.0, COMMITTED, "hardened rod stock", "Z_POST_DIA")
 
 

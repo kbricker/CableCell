@@ -30,6 +30,7 @@ import argparse
 import math
 import pathlib
 
+from sim import imaging
 from sim import layout as L
 
 MM = 0.001  # layout is in millimetres; MuJoCo works in metres
@@ -464,37 +465,9 @@ def render(views: tuple[str, ...] | None = None) -> list[pathlib.Path]:
             renderer.update_scene(data, camera=cam)
             pixels = renderer.render()
             path = out_dir / f"roughin_{name}.png"
-            _write_png(path, pixels)
+            imaging.save_png(path, pixels)
             written.append(path)
     return written
-
-
-def _write_png(path: pathlib.Path, pixels) -> None:
-    """Minimal PNG writer so we do not add an image dependency."""
-    import struct
-    import zlib
-
-    height, width, _ = pixels.shape
-    raw = bytearray()
-    for row in range(height):
-        raw.append(0)  # filter type 0
-        raw.extend(pixels[row].tobytes())
-
-    def chunk(tag: bytes, payload: bytes) -> bytes:
-        return (
-            struct.pack(">I", len(payload))
-            + tag
-            + payload
-            + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
-        )
-
-    header = struct.pack(">2I5B", width, height, 8, 2, 0, 0, 0)
-    path.write_bytes(
-        b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", header)
-        + chunk(b"IDAT", zlib.compress(bytes(raw), 6))
-        + chunk(b"IEND", b"")
-    )
 
 
 def main() -> int:

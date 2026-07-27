@@ -2,7 +2,7 @@
 
     uv run python -m sim.run_cycle              # interactive viewer, loops
     uv run python -m sim.run_cycle --sheet      # contact sheet of key poses
-    uv run python -m sim.run_cycle --frames 90  # numbered frames for a GIF
+    uv run python -m sim.run_cycle --gif        # animated GIF of the cycle
 
 The motion is the real sequence the machine will run, minus the tooling: lift to
 a rotation-safe height, index to the next station, descend to that station's
@@ -24,6 +24,7 @@ import mujoco
 import numpy as np
 
 from sim import build_scene
+from sim import imaging
 from sim import layout as L
 
 MM = 0.001
@@ -123,60 +124,54 @@ def contact_sheet(cols: int = 3, rows: int = 3) -> pathlib.Path:
     cam.lookat[:] = (0.0, 0.0, 0.215)
 
     cell_w, cell_h = 640, 400
-    sheet = np.zeros((cell_h * rows, cell_w * cols, 3), dtype=np.uint8)
-
     ids = _act_ids(model)
+    tiles: list[tuple[str, np.ndarray]] = []
+
     with mujoco.Renderer(model, height=cell_h, width=cell_w) as renderer:
-        for idx, (label, targets, _sec) in enumerate(picks):
+        for idx, (caption, targets, _sec) in enumerate(picks):
             # Jump straight to this waypoint's pose.
             for name, target in targets.items():
                 data.ctrl[ids[name]] = target
             for _ in range(400):
                 mujoco.mj_step(model, data)
             renderer.update_scene(data, camera=cam)
-            frame = renderer.render()
-            r, c = divmod(idx, cols)
-            sheet[r * cell_h:(r + 1) * cell_h, c * cell_w:(c + 1) * cell_w] = frame
-            print(f"  {idx + 1}/{want}  {label}")
+            tiles.append((caption, renderer.render()))
+            print(f"  {idx + 1}/{want}  {caption}")
 
     out = pathlib.Path(__file__).parent / "studies" / "renders" / "cycle_sheet.png"
-    build_scene._write_png(out, sheet)
-    return out
+    return imaging.contact_sheet(tiles, cols, out)
 
 
-def frames(count: int) -> pathlib.Path:
-    """Numbered frames across the cycle, for assembling into a GIF."""
+def gif(count: int = 84, fps: int = 16, scale: float = 0.46) -> pathlib.Path:
+    """Render the cycle and write it out as an animated GIF."""
     model = mujoco.MjModel.from_xml_path(str(build_scene.MJCF_PATH))
     data = mujoco.MjData(model)
     mujoco.mj_forward(model, data)
 
-    out = pathlib.Path(__file__).parent / "studies" / "renders" / "cycle"
-    out.mkdir(parents=True, exist_ok=True)
-    for old in out.glob("*.png"):
-        old.unlink()
-
     cam = mujoco.MjvCamera()
     cam.type = mujoco.mjtCamera.mjCAMERA_FREE
-    az, el, dist, lookat = build_scene.VIEWS["overview"]
-    cam.azimuth, cam.elevation, cam.distance = az, el, dist
-    cam.lookat[:] = lookat
+    cam.azimuth, cam.elevation, cam.distance = 38.0, -27.0, 0.70
+    cam.lookat[:] = (0.0, 0.0, 0.215)
 
     total_steps = sum(max(1, int(s / model.opt.timestep)) for _, _, s in waypoints())
     every = max(1, total_steps // count)
-    state = {"i": 0, "n": 0}
+    collected: list[np.ndarray] = []
+    state = {"i": 0}
 
     with mujoco.Renderer(model, height=720, width=1152) as renderer:
-        def on_frame(label: str, _p: float) -> None:
-            if state["i"] % every == 0 and state["n"] < count:
+        def on_frame(caption: str, _p: float) -> None:
+            if state["i"] % every == 0 and len(collected) < count:
                 renderer.update_scene(data, camera=cam)
-                build_scene._write_png(out / f"f{state['n']:04d}.png", renderer.render())
-                state["n"] += 1
+                collected.append(imaging.label(renderer.render(), caption, size=26))
             state["i"] += 1
 
         play(model, data, on_frame=on_frame)
 
-    print(f"{state['n']} frames -> {out}")
-    return out
+    out = pathlib.Path(__file__).parent / "studies" / "renders" / "cycle.gif"
+    path = imaging.save_gif(collected, out, fps=fps, scale=scale)
+    size_mb = path.stat().st_size / 1_048_576
+    print(f"{len(collected)} frames -> {path}  ({size_mb:.1f} MB)")
+    return path
 
 
 def viewer() -> None:
@@ -206,14 +201,14 @@ def viewer() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sheet", action="store_true", help="contact sheet of key poses")
-    parser.add_argument("--frames", type=int, default=0, help="write N frames for a GIF")
+    parser.add_argument("--gif", action="store_true", help="write an animated GIF")
     args = parser.parse_args()
 
     if args.sheet:
         print("rendering contact sheet ...")
         print(f"wrote {contact_sheet()}")
-    elif args.frames:
-        frames(args.frames)
+    elif args.gif:
+        gif()
     else:
         viewer()
     return 0

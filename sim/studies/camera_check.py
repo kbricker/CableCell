@@ -31,6 +31,7 @@ import mujoco
 import numpy as np
 
 from sim import build_scene
+from sim import imaging
 from sim import layout as L
 
 # Practical limits, not hard physics.
@@ -133,7 +134,7 @@ def render_views() -> list[pathlib.Path]:
             _station_qpos(model, data, station)
             renderer.update_scene(data, camera="arm_cam")
             path = out / f"{station.lower()}.png"
-            build_scene._write_png(path, renderer.render())
+            imaging.save_png(path, renderer.render())
             written.append(path)
     return written
 

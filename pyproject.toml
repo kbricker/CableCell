@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "mujoco>=3.10",
     "numpy>=2.0",
+    "pillow>=12.3.0",
 ]
 
 # Not a distributable package: the repo is run in place

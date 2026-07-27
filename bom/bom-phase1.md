@@ -95,7 +95,8 @@ Five axes: **Z** lift, **θ** rotate, **R** extend, **S** cross-slide, **W** wri
 | 3.2 | **Z stage** — guide rods | Amazon | 8 mm hardened rod, 200 mm | ⓘ ~$14 | 3 | See §8 — the platform-on-posts arrangement |
 | 3.3 | Z stage — linear bearings | Amazon | LM8UU / SC8UU | ⓘ ~$12 | 6 | Two per post |
 | 3.4 | Z stage — leadscrew | Amazon | T8, 2 mm lead, 200 mm + anti-backlash nut | ⓘ ~$16 | 1 | **Off-axis**, so the rotary axis at the platform centre stays clear. T8 trapezoidal **self-locks** — an E-stop will not drop the arm |
-| 3.5 | θ — rotary bearing | PBC Linear / Amazon | slew ring or turntable bearing, ~80–100 mm | ⓘ ~$40 | 1 | Carries radial extension load and insertion reaction. [PBC SRB-P02 series](https://pbclinear.com/collections/plain-bearing-slewing-ring-bearings) is the right class; no public pricing — **quote needed** |
+| 3.5 | θ — rotary bearing, **Phase 1** | Amazon | plain turntable / lazy-susan bearing | ⓘ ~$15 | 1 | Stand-in. Phase 1 has no insertion step whose accuracy the bearing must hold |
+| 3.5b | θ — rotary bearing, **production** | PBC Linear | [SRB-P03-0060-0160-ALNN-E6](https://pbclinear.com/collections/plain-bearing-slewing-ring-bearings) | ✅ **$199.35** *(2026-07-26)* | 1 | 60 mm bore / **160 mm OD**. Real catalogue price — the earlier ~$40 estimate was 5× low. Pick still needs PBC's **moment ratings** to confirm against the ~12 N·m the arm applies |
 | 3.6 | θ — belt reduction | Amazon | GT2 20T + 100T pulleys, belt | ⓘ ~$18 | 1 | 5:1. Buys resolution and holding torque against station reaction |
 | 3.7 | R — linear rail | Amazon | MGN12H, 250 mm + carriage | ⓘ ~$32 | 1 | The shared "extend into the station" motion |
 | 3.8 | R — drive | Amazon | T8 leadscrew 150 mm + nut | ⓘ ~$14 | 1 | |
@@ -104,7 +105,26 @@ Five axes: **Z** lift, **θ** rotate, **R** extend, **S** cross-slide, **W** wri
 | 3.11 | **W — wrist drive** | Amazon | NEMA 17 + GT2 belt, 2 hard stops | ⓘ ~$20 | 1 | 🔴 **Changed from the pneumatic rotary actuator — see §8** |
 | 3.12 | Couplers, shaft hardware | Amazon | 5×8 flexible couplers, collars | ⓘ ~$18 | 1 | |
 
-**Subtotal ~$250** (excludes the slew bearing if it quotes high)
+**Subtotal ~$225** for Phase 1 (turntable stand-in). Add **$199** at production
+for the real slew ring.
+
+🔴 **Slew-ring bore and OD are not independent.** The PBC catalogue, fetched
+2026-07-26:
+
+| bore | OD | cheapest |
+|---|---|---|
+| 20 mm | 80 mm | $93.69 |
+| 30 mm | 100 mm | $127.23 |
+| 50 mm | 150 mm | $164.19 |
+| **60 mm** | **160 mm** | **$199.35** |
+| 100 mm | 185 mm | $289.65 |
+| 150 mm | 250 mm | $509.94 |
+
+A 100 mm bore comes with a **185 mm** OD, not the 120 mm assumed. Since the Z
+guide posts have to sit *outside* the bearing OD, that ripples straight into the
+Z platform size — `Z_POST_CIRCLE_R` is now **derived** from `MAIN_BEARING_OD` in
+`layout.py` rather than hand-set, because typing it by hand caused two
+successive clashes.
 
 ---
 
