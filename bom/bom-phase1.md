@@ -20,13 +20,19 @@ Sourcing rationale per category is in [`docs/sourcing-index.md`](../docs/sourcin
 |---|---|---|
 | §1 Cell infrastructure | ~$300 | mixed |
 | §2 Pneumatics | ~$390 | mixed |
-| §3 Main arm | ~$250 | mostly estimated |
+| §3 Main arm | ~$230 | mostly estimated |
 | §4 Station 1 — feed / measure / cut | ~$70 | estimated |
 | §5 Station 2 — slit + fan | ~$35 | estimated |
 | §6 Station 3 — strip | ~$35 | estimated |
 | §7 Printed parts (filament) | ~$40 | estimated |
 | §7b Arm camera | ~$20 | camera already owned |
-| **Phase 1 total** | **~$1,140** | |
+| **Phase 1 total** | **~$980** | **mostly unsourced — see below** |
+
+> ⚠️ **Most of this total is not sourced.** Only the compressor, filter/regulator,
+> valve manifold and spindle bearings have been priced off a real page. Everything
+> marked ⓘ is a planning figure from part class, and the one such figure that has
+> since been checked — the rotary bearing — was **5× wrong**. Treat the total as
+> an order of magnitude, not a budget, until the browser pass in §10 is done.
 
 **This is above the $700–900 I quoted, and well above the "few hundred" first
 estimated.** Two reasons: pneumatics are ~36% of the build once valves, flow
@@ -95,8 +101,7 @@ Five axes: **Z** lift, **θ** rotate, **R** extend, **S** cross-slide, **W** wri
 | 3.2 | **Z stage** — guide rods | Amazon | 8 mm hardened rod, 200 mm | ⓘ ~$14 | 3 | See §8 — the platform-on-posts arrangement |
 | 3.3 | Z stage — linear bearings | Amazon | LM8UU / SC8UU | ⓘ ~$12 | 6 | Two per post |
 | 3.4 | Z stage — leadscrew | Amazon | T8, 2 mm lead, 200 mm + anti-backlash nut | ⓘ ~$16 | 1 | **Off-axis**, so the rotary axis at the platform centre stays clear. T8 trapezoidal **self-locks** — an E-stop will not drop the arm |
-| 3.5 | θ — rotary bearing, **Phase 1** | Amazon | plain turntable / lazy-susan bearing | ⓘ ~$15 | 1 | Stand-in. Phase 1 has no insertion step whose accuracy the bearing must hold |
-| 3.5b | θ — rotary bearing, **production** | PBC Linear | [SRB-P03-0060-0160-ALNN-E6](https://pbclinear.com/collections/plain-bearing-slewing-ring-bearings) | ✅ **$199.35** *(2026-07-26)* | 1 | 60 mm bore / **160 mm OD**. Real catalogue price — the earlier ~$40 estimate was 5× low. Pick still needs PBC's **moment ratings** to confirm against the ~12 N·m the arm applies |
+| 3.5 | **θ — spindle bearings** | VXB / Amazon | **2× 6810-2RS** (50 mm bore, 65 OD, 7 wide), spaced 50 mm | ✅ **$24.99–34.99 ea** *(VXB, 2026-07-26)* · ⚠️ generics ~$8–15 | 2 | Paired bearings resist the arm's ~12 N·m as a **couple** — 240 N radial each against a ~6,200 N static rating, **26× margin**. Lever arm is the spacing, which is free. [VXB](https://vxb.com/search?q=6810) · [NSK](https://www.amazon.com/NSK-6810-Clearance-Rotational-Capacity/dp/B007Z2U718) · [KOYO](https://www.amazon.com/KOYO-6810-Groove-Bearing-Section/dp/B014TR7EO4) · [generic](https://www.amazon.com/Bearings-6810-2rs-50x65x7-Bearing-Shielded/dp/B083FLPVDP) |
 | 3.6 | θ — belt reduction | Amazon | GT2 20T + 100T pulleys, belt | ⓘ ~$18 | 1 | 5:1. Buys resolution and holding torque against station reaction |
 | 3.7 | R — linear rail | Amazon | MGN12H, 250 mm + carriage | ⓘ ~$32 | 1 | The shared "extend into the station" motion |
 | 3.8 | R — drive | Amazon | T8 leadscrew 150 mm + nut | ⓘ ~$14 | 1 | |
@@ -105,8 +110,17 @@ Five axes: **Z** lift, **θ** rotate, **R** extend, **S** cross-slide, **W** wri
 | 3.11 | **W — wrist drive** | Amazon | NEMA 17 + GT2 belt, 2 hard stops | ⓘ ~$20 | 1 | 🔴 **Changed from the pneumatic rotary actuator — see §8** |
 | 3.12 | Couplers, shaft hardware | Amazon | 5×8 flexible couplers, collars | ⓘ ~$18 | 1 | |
 
-**Subtotal ~$225** for Phase 1 (turntable stand-in). Add **$199** at production
-for the real slew ring.
+**Subtotal ~$230.**
+
+🔴 **A lazy-susan turntable was proposed here and withdrawn.** They are rated for
+**axial** load on a table, not moment; under a 200 mm cantilever they tip, and
+their mm-scale axial play would have invalidated the very stiffness test that
+justifies building Phase 1 at the full R₀. Do not buy one.
+
+**The paired spindle is plausibly the production answer too**, not a stand-in —
+better per dollar than a slew ring for this load case, and it shrank the Z
+platform from 248 mm to 165 mm. The PBC catalogue below stays as the documented
+fallback if the spindle shows too much runout in practice.
 
 🔴 **Slew-ring bore and OD are not independent.** The PBC catalogue, fetched
 2026-07-26:
@@ -282,3 +296,29 @@ Pneumatics are **~36%** of Phase 1. If the total needs to come down:
 - **Exact cylinder bores and strokes** — depends on station tooling geometry that is not designed yet. Bores above are a first pass sized on required force, not on measured die resistance.
 - **Guillotine and strip blade specifics** — depends on the ribbon's measured cross-section.
 - **3030 extrusion cut list** — depends on the frame design, which depends on the deck diameter being confirmed at 560 mm.
+
+
+---
+
+## 10. Sourcing status
+
+Per the `source-bom` skill: every line needs a real URL and a real price, or an
+explicit unsourced mark. Current state, honestly:
+
+| | Lines | Notes |
+|---|---|---|
+| ✅ priced off a real page | 5 | compressor, filter/regulator, valve manifold, spindle bearings, PBC slew-ring catalogue |
+| ⚠️ class confirmed, price not pinned | 2 | Octopus board, valve manifold exact variant |
+| ⓘ **unsourced** | ~30 | most of the arm, all three stations, frame, wiring, pneumatic fittings |
+
+**Why the rest is not done yet.** The vendors holding those lines block automated
+fetching: Amazon returns 403, StepperOnline returns 403, eBay times out, and
+Trimantec's public product feed exposes only a slice of its Airtac catalogue.
+PBC and VXB are Shopify and *do* expose `/products.json`, which is how the slew
+ring and 6810 prices came out exact.
+
+**What finishes it:** a live browser pass in Kyle's logged-in Chrome
+(`amazon-shopping-pass`), which is the documented route for exactly this. Most
+remaining lines are Amazon.
+
+Do not let the ⓘ figures harden into a budget in the meantime.
