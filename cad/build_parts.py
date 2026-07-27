@@ -666,24 +666,88 @@ def camera_mount():
     The wrist flips 180 degrees between cable ends; the camera must not. Tilted
     down at the station work point so it can read that station's AprilTag.
     """
+    import math
+
+    # THE ORIGIN IS THE FOOT, NOT THE LENS.
+    #
+    # It used to be the lens, and the part carried a 34 mm "leg" that went
+    # nowhere: the scene placed the mesh at the camera position, so the leg hung
+    # in the air behind it. Kyle, in the viewer: "the black camera mount thingy
+    # still just floating in space." He was right, and it was not a placement
+    # bug — there was genuinely no bracket. Nothing joined the camera to the
+    # machine at all.
+    #
+    # The camera rides the RADIAL carriage, so the only thing it can stand on is
+    # that carriage's plate. This part now starts there and reaches out and up
+    # to the lens, both distances derived.
     board = float(L.CAMERA_BOARD)
+    run = float(L.camera_stalk_run())
+    rise = float(L.camera_stalk_rise())
+    tilt = math.radians(float(L.CAMERA_TILT))
+    w = board + 10.0
     plate_t = 5.0
-    face = Part.makeBox(board + 10.0, board + 10.0, plate_t, V(-(board + 10) / 2, -(board + 10) / 2, 0))
+    post_t = 12.0
 
-    # ELP boards use a 30 mm M2 pattern.
-    for sx in (-1, 1):
+    # TWO POSTS, STRADDLING THE WRIST. A single post on the centreline is the
+    # obvious build and MuJoCo rejected it immediately: it stood in the same
+    # 2 mm of space as the body clamp at the top of the Z stroke. The wrist
+    # train is 32 mm wide, so the posts go either side of it and the arm
+    # bridges over the top. Symmetric, stiffer, and it costs nothing.
+    post_y = max(float(L.CLAMP_BODY_W), float(L.COMB_BODY_W)) / 2.0 + 10.0
+
+    part = None
+    for sy in (-1.0, 1.0):
+        y0 = sy * post_y - post_t / 2.0
+        foot = Part.makeBox(34.0, post_t, 8.0, V(-17.0, y0, 0))
+        foot = foot.cut(_z_cyl(1.7, 10.0, -1.0, -12.0, sy * post_y))
+        foot = foot.cut(_z_cyl(1.7, 10.0, -1.0, 12.0, sy * post_y))
+        post = Part.makeBox(post_t, post_t, rise, V(-post_t / 2, y0, 0))
+        leg = foot.fuse(post)
+        part = leg if part is None else part.fuse(leg)
+
+    # Bridge from post to post and out to the lens.
+    span = 2.0 * post_y + post_t
+    part = part.fuse(
+        Part.makeBox(run + post_t / 2, span, post_t,
+                     V(-post_t / 2, -span / 2, rise - post_t))
+    )
+    # Gussets in both corners — the bridge carries the board out on a lever.
+    for sy in (-1.0, 1.0):
+        y0 = sy * post_y - post_t / 2.0
+        tri = Part.makePolygon([
+            V(post_t / 2, y0, rise - post_t),
+            V(post_t / 2 + 22.0, y0, rise - post_t),
+            V(post_t / 2, y0, rise - post_t - 22.0),
+            V(post_t / 2, y0, rise - post_t),
+        ])
+        part = part.fuse(Part.Face(Part.Wire(tri)).extrude(V(0, post_t, 0)))
+
+    # Board plate at the lens, normal to the optical axis. Built as a profile in
+    # XZ and extruded in Y, because Shape.rotate() mutates in place and returns
+    # None — fusing that result kills freecadcmd with no traceback.
+    ux, uz = math.sin(tilt), math.cos(tilt)      # along the board face
+    nx, nz = math.cos(tilt), -math.sin(tilt)     # optical axis, outward and down
+    cx, cz = run, rise
+    half = w / 2.0
+    pts = [
+        V(cx + ux * half, -w / 2, cz + uz * half),
+        V(cx - ux * half, -w / 2, cz - uz * half),
+        V(cx - ux * half - nx * plate_t, -w / 2, cz - uz * half - nz * plate_t),
+        V(cx + ux * half - nx * plate_t, -w / 2, cz + uz * half - nz * plate_t),
+        V(cx + ux * half, -w / 2, cz + uz * half),
+    ]
+    pad = Part.Face(Part.Wire(Part.makePolygon(pts))).extrude(V(0, w, 0))
+    part = part.fuse(pad)
+
+    # Lens clearance and the ELP board's 30 mm M2 pattern, both along the
+    # optical axis rather than along z.
+    axis = V(nx, 0, nz)
+    back = V(cx - nx * 12.0, 0, cz - nz * 12.0)
+    part = part.cut(Part.makeCylinder(9.0, 24.0, back, axis))
+    for su in (-1, 1):
         for sy in (-1, 1):
-            face = face.cut(_z_cyl(1.15, plate_t + 2.0, -1.0, sx * 15.0, sy * 15.0))
-    face = face.cut(_z_cyl(9.0, plate_t + 2.0, -1.0))  # lens clearance
-
-    # Angled leg setting CAMERA_TILT, with a slot so the angle can be trimmed
-    # once we see what the camera actually frames.
-    leg = Part.makeBox(12.0, board + 10.0, 34.0, V(-(board + 10) / 2 - 12.0, -(board + 10) / 2, 0))
-    part = face.fuse(leg)
-    for z in (10.0, 24.0):
-        part = part.cut(
-            Part.makeCylinder(1.7, 20.0, V(-(board + 10) / 2 - 16.0, 0, z), V(1, 0, 0))
-        )
+            o = V(back.x + ux * su * 15.0, sy * 15.0, back.z + uz * su * 15.0)
+            part = part.cut(Part.makeCylinder(1.15, 24.0, o, axis))
     return part
 
 

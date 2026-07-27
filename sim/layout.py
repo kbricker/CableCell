@@ -425,6 +425,27 @@ CAMERA_BACK_OFFSET = _d(42.0, ESTIMATED, "clears the cross-slide, camera_check",
 CAMERA_UP_OFFSET = _d(55.0, ESTIMATED, "clears the comb and clamp, camera_check", "CAMERA_UP_OFFSET")
 CAMERA_TILT = _d(52.6, ESTIMATED, "derived: atan(up/back)", "CAMERA_TILT")
 
+
+# WHERE THE BRACKET HAS TO REACH FROM. The camera mount was placed at the lens
+# position with nothing joining it to the machine — Kyle, in the viewer: "the
+# black camera mount thingy still just floating in space." It had a 34 mm leg on
+# it, which was a bracket to nowhere: the part's origin was the lens, so the leg
+# hung in the air behind the camera instead of standing on anything.
+#
+# The camera rides the RADIAL carriage, so the only thing it can stand on is
+# that carriage's plate. These two say how far the bracket has to travel to get
+# there, and build_parts now grows it from the FOOT rather than from the lens.
+def camera_stalk_run() -> float:
+    """Radial distance from the R-carriage centreline out to the lens."""
+    return arm_tool_reach() - float(CAMERA_BACK_OFFSET)
+
+
+def camera_stalk_rise() -> float:
+    """Height from the R-carriage plate's top face up to the lens."""
+    return (
+        float(STATION_TOOLING_HEIGHT) + float(CAMERA_UP_OFFSET) - arm_carriage_plate_top()
+    )
+
 # AprilTag at each station, tag36h11. TendWright prints these at 40 mm.
 # 25 -> 20 mm, and the tag size is now SET BY the gap it has to live in rather
 # than scaled from TendWright's 40 mm. The band between the arm's outermost
@@ -1215,6 +1236,52 @@ DECK_RADIUS = _d(
 # ---------------------------------------------------------------------------
 
 
+CHUTE_STATIONS = ("S6_DROP", "S6_REJECT")
+
+
+def station_radius(name: str) -> float:
+    """The radius at which this stop's hardware actually sits.
+
+    Not every stop works at R0. The S6 chutes are holes in the deck under where
+    the cable hangs, which is 43 mm inboard of the bolt circle.
+    """
+    if name in CHUTE_STATIONS:
+        return (float(DROP_HOLE_R_IN) + float(DROP_HOLE_R_OUT)) / 2.0
+    return float(ARM_R0)
+
+
+def station_width(name: str) -> float:
+    """Tangential width of the hardware at this stop, mm."""
+    if name == "S4_CRIMP":
+        return float(PRESS_WIDTH)
+    if name in CHUTE_STATIONS:
+        # The COLLAR, not the hole. The lip is what two neighbouring chutes
+        # collide with, and it is 38 mm wider than the slot it surrounds.
+        return float(DROP_HOLE_W) + 2.0 * (float(CHUTE_COLLAR_WALL) + float(CHUTE_COLLAR_H))
+    return float(STATION_WIDTH)
+
+
+def check_station_spacing() -> list[str]:
+    """No two neighbouring stops may overlap, each measured at its OWN radius.
+
+    Cheap, and it is the check that would have caught the intersecting chutes
+    before they were rendered.
+    """
+    bad: list[str] = []
+    order = list(STATIONS)
+    for a, b in zip(order, order[1:]):
+        gap_deg = float(STATION_ANGLES[b]) - float(STATION_ANGLES[a])
+        need = angular_half_width(station_width(a), station_radius(a)) + \
+            angular_half_width(station_width(b), station_radius(b))
+        if gap_deg < need - 0.01:
+            bad.append(
+                f"{a} and {b} overlap: {gap_deg:.1f} deg apart, need {need:.1f} deg "
+                f"(widths {station_width(a):.0f}/{station_width(b):.0f} mm at "
+                f"R={station_radius(a):.0f}/{station_radius(b):.0f})"
+            )
+    return bad
+
+
 def assign_station_angles(radius: float | None = None) -> dict[str, float]:
     """Lay the seven stops out around the arc, respecting their real widths.
 
@@ -1230,8 +1297,16 @@ def assign_station_angles(radius: float | None = None) -> dict[str, float]:
     order = list(STATIONS)
 
     def half(name: str) -> float:
-        width = PRESS_WIDTH if name == "S4_CRIMP" else STATION_WIDTH
-        return angular_half_width(float(width), float(r))
+        # EACH STOP AT ITS OWN RADIUS. This measured every stop's angular width
+        # at R0, which was right while every stop WAS at R0. The S6 chutes are
+        # not: they sit at R=157, under where the cable hangs, and the same
+        # physical width subtends a bigger angle further in. Spaced as if they
+        # were at R0, the two collars overlapped each other by 12 mm — Kyle saw
+        # it in the viewer as "2 trays that intersect with each other".
+        #
+        # The general shape of this mistake is worth naming: a derivation that
+        # silently assumes a constant, taken from a time when it was one.
+        return angular_half_width(station_width(name), station_radius(name))
 
     occupied = sum(2.0 * half(n) for n in order)
     gaps = len(order) - 1
@@ -1361,6 +1436,17 @@ def press_centre_distance() -> float:
 # every consumer — the scene builder, the studies, the CAD — sees the same
 # numbers without having to remember to call it.
 apply_derived_station_angles()
+
+# ...and then prove the result, at each stop's own radius. The spread is derived
+# from the same widths, so this should be redundant — it is not, and it was not:
+# the two S6 collars overlapped by 12 mm because the derivation measured every
+# stop at R0 while the chutes sit 43 mm inside it. A derived value is only as
+# good as the assumption underneath it, so the assumption gets checked too.
+_SPACING_FAILURES = check_station_spacing()
+if _SPACING_FAILURES:
+    raise AssertionError(
+        "stations overlap on the dial:\n  " + "\n  ".join(_SPACING_FAILURES)
+    )
 
 
 def report() -> str:

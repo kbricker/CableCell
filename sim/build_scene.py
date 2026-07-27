@@ -723,9 +723,11 @@ def build_mjcf() -> str:
                  wrist — the wrist flips 180 degrees and the camera must not.
                  Offsets are from the WORK POINT, which is where it has to look;
                  they were from the comb, which now moves relative to it. -->
+            <!-- Placed by its FOOT on the carriage plate, and unrotated: the
+                 tilt is built into the part now, so the bracket stands on
+                 something instead of floating at the lens position. -->
             <geom name="arm_camera" type="mesh" mesh="camera_mount_mesh"
-              pos="{(L.arm_tool_reach() - float(L.CAMERA_BACK_OFFSET)) * MM:.6g} 0 {(_REL(float(L.STATION_TOOLING_HEIGHT)) + float(L.CAMERA_UP_OFFSET)) * MM:.6g}"
-              euler="0 {math.radians(float(L.CAMERA_TILT)):.6g} 0"
+              pos="0 0 {_REL(L.arm_carriage_plate_top()) * MM:.6g}"
               material="camera_mat" contype="0" conaffinity="0"/>
             <camera name="arm_cam"
               pos="{(L.arm_tool_reach() - float(L.CAMERA_BACK_OFFSET)) * MM:.6g} 0 {(_REL(float(L.STATION_TOOLING_HEIGHT)) + float(L.CAMERA_UP_OFFSET)) * MM:.6g}"
