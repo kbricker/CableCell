@@ -107,7 +107,12 @@ def spool_hanger():
     Mounts to 3030 extrusion on 30 mm centres. Gusseted, because a 150 mm
     upright in PLA will flex under dancer tension otherwise.
     """
-    h = float(L.SPOOL_AXLE_HEIGHT)
+    # SPOOL_AXLE_HEIGHT is the height of the AXLE, so the upright has to stand
+    # proud of it. It was previously the upright height with the bore 18 mm
+    # below, which put the real axle 18 mm under where the scene placed the
+    # spool — the two disagreed silently until the meshes went into the scene.
+    h = float(L.SPOOL_AXLE_HEIGHT) + 20.0
+    axle_z = float(L.SPOOL_AXLE_HEIGHT)
     base_l, base_w, base_t = 70.0, 44.0, 6.0
     up_t, up_w = 8.0, 44.0
 
@@ -131,8 +136,7 @@ def spool_hanger():
         face = Part.Face(Part.Wire(tri))
         part = part.fuse(face.extrude(V(0, gusset_t, 0)))
 
-    # Axle bore, through the upright near the top.
-    axle_z = h - 18.0
+    # Axle bore, through the upright at the committed axle height.
     bore = Part.makeCylinder(
         float(L.SPOOL_BORE) / 2.0 + 0.15, up_t + 20.0, V(-up_t / 2 - 10, 0, axle_z), V(1, 0, 0)
     )
@@ -322,6 +326,85 @@ def spreader_plate():
     return plate
 
 
+def splitting_wedge():
+    """S2's splitter — starts both tears; the spreader plate finishes them.
+
+    Kyle 2026-07-27: "I'm 100% certain we can print wedges that can split the
+    ribbon cable." This part exists because the ribbon is DESIGNED to zip apart
+    by hand, so S2 is not cutting insulation — it is starting a tear in a
+    deliberately weak web and letting geometry propagate it.
+
+    Three tangent conductors have TWO webs, at +/- RIBBON_PITCH/2. So there are
+    two tips, 1.40 mm apart, each centred on its web line.
+
+    The asymmetry is the whole design. Each fin grows OUTWARD only: its inner
+    face pulls back barely at all, holding the centre conductor on the
+    centreline, while its outer face sweeps out to WEDGE_OPEN_GAP and drives
+    the outer conductor away. A symmetric fin would shove the centre conductor
+    sideways and the three tails would arrive at the comb off-pitch.
+
+    No cylinder, no depth adjustment, no anvil. Split length is set by how far
+    the arm advances, which makes it a commanded number rather than a tooling
+    dimension — see the wedge decision on plan #672.
+    """
+    web = float(L.WEDGE_WEB_OFFSET)
+    tip_r = float(L.WEDGE_TIP_RADIUS)
+    ramp = float(L.WEDGE_RAMP_LENGTH)
+    gap = float(L.WEDGE_OPEN_GAP)
+    od = float(L.RIBBON_CONDUCTOR_OD)
+
+    ch_h = float(L.RIBBON_THICKNESS) + 0.4
+    entry_half = (float(L.RIBBON_WIDTH) + 0.6) / 2.0
+    exit_half = web + gap + od + 0.3
+
+    base_x, base_y, base_t = 50.0, 50.0, 8.0
+    blk_y, blk_z = 30.0, 24.0
+    ch_z = base_t + 10.0
+
+    part = Part.makeBox(base_x, base_y, base_t, V(-base_x / 2, -base_y / 2, 0))
+    part = part.fuse(
+        Part.makeBox(base_x, blk_y, blk_z, V(-base_x / 2, -blk_y / 2, base_t))
+    )
+
+    def _sect(x: float, y0: float, y1: float) -> Part.Wire:
+        """Rectangle in the YZ plane at station x, spanning y0..y1."""
+        pts = [
+            V(x, y0, ch_z),
+            V(x, y1, ch_z),
+            V(x, y1, ch_z + ch_h),
+            V(x, y0, ch_z + ch_h),
+            V(x, y0, ch_z),
+        ]
+        return Part.Wire(Part.makePolygon(pts))
+
+    # Ribbon channel: widens as the conductors are driven apart, so nothing
+    # binds on the side walls while it is being split.
+    x_in, x_out = -base_x / 2 - 1.0, base_x / 2 + 1.0
+    part = part.cut(
+        Part.makeLoft(
+            [_sect(x_in, -entry_half, entry_half), _sect(x_out, -exit_half, exit_half)],
+            True,
+        )
+    )
+
+    # The two fins. Built after the channel is cut, because they live in it.
+    x_tip = -base_x / 2 + 4.0          # short plain lead-in first
+    x_open = x_tip + ramp
+    for sign in (1.0, -1.0):
+        sections = [
+            _sect(x_tip, sign * (web - tip_r), sign * (web + tip_r)),
+            _sect(x_open, sign * (od / 2.0 + 0.15), sign * (web + gap)),
+            _sect(base_x / 2, sign * (od / 2.0 + 0.15), sign * (web + gap)),
+        ]
+        part = part.fuse(Part.makeLoft(sections, True))
+
+    # Mounts on station_mount's 40 mm square pattern, like every other station.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            part = part.cut(_z_cyl(2.2, base_t + 2.0, -1.0, sx * 20.0, sy * 20.0))
+    return part
+
+
 def z_platform():
     """The Z platform — rides three guide posts, driven by one off-axis screw,
     and houses the paired-bearing spindle at its centre.
@@ -452,21 +535,28 @@ def wrist_mount():
     dropped at $220 against ~$20 for a stepper and belt.
     """
     hub_r, hub_w = 13.0, 14.0
-    part = Part.makeCylinder(hub_r, hub_w, V(0, -hub_w / 2, 0), V(0, 1, 0))
-    part = part.cut(Part.makeCylinder(2.6, hub_w + 4.0, V(0, -hub_w / 2 - 2, 0), V(0, 1, 0)))
 
-    # Comb mounting pad.
-    pad = Part.makeBox(26.0, 32.0, 6.0, V(hub_r - 4.0, -16.0, -3.0))
+    # Hub axis is RADIAL (+X), matching the sim's W joint. It was built on Y
+    # originally, which would have flipped the comb about the wrong axis — the
+    # cable is turned end-for-end about the arm's long axis, not side to side.
+    # The scene caught the mismatch; fixing it here rather than rotating the
+    # mesh at placement keeps the part and the model telling the same story.
+    part = Part.makeCylinder(hub_r, hub_w, V(-hub_w / 2, 0, 0), V(1, 0, 0))
+    part = part.cut(Part.makeCylinder(2.6, hub_w + 4.0, V(-hub_w / 2 - 2, 0, 0), V(1, 0, 0)))
+
+    # Comb mounting pad, on the outboard face of the hub so the comb projects
+    # radially outward toward the station.
+    pad = Part.makeBox(26.0, 32.0, 6.0, V(hub_w / 2, -16.0, -3.0))
     part = part.fuse(pad)
     for y in (-11.0, 11.0):
         part = part.cut(
-            Part.makeCylinder(1.7, 12.0, V(hub_r + 2.0, y, -6.0), V(0, 0, 1))
+            Part.makeCylinder(1.7, 12.0, V(hub_w / 2 + 8.0, y, -6.0), V(0, 0, 1))
         )
 
     # Hard-stop lugs — the two positions are mechanical, not commanded.
     for sign in (1.0, -1.0):
         part = part.fuse(
-            Part.makeBox(8.0, 6.0, 10.0, V(-hub_r - 2.0, sign * 4.0 - 3.0, -5.0))
+            Part.makeBox(6.0, 8.0, 10.0, V(-hub_w / 2 - 3.0, sign * hub_r - 4.0, -5.0))
         )
     return part
 
@@ -639,6 +729,7 @@ PARTS = {
     "comb": comb,
     "guide_tube_mount": guide_tube_mount,
     "measuring_wheel": measuring_wheel,
+    "splitting_wedge": splitting_wedge,
     "spreader_plate": spreader_plate,
     "z_platform": z_platform,
     "spindle_shaft": spindle_shaft,

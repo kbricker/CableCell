@@ -266,6 +266,55 @@ RIBBON_HAND_SEPARABLE = True  # the web is designed to zip apart
 RIBBON_LENGTH_STOCK = _d(15240.0, COMMITTED, "50 ft spool", "RIBBON_LENGTH_STOCK")
 RIBBON_MASS_PER_M = _d(16.4, COMMITTED, "250 g / 50 ft", "RIBBON_MASS_PER_M")
 
+
+# ---------------------------------------------------------------------------
+# 4d. S2 splitting wedge (Kyle 2026-07-27 — "we can run with that assumption")
+# ---------------------------------------------------------------------------
+# S2 is a FIXED PRINTED WEDGE, not a slitting die. The ribbon is designed to be
+# zipped apart by hand, so we are not cutting insulation — we start a tear in a
+# deliberately weak web and let geometry propagate it.
+#
+# Division of labour, and the reason this is two parts and not one:
+#   the WEDGE starts both tears over a short ramp;
+#   the SPREADER PLATE propagates them and fans the tails to comb pitch.
+# Splitting them means the tear-start geometry (the uncertain part) can be
+# reprinted without touching the fan geometry (the settled part).
+#
+# Three tangent conductors have TWO webs, at +/- RIBBON_PITCH/2 from centreline,
+# so the wedge has two tips 1.40 mm apart. Each tip is centred on its web line
+# and grows OUTWARD only — the inner faces stay clear of the centre conductor,
+# which must not be displaced.
+#
+# Split length is NOT set here. It is set by how far the arm advances, which
+# makes it a commanded number rather than a tooling dimension. That is the whole
+# point of the wedge route.
+#
+# None of the four values below is measured. They are print-resolution and
+# geometry reasoning, and they are cheap to iterate: leading-edge radius and
+# included angle are the only two variables, and a reprint is hours not dollars.
+# Fallback if the tear wanders is the $32 pneumatic die, still purchasable then.
+
+WEDGE_WEB_OFFSET = _d(
+    float(RIBBON_PITCH) / 2.0, COMMITTED, "= RIBBON_PITCH/2, tangent webs", "WEDGE_WEB_OFFSET"
+)
+WEDGE_TIP_RADIUS = _d(
+    0.25, ESTIMATED, "0.4 mm nozzle, single-perimeter tip", "WEDGE_TIP_RADIUS"
+)
+WEDGE_RAMP_LENGTH = _d(10.0, ESTIMATED, "tear-start ramp, unvalidated", "WEDGE_RAMP_LENGTH")
+WEDGE_OPEN_GAP = _d(
+    3.0, ESTIMATED, "hand-off separation to spreader", "WEDGE_OPEN_GAP"
+)
+
+
+def wedge_ramp_angle() -> float:
+    """Half-angle of one wedge face, degrees. Reported, not commanded.
+
+    Shallow is safer — a steep face tries to shear the conductor sideways
+    instead of propagating the tear along the web.
+    """
+    rise = float(WEDGE_OPEN_GAP) - float(WEDGE_TIP_RADIUS)
+    return math.degrees(math.atan2(rise, float(WEDGE_RAMP_LENGTH)))
+
 # The wire ships as a LOOSE ROLL, not on a rigid spool — so the spool is ours
 # to design. Sized in spool_capacity_m() below; printed, 8 mm bore to match the
 # hardened rod stock already on the BOM for the Z stage.
@@ -410,7 +459,12 @@ Z_STAGE_STOCK_STROKES = (50.0, 100.0, 150.0, 200.0, 300.0, 400.0)
 # ---------------------------------------------------------------------------
 
 EXTRUSION = _d(30.0, COMMITTED, "3030, cell-design.md 5.1", "EXTRUSION")
-DECK_THICKNESS = _d(10.0, COMMITTED, "tooling plate, cell-design.md 5.1", "DECK_THICKNESS")
+# 1/2" nominal plywood, which is what Kyle is actually cutting — NOT the 10 mm
+# aluminium tooling plate cell-design.md originally assumed. The cut sheet was
+# already quoting 1/2" while layout.py still said 10 mm; two sources of truth
+# for the one part that gets made on a saw, which is exactly the drift the
+# single-source rule exists to prevent. deck_cut_sheet.py now reads this value.
+DECK_THICKNESS = _d(12.0, COMMITTED, '1/2" ply, Kyle supplies and cuts', "DECK_THICKNESS")
 DECK_RADIUS = _d(
     float(ARM_R0 + STATION_WIDTH), ESTIMATED, "R0 + station depth", "DECK_RADIUS"
 )

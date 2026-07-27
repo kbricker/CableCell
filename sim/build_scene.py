@@ -69,25 +69,134 @@ def _fmt(*vals: float) -> str:
     return " ".join(f"{v:.6g}" for v in vals)
 
 
+# Every printed part that build_parts.py produces, available as a mesh.
+MESHES = (
+    "comb", "spool", "spool_hanger", "dancer_arm", "guide_tube_mount",
+    "measuring_wheel", "splitting_wedge", "spreader_plate", "z_platform",
+    "spindle_shaft", "radial_carriage", "wrist_mount", "camera_mount",
+    "drive_roller_block", "guillotine_holder", "station_mount",
+)
+
+
+def _mesh_assets() -> str:
+    """Real CAD geometry from cad/build_parts.py.
+
+    Same layout.py dimensions drive both the printed part and the sim, so they
+    cannot disagree. STL is in millimetres; MuJoCo is in metres.
+    """
+    return "\n".join(
+        f'    <mesh name="{n}_mesh" file="{n}.stl" scale="0.001 0.001 0.001"/>'
+        for n in MESHES
+    )
+
+
+# Where the station mount sits. Its tag ledge is at part x = -38, and the tag
+# must land just inboard of the bolt circle, so the mount centre goes 35 mm
+# outboard of R0.
+STATION_MOUNT_R = float(L.ARM_R0) + 35.0
+STATION_MOUNT_T = 10.0  # station_mount base thickness — parts bolt to its top
+
+# Which real parts stand at each stop, as
+#   (mesh, radial offset from R0, tangential offset, height of the part's
+#    RIBBON PASSAGE above its own base, flow-reversed, extra euler)
+# Radial offsets are negative INBOARD. "flow-reversed" rotates the part 180
+# degrees about z, because ribbon travels from outboard IN toward the pivot
+# while every part is modelled with its flow along its own +x.
+# Radial order matters and follows the documented ribbon path (docs/stations.md
+# 1): spool -> dancer -> drive rollers -> encoder wheel -> PTFE tube ->
+# presentation point, with the guillotine cutting AT the presentation point.
+# The first cut of this table had the guillotine outboard of the guide tube,
+# which would have cut the ribbon before it was ever guided.
+STATION_PARTS: dict[str, tuple] = {
+    "S1_FEED": (
+        ("drive_roller_block", 78.0, 0.0, 29.3, True, None),
+        ("measuring_wheel", 56.0, 0.0, 4.5, False, "1.5708 0 {t}"),
+        ("guide_tube_mount", 30.0, 0.0, 20.0, True, None),
+        ("guillotine_holder", 8.0, 0.0, 34.0, True, None),
+    ),
+    "S2_SLIT": (
+        ("splitting_wedge", 30.0, 0.0, 18.0, True, None),
+        ("spreader_plate", 2.0, 0.0, 4.0, True, None),
+    ),
+}
+
+# Stops with no modelled tooling yet. These stay grey ON PURPOSE and say why —
+# a detailed guess is worse than an obvious blank.
+UNMODELLED = {
+    "S3_STRIP": "V-blade die geometry undecided",
+    "S5_INSERT": "out of Phase 1 scope",
+    "S6_DROP": "chute not designed",
+    "S6_REJECT": "chute not designed",
+}
+
+
 def _station_bodies() -> str:
-    """Static station blocks on the deck, one per angular stop."""
+    """Station assemblies on the deck, one per angular stop.
+
+    Real printed geometry where a part exists; an honest grey block where it
+    does not, labelled with the reason.
+    """
     deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
     out: list[str] = []
     for name in L.STATIONS:
         if name == "S4_CRIMP":
             continue  # the press stands in for S4
         theta = float(L.STATION_ANGLES[name])
-        r = float(L.ARM_R0) + STATION_BODY_DEPTH / 2.0
-        x, y = _polar(r, theta)
-        z = deck_top + STATION_BODY_HEIGHT / 2.0
-        mat = "reject_mat" if name == "S6_REJECT" else "station_mat"
+        rot = math.radians(theta)
+        engage_z = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name])
+
+        # Every station sits on the same printed mount — that shared interface
+        # is what makes stations bolt-on modules.
+        mx, my = _polar(STATION_MOUNT_R, theta)
         out.append(
-            f'    <geom name="{name.lower()}" type="box" '
-            f'pos="{_fmt(x * MM, y * MM, z * MM)}" '
-            f'size="{_fmt(STATION_BODY_DEPTH / 2 * MM, float(L.STATION_WIDTH) / 2 * MM, STATION_BODY_HEIGHT / 2 * MM)}" '
-            f'euler="0 0 {math.radians(theta):.6g}" material="{mat}" '
-            f'contype="0" conaffinity="0"/>'
+            f'    <geom name="{name.lower()}_mount" type="mesh" mesh="station_mount_mesh" '
+            f'pos="{_fmt(mx * MM, my * MM, deck_top * MM)}" '
+            f'euler="0 0 {rot:.6g}" material="mount_mat" contype="0" conaffinity="0"/>'
         )
+
+        for mesh, r_off, t_off, passage_h, reversed_, euler_tpl in STATION_PARTS.get(name, ()):
+            r = float(L.ARM_R0) + r_off
+            px = r * math.cos(rot) - t_off * math.sin(rot)
+            py = r * math.sin(rot) + t_off * math.cos(rot)
+            pz = engage_z - passage_h
+            if euler_tpl is not None:
+                euler = euler_tpl.format(t=f"{rot:.6g}")
+            else:
+                euler = f"0 0 {rot + (math.pi if reversed_ else 0.0):.6g}"
+            out.append(
+                f'    <geom name="{name.lower()}_{mesh}" type="mesh" mesh="{mesh}_mesh" '
+                f'pos="{_fmt(px * MM, py * MM, pz * MM)}" '
+                f'euler="{euler}" material="printed_mat" contype="0" conaffinity="0"/>'
+            )
+            # Every part is placed by its RIBBON PASSAGE, which must land on the
+            # station's engagement height. Its base then lands wherever it
+            # lands, and the gap down to the mount is a real printed pedestal —
+            # not a modelling fudge. Draw it, so the parts count is honest.
+            # pedestal_heights() reports these for the BOM.
+            gap = pz - (deck_top + STATION_MOUNT_T)
+            if gap > 0.5:
+                out.append(
+                    f'    <geom name="{name.lower()}_{mesh}_pedestal" type="box" '
+                    f'pos="{_fmt(px * MM, py * MM, (pz - gap / 2.0) * MM)}" '
+                    f'size="{_fmt(0.020, 0.020, gap / 2.0 * MM)}" '
+                    f'euler="{euler}" material="pedestal_mat" '
+                    f'contype="0" conaffinity="0"/>'
+                )
+
+        if name in UNMODELLED:
+            # Deliberately a box. See UNMODELLED for why this one is blank.
+            r = float(L.ARM_R0) + STATION_BODY_DEPTH / 2.0
+            x, y = _polar(r, theta)
+            z = deck_top + STATION_MOUNT_T + STATION_BODY_HEIGHT / 2.0
+            mat = "reject_mat" if name == "S6_REJECT" else "unknown_mat"
+            out.append(
+                f'    <!-- {name}: greybox - {UNMODELLED[name]} -->\n'
+                f'    <geom name="{name.lower()}" type="box" '
+                f'pos="{_fmt(x * MM, y * MM, z * MM)}" '
+                f'size="{_fmt(STATION_BODY_DEPTH / 2 * MM, float(L.STATION_WIDTH) / 2 * MM, STATION_BODY_HEIGHT / 2 * MM)}" '
+                f'euler="0 0 {rot:.6g}" material="{mat}" '
+                f'contype="0" conaffinity="0"/>'
+            )
         # AprilTag facing the pivot — what the arm camera registers against.
         tx, ty = _polar(float(L.ARM_R0) - 3.0, theta)
         tz = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name]) + 10.0
@@ -127,7 +236,15 @@ def _press_body() -> str:
     # Applicator sits on the base plate, under the ram, its long axis radial.
     ax, ay = _polar(float(L.ARM_R0) + float(L.APPLICATOR_LENGTH) / 2.0 - 40.0, theta)
 
-    return f"""    <!-- S4 CRIMP: the press. Placed first; everything else is derived from it. -->
+    return f"""    <!-- S4 CRIMP: the press. Placed first; everything else is derived from it.
+
+         THIS ONE STAYS A BOX ON PURPOSE (Kyle 2026-07-27, "sure press is still
+         a box"). We have footprint, height and weight from the vendor and
+         nothing else - ram-axis depth and base-plate height are unmeasured.
+         Drawing a detailed press would be INVENTING detail, and
+         detailed-but-wrong is worse than obviously-blank. Greybox where we are
+         ignorant is honest; greybox where the part is already designed is just
+         undone work. Every other station here is real geometry. -->
     <geom name="press_base" type="box"
       pos="{_fmt(cx * MM, cy * MM, 0.030)}"
       size="{_fmt(float(L.PRESS_DEPTH) / 2 * MM, float(L.PRESS_WIDTH) / 2 * MM, 0.030)}"
@@ -198,51 +315,60 @@ def _spool_and_hanger() -> str:
     x, y = _polar(r, theta)
     z = deck_top + float(L.SPOOL_AXLE_HEIGHT)
 
+    rot = math.radians(theta)
     # Spool axis is tangential, so ribbon pays off radially toward the pivot.
-    axis_euler = f"{math.pi / 2:.6g} 0 {math.radians(theta):.6g}"
-    half_w = float(L.SPOOL_INNER_WIDTH) / 2.0
-    fl = float(L.SPOOL_FLANGE_T)
+    # euler (90deg about x, then theta about z) sends the mesh's own +z along
+    # this unit vector:
+    axis_euler = f"{math.pi / 2:.6g} 0 {rot:.6g}"
+    ax, ay = math.sin(rot), -math.cos(rot)
+    # The spool mesh is modelled from z=0 up, so shift it back half its width
+    # to sit centred on the axle.
+    total_w = float(L.SPOOL_INNER_WIDTH) + 2.0 * float(L.SPOOL_FLANGE_T)
+    sx = x - ax * total_w / 2.0
+    sy = y - ay * total_w / 2.0
 
     parts: list[str] = []
     parts.append(
-        f'    <geom name="spool_hub" type="cylinder" pos="{_fmt(x * MM, y * MM, z * MM)}" '
-        f'size="{_fmt(float(L.SPOOL_HUB_R) * MM, half_w * MM)}" euler="{axis_euler}" '
+        f'    <geom name="spool" type="mesh" mesh="spool_mesh" '
+        f'pos="{_fmt(sx * MM, sy * MM, z * MM)}" euler="{axis_euler}" '
         f'material="spool_mat" contype="0" conaffinity="0"/>'
     )
-    # Wound ribbon, shown at full stock.
+    # Wound ribbon, shown at full stock — a cylinder, because it is stock on a
+    # reel, not a part we make.
     parts.append(
         f'    <geom name="spool_ribbon" type="cylinder" pos="{_fmt(x * MM, y * MM, z * MM)}" '
-        f'size="{_fmt((float(L.SPOOL_FLANGE_R) - 4.0) * MM, (half_w - 1.0) * MM)}" '
+        f'size="{_fmt((float(L.SPOOL_FLANGE_R) - 4.0) * MM, (float(L.SPOOL_INNER_WIDTH) / 2 - 1.0) * MM)}" '
         f'euler="{axis_euler}" material="ribbon_mat" contype="0" conaffinity="0"/>'
     )
-    for sign, tag in ((1.0, "a"), (-1.0, "b")):
-        ox, oy = _polar(r, theta)
-        # offset along the spool axis (tangential direction)
-        ax, ay = -math.sin(math.radians(theta)), math.cos(math.radians(theta))
-        px = ox + ax * sign * (half_w + fl / 2.0)
-        py = oy + ay * sign * (half_w + fl / 2.0)
-        parts.append(
-            f'    <geom name="spool_flange_{tag}" type="cylinder" '
-            f'pos="{_fmt(px * MM, py * MM, z * MM)}" '
-            f'size="{_fmt(float(L.SPOOL_FLANGE_R) * MM, fl / 2 * MM)}" euler="{axis_euler}" '
-            f'material="spool_mat" contype="0" conaffinity="0"/>'
-        )
-    # Hanger upright carrying the 8 mm axle.
-    hx, hy = _polar(r + 20.0, theta)
+    # Hanger. Its axle bore runs along the part's own +x, so turning it a
+    # further 90 degrees puts the axle tangential, parallel to the spool.
+    #
+    # It does NOT bolt to the deck. At SPOOL_RADIAL_OFFSET = 90 the spool sits
+    # outboard of DECK_RADIUS, which is deliberate — but the first version of
+    # this scene left the hanger floating in mid-air at deck height, because
+    # nothing was holding it up. The part's own base has T-nut slots on 30 mm
+    # centres, so what it actually wants is a 3030 extrusion post off the
+    # bench. Drawing that post is what made the omission visible.
+    hx, hy = _polar(r + 34.0, theta)
     parts.append(
-        f'    <geom name="spool_hanger" type="box" '
-        f'pos="{_fmt(hx * MM, hy * MM, (deck_top + float(L.SPOOL_AXLE_HEIGHT) / 2) * MM)}" '
-        f'size="{_fmt(0.008, 0.030, float(L.SPOOL_AXLE_HEIGHT) / 2 * MM)}" '
-        f'euler="0 0 {math.radians(theta):.6g}" material="hanger_mat" '
+        f'    <geom name="spool_post" type="box" '
+        f'pos="{_fmt(hx * MM, hy * MM, deck_top / 2 * MM)}" '
+        f'size="0.015 0.015 {deck_top / 2 * MM:.6g}" material="frame_mat" '
+        f'contype="0" conaffinity="0"/>'
+    )
+    parts.append(
+        f'    <geom name="spool_hanger" type="mesh" mesh="spool_hanger_mesh" '
+        f'pos="{_fmt(hx * MM, hy * MM, deck_top * MM)}" '
+        f'euler="0 0 {rot + math.pi / 2:.6g}" material="hanger_mat" '
         f'contype="0" conaffinity="0"/>'
     )
     # Dancer arm — passive tension, and its flag is the spool-empty detect.
-    dx, dy = _polar(r - 40.0, theta)
+    dx, dy = _polar(r - 46.0, theta)
     parts.append(
-        f'    <geom name="dancer_arm" type="capsule" '
-        f'fromto="{_fmt(dx * MM, dy * MM, (deck_top + 40) * MM)} '
-        f'{_fmt((dx - float(L.DANCER_ARM_LENGTH) * 0.7) * MM, dy * MM, (deck_top + 95) * MM)}" '
-        f'size="0.005" material="hanger_mat" contype="0" conaffinity="0"/>'
+        f'    <geom name="dancer_arm" type="mesh" mesh="dancer_arm_mesh" '
+        f'pos="{_fmt(dx * MM, dy * MM, (deck_top + 70.0) * MM)}" '
+        f'euler="0 0 {rot + math.pi:.6g}" material="hanger_mat" '
+        f'contype="0" conaffinity="0"/>'
     )
     return "\n".join(parts)
 
@@ -285,6 +411,12 @@ def build_mjcf() -> str:
     <material name="applicator_mat" rgba="0.80 0.55 0.15 1"/>
     <material name="station_mat" rgba="0.25 0.42 0.60 1"/>
     <material name="reject_mat" rgba="0.60 0.30 0.30 1"/>
+    <!-- Printed parts read as printed; anything still grey is grey BECAUSE we
+         do not know its shape, not because the modelling is unfinished. -->
+    <material name="printed_mat" rgba="0.24 0.52 0.72 1"/>
+    <material name="mount_mat" rgba="0.34 0.38 0.44 1"/>
+    <material name="pedestal_mat" rgba="0.18 0.40 0.56 1"/>
+    <material name="unknown_mat" rgba="0.52 0.52 0.54 0.55"/>
     <material name="zstage_mat" rgba="0.35 0.55 0.42 1"/>
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
     <material name="arm_mat" rgba="0.72 0.74 0.78 1"/>
@@ -300,8 +432,7 @@ def build_mjcf() -> str:
     <!-- Real CAD geometry from cad/build_parts.py. Same layout.py dimensions
          drive both, so the printed part and the sim cannot disagree. STL is in
          millimetres; MuJoCo is in metres. -->
-    <mesh name="comb_mesh" file="comb.stl" scale="0.001 0.001 0.001"/>
-    <mesh name="spool_mesh" file="spool.stl" scale="0.001 0.001 0.001"/>
+{_mesh_assets()}
   </asset>
 
   <worldbody>
@@ -338,8 +469,7 @@ def build_mjcf() -> str:
     <body name="z_carriage" pos="0 0 {deck_top * MM:.6g}">
       <joint name="Z" type="slide" axis="0 0 1" range="0 {z_stroke * MM:.6g}"
         damping="40"/>
-      <geom name="z_platform" type="cylinder" pos="0 0 0"
-        size="{Z_POST_RADIUS * 1.45 * MM:.6g} 0.008"
+      <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">
@@ -350,8 +480,10 @@ def build_mjcf() -> str:
         <joint name="T" type="hinge" axis="0 0 1"
           range="0 {math.radians(float(L.SWEEP_ARC)):.6g}"
           damping="12"/>
-        <geom name="main_bearing" type="cylinder" pos="0 0 0.012"
-          size="{float(L.MAIN_BEARING_BORE) / 2 * MM:.6g} 0.012"
+        <!-- The rotating member: a tube through both 6810 inner races, which
+             replaced the slew ring. Moment becomes a couple and the lever arm
+             is SPINDLE_SPACING rather than a bought diameter. -->
+        <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
           material="rotor_mat" contype="0" conaffinity="0"/>
 
         <body name="arm" pos="0 0 {COMB_ABOVE_ROTOR * MM:.6g}">
@@ -363,16 +495,15 @@ def build_mjcf() -> str:
           <body name="radial" pos="{r_retracted * MM:.6g} 0 0">
             <joint name="R" type="slide" axis="1 0 0"
               range="0 {float(L.ARM_STROKE) * MM:.6g}" damping="20"/>
-            <geom name="radial_carriage" type="box" pos="0 0 0.014"
-              size="0.020 0.028 0.010" material="arm_mat"
+            <geom name="radial_carriage" type="mesh" mesh="radial_carriage_mesh"
+              pos="0 0 0.004" material="arm_mat"
               contype="0" conaffinity="0"/>
             <!-- Arm camera. Rides the RADIAL carriage, deliberately NOT the
                  wrist — the wrist flips 180 degrees and the camera must not.
                  Looks radially outward and down at the station work point;
                  registers against each station's AprilTag. -->
-            <geom name="arm_camera" type="box"
+            <geom name="arm_camera" type="mesh" mesh="camera_mount_mesh"
               pos="{-float(L.CAMERA_BACK_OFFSET) * MM:.6g} 0 {float(L.CAMERA_UP_OFFSET) * MM:.6g}"
-              size="{_fmt(float(L.CAMERA_DEPTH) / 2 * MM, float(L.CAMERA_BOARD) / 2 * MM, float(L.CAMERA_BOARD) / 2 * MM)}"
               euler="0 {math.radians(float(L.CAMERA_TILT)):.6g} 0"
               material="camera_mat" contype="0" conaffinity="0"/>
             <camera name="arm_cam"
@@ -391,6 +522,12 @@ def build_mjcf() -> str:
               <body name="wrist" pos="0 0 0">
                 <joint name="W" type="hinge" axis="1 0 0" range="0 {math.pi:.6g}"
                   damping="6"/>
+                <!-- Wrist hub. Two positions only, set by mechanical hard
+                     stops; the motor just has to reach them. Hub axis is
+                     radial, so the cable turns end-for-end. -->
+                <geom name="wrist_hub" type="mesh" mesh="wrist_mount_mesh"
+                  pos="-0.014 0 -0.009" material="arm_mat"
+                  contype="0" conaffinity="0"/>
                 <!-- Comb: 3 channels at 8 mm pitch, guiding not clamping. -->
                 <geom name="comb_body" type="mesh" mesh="comb_mesh"
                   pos="-0.004 0 -0.006" material="comb_mat"
@@ -470,6 +607,32 @@ def render(views: tuple[str, ...] | None = None) -> list[pathlib.Path]:
     return written
 
 
+def pedestal_heights() -> list[tuple[str, str, float]]:
+    """Standoff each station part needs under it, in mm.
+
+    These are real printed parts nobody has costed yet. They exist because
+    STATION_Z is still a flat PLACEHOLDER 60 mm for every stop while the parts
+    underneath have passage heights from 4.5 to 34 mm — so the engagement plane
+    and the tooling do not currently agree, and the difference has to go
+    somewhere. The honest options are:
+
+      a) derive STATION_Z per stop from its tallest part (pedestals shrink to
+         the WITHIN-station spread only), or
+      b) keep a common engagement height and print these standoffs.
+
+    (a) is better and is the open decision. Either way the within-station
+    spread is real: at S1 the guillotine passage sits 29.5 mm above the
+    measuring wheel's, so something is packing that difference.
+    """
+    deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
+    rows: list[tuple[str, str, float]] = []
+    for name, parts in STATION_PARTS.items():
+        engage_z = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z[name])
+        for mesh, _r, _t, passage_h, _rev, _e in parts:
+            rows.append((name, mesh, engage_z - passage_h - (deck_top + STATION_MOUNT_T)))
+    return rows
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--render", action="store_true", help="also render PNG views")
@@ -482,6 +645,13 @@ def main() -> int:
     print(f"  Z stroke    {L.z_stage_choice():.0f} mm (needs {L.z_travel_required():.0f})")
     print(f"  press at    theta {float(L.STATION_ANGLES['S4_CRIMP']):.0f} deg, "
           f"{L.press_centre_distance():.0f} mm from pivot")
+
+    rows = pedestal_heights()
+    print("\n  station part standoffs (mm above the station mount):")
+    for station, mesh, h in rows:
+        flag = "  <-- NEGATIVE, part sinks into its mount" if h < 0 else ""
+        print(f"    {station:<10} {mesh:<20}{h:7.1f}{flag}")
+    print(f"  {len(rows)} standoffs, none costed. See pedestal_heights().")
 
     if args.render:
         for p in render():

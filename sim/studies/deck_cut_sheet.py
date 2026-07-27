@@ -45,7 +45,7 @@ def spec() -> dict:
     centre_d_mm = math.ceil((z_reach_mm * 2.0 + 20.0) / MM_PER_IN * 2) / 2 * MM_PER_IN
     return {
         "deck_d": (deck_d_mm, deck_d_mm / MM_PER_IN),
-        "thickness": (12.0, 12.0 / MM_PER_IN),
+        "thickness": (float(L.DECK_THICKNESS), float(L.DECK_THICKNESS) / MM_PER_IN),
         "bolt_d": (bolt_d_mm, bolt_d_mm / MM_PER_IN),
         "centre_d": (centre_d_mm, centre_d_mm / MM_PER_IN),
         "deck_above_bench": (float(L.DECK_ABOVE_BENCH), float(L.DECK_ABOVE_BENCH) / MM_PER_IN),
