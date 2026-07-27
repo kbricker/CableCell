@@ -32,6 +32,7 @@ import pathlib
 
 from sim import imaging
 from sim import layout as L
+from sim import ribbon as RIB
 
 MM = 0.001  # layout is in millimetres; MuJoCo works in metres
 
@@ -141,6 +142,13 @@ UNMODELLED = {
     "S6_DROP": "chute not designed",
     "S6_REJECT": "chute not designed",
 }
+
+
+def _ribbon_bodies() -> str:
+    """The ribbon, generated at S1's presentation point."""
+    engage = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z["S1_FEED"])
+    cut_x = float(L.ARM_R0) + 10.0
+    return RIB.bodies(engage, cut_x, float(L.STATION_ANGLES["S1_FEED"]))
 
 
 def _station_bodies() -> str:
@@ -465,7 +473,7 @@ def build_mjcf() -> str:
     <material name="arm_mat" rgba="0.72 0.74 0.78 1"/>
     <material name="comb_mat" rgba="0.90 0.85 0.30 1"/>
     <material name="spool_mat" rgba="0.85 0.86 0.88 1"/>
-    <material name="ribbon_mat" rgba="0.20 0.20 0.22 1"/>
+    <material name="ribbon_mat" rgba="0.85 0.95 0.15 1"/>
     <material name="hanger_mat" rgba="0.45 0.48 0.52 1"/>
     <material name="camera_mat" rgba="0.15 0.15 0.17 1"/>
     <material name="tag_mat" rgba="0.97 0.97 0.97 1"/>
@@ -507,6 +515,8 @@ def build_mjcf() -> str:
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
 {_z_posts(deck_top, z_stroke)}
+
+{_ribbon_bodies()}
 
     <!-- ============ the moving assembly ============ -->
     <body name="z_carriage" pos="0 0 {deck_top * MM:.6g}">
@@ -595,6 +605,10 @@ def build_mjcf() -> str:
       </body>
     </body>
   </worldbody>
+
+  <equality>
+{RIB.equalities()}
+  </equality>
 
   <actuator>
     <position name="Z_act" joint="Z" kp="800" ctrlrange="0 {z_stroke * MM:.6g}"/>

@@ -182,3 +182,23 @@ to 12/117.
 10 mm (an aluminium tooling plate from `cell-design.md`) while the generated cut
 sheet quoted 1/2" ply. Two sources of truth for the one part that gets made on a
 saw. `deck_cut_sheet.py` now reads the value instead of hard-coding it.
+
+**2026-07-27 — The body clamp blocks the arm camera, and `camera_check` cannot
+see it.** Found by trying to render the ribbon cycle from the arm's own camera —
+the obvious viewpoint, since that camera exists precisely to watch the work
+point. The body clamp fills the entire frame.
+
+`camera_check` reports all six station tags in frame at 70 mm, 0.2° off-axis,
+32.8° obliquity, and has done since it was written. It is not wrong; it answers
+"is the tag within the field of view and at a sane angle" by geometry. It does
+not answer "is anything in the way", because occlusion needs a render or a ray
+cast, not a trigonometric check. A study that passes for the right reason and
+still misses the problem is worth recording as carefully as a bug.
+
+**Consequence:** the arm camera's job is step-readiness verification — did the
+ribbon get gripped, did the slit cut, are three tails in three channels — and
+it currently cannot see any of that. Either the camera moves, or the clamp does.
+The camera is on the radial carriage and the clamp is on the wrist, so they move
+independently; the fix is a placement study, not a redesign.
+
+`camera_check` should grow an occlusion test before it is trusted again.
