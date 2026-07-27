@@ -199,7 +199,7 @@ CAVITY_PITCH = _d(2.5, COMMITTED, "Molex 5264 TRUE 2.5mm", "CAVITY_PITCH")
 INSERT_DEPTH = _d(6.0, COMMITTED, "recipe SPOX-3P", "INSERT_DEPTH")
 PULLBACK = _d(1.5, COMMITTED, "recipe SPOX-3P", "PULLBACK")
 
-MAIN_BEARING_BORE = _d(60.0, ESTIMATED, "PBC SRB selection, see below", "MAIN_BEARING_BORE")
+MAIN_BEARING_BORE = _d(50.0, COMMITTED, "6810 spindle bore", "MAIN_BEARING_BORE")
 ARM_THICKNESS = _d(25.0, ESTIMATED, "stiffness guess", "ARM_THICKNESS")
 ARM_WIDTH = _d(60.0, ESTIMATED, "MGN12 carriage width", "ARM_WIDTH")
 
@@ -306,21 +306,25 @@ Z_STAGE_MARGIN = _d(20.0, ESTIMATED, "commissioning headroom", "Z_STAGE_MARGIN")
 # Guide posts on a circle around the pivot, with the leadscrew OFF-AXIS so the
 # rotary axis at the platform centre stays clear. This is the arrangement a
 # single coaxial rail cannot give us.
-# Real PBC Linear SRB plain slew ring catalogue, fetched 2026-07-26. Bore/OD
-# pairs are NOT freely chosen — OD is much larger than intuition suggests, which
-# is what caused two successive post-circle clashes.
+# PAIRED-BEARING SPINDLE, not a slew ring (2026-07-26).
 #
-#   ID    OD   cheapest
-#   20    80    $93.69
-#   30   100   $127.23
-#   50   150   $164.19
-#   60   160   $199.35
-#  100   185   $289.65
-#  150   250   $509.94
-#  200   300   $692.46
+# A slew ring resists moment in ONE plane, buying its lever arm from its own
+# diameter — which is why they get big and expensive fast. Two deep-groove
+# bearings spaced vertically resist the same moment as a COUPLE, and the lever
+# arm is the spacing, which costs us nothing: the platform is already thick.
 #
-# The earlier $40 estimate was 3-7x low, and the assumed 120 mm OD for a 90 mm
-# bore does not exist — a 100 mm bore comes with a 185 mm OD.
+# The arm applies roughly 12 N*m (50 N insertion reaction at R0 = 200 mm, plus
+# ~2 kg of self-weight at ~100 mm). At SPINDLE_SPACING that becomes:
+#     12 N*m / 0.050 m = 240 N radial per bearing
+# A 6810 carries ~6200 N static. Twenty-five times margin.
+#
+# Knock-on: 65 mm bearing OD instead of a 160 mm ring lets the Z guide posts
+# come back in, which shrinks the whole centre section.
+#
+# PBC slew ring catalogue kept as the fallback if the spindle shows too much
+# runout in practice (fetched 2026-07-26; bore -> OD, cheapest):
+#     20->80 $93.69   30->100 $127.23   50->150 $164.19   60->160 $199.35
+#    100->185 $289.65 150->250 $509.94  200->300 $692.46
 PBC_SLEW_RINGS = {
     20: (80.0, 93.69),
     30: (100.0, 127.23),
@@ -331,21 +335,22 @@ PBC_SLEW_RINGS = {
     200: (300.0, 692.46),
 }
 
-# Production pick is still open — it needs PBC's moment ratings, which are in the
-# datasheet rather than the catalogue listing. 60 mm bore is the working
-# assumption: the arm applies roughly 12 N*m of moment (50 N insertion reaction
-# at R0 = 200 mm, plus ~2 kg of self-weight at ~100 mm), and a 160 mm ring is
-# comfortably into that class without paying for 185 mm.
-#
-# PHASE 1 DOES NOT BUY THIS. A ~$15 turntable bearing stands in, because Phase 1
-# has no insertion step whose accuracy the bearing would have to hold.
-MAIN_BEARING_BORE_SEL = 60
-MAIN_BEARING_OD = _d(
-    PBC_SLEW_RINGS[MAIN_BEARING_BORE_SEL][0], COMMITTED, "PBC catalogue 2026-07-26", "MAIN_BEARING_OD"
+# 6810 thin-section deep groove: 50 mm bore, 65 mm OD, 7 mm wide.
+SPINDLE_BEARING_BORE = _d(50.0, COMMITTED, "6810 standard", "SPINDLE_BEARING_BORE")
+SPINDLE_BEARING_OD = _d(65.0, COMMITTED, "6810 standard", "SPINDLE_BEARING_OD")
+SPINDLE_BEARING_W = _d(7.0, COMMITTED, "6810 standard", "SPINDLE_BEARING_W")
+SPINDLE_BEARING_STATIC_N = _d(6200.0, COMMITTED, "NSK 6810 datasheet", "SPINDLE_BEARING_STATIC_N")
+
+# Centre-to-centre. Bigger spacing = lower bearing load, taller spindle.
+SPINDLE_SPACING = _d(50.0, ESTIMATED, "load vs height", "SPINDLE_SPACING")
+SPINDLE_HOUSING_WALL = _d(6.0, ESTIMATED, "printed wall", "SPINDLE_HOUSING_WALL")
+SPINDLE_HOUSING_OD = _d(
+    float(SPINDLE_BEARING_OD) + 2.0 * float(SPINDLE_HOUSING_WALL),
+    ESTIMATED, "bearing OD + walls", "SPINDLE_HOUSING_OD",
 )
-MAIN_BEARING_PRICE = _d(
-    PBC_SLEW_RINGS[MAIN_BEARING_BORE_SEL][1], COMMITTED, "PBC catalogue 2026-07-26", "MAIN_BEARING_PRICE"
-)
+
+# Kept for the parts that still reference a single bearing dimension.
+MAIN_BEARING_OD = _d(float(SPINDLE_HOUSING_OD), ESTIMATED, "= spindle housing", "MAIN_BEARING_OD")
 
 # Radial room between the bearing OD and the guide posts.
 Z_POST_CLEARANCE = _d(14.0, ESTIMATED, "assembly access", "Z_POST_CLEARANCE")

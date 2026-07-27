@@ -116,18 +116,18 @@
          rotary axis at the platform centre unobstructed, which a single
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
-    <geom name="z_post_0" type="cylinder" pos="6.00077e-18 0.098 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_1" type="cylinder" pos="-0.0848705 -0.049 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_2" type="cylinder" pos="0.0848705 -0.049 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_leadscrew" type="cylinder" pos="-1.80023e-17 -0.098 0.245" size="0.005 0.065" material="screw_mat" contype="0" conaffinity="0"/>
-    <geom name="z_motor" type="box" pos="-1.80023e-17 -0.098 0.158" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_0" type="cylinder" pos="3.45963e-18 0.0565 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_1" type="cylinder" pos="-0.0489304 -0.02825 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_2" type="cylinder" pos="0.0489304 -0.02825 0.245" size="0.004 0.065" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_leadscrew" type="cylinder" pos="-1.03789e-17 -0.0565 0.245" size="0.005 0.065" material="screw_mat" contype="0" conaffinity="0"/>
+    <geom name="z_motor" type="box" pos="-1.03789e-17 -0.0565 0.158" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
 
     <!-- ============ the moving assembly ============ -->
     <body name="z_carriage" pos="0 0 0.18">
       <joint name="Z" type="slide" axis="0 0 1" range="0 0.1"
         damping="40"/>
       <geom name="z_platform" type="cylinder" pos="0 0 0"
-        size="0.1421 0.008"
+        size="0.081925 0.008"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
       <body name="rotor" pos="0 0 0.018">
@@ -139,7 +139,7 @@
           range="0 4.71239"
           damping="12"/>
         <geom name="main_bearing" type="cylinder" pos="0 0 0.012"
-          size="0.03 0.012"
+          size="0.025 0.012"
           material="rotor_mat" contype="0" conaffinity="0"/>
 
         <body name="arm" pos="0 0 0.032">

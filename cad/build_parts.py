@@ -21,6 +21,7 @@ Print notes are in `cad/README.md`.
 
 from __future__ import annotations
 
+import math
 import pathlib
 import sys
 
@@ -322,12 +323,14 @@ def spreader_plate():
 
 
 def z_platform():
-    """The Z platform — rides three guide posts, driven by one off-axis screw.
+    """The Z platform — rides three guide posts, driven by one off-axis screw,
+    and houses the paired-bearing spindle at its centre.
 
-    This is the part that resolves the coaxial conflict: a rotary axis cannot
-    pass through a linear rail, so the screw moves off-axis and the platform
-    centre is left clear for the main bearing. Stiffness comes from the post
-    triangle rather than a cantilever.
+    Two things are resolved here. The off-axis screw leaves the rotary axis
+    clear, which a single coaxial rail cannot do. And the spindle is TWO 6810s
+    spaced 50 mm apart rather than one slew ring: the moment becomes a couple,
+    the lever arm is the spacing rather than a bought diameter, and the centre
+    section shrinks from 248 mm to 165 mm as a result.
     """
     import math
 
@@ -335,6 +338,10 @@ def z_platform():
     plate_r = pc + 26.0
     plate_t = 10.0
     lm_r = float(L.LM8UU_OD) / 2.0
+    bore_r = float(L.SPINDLE_BEARING_OD) / 2.0
+    housing_r = float(L.SPINDLE_HOUSING_OD) / 2.0
+    spacing = float(L.SPINDLE_SPACING)
+    bw = float(L.SPINDLE_BEARING_W)
 
     plate = _z_cyl(plate_r, plate_t)
 
@@ -355,15 +362,46 @@ def z_platform():
         by = sy + float(L.T8_NUT_BOLT_CIRCLE) / 2.0 * math.sin(a)
         plate = plate.cut(_z_cyl(1.7, plate_t + 12.0, -1.0, bx, by))
 
-    # Central bore + bolt ring for the main rotary bearing.
-    bearing_r = float(L.MAIN_BEARING_BORE) / 2.0
-    plate = plate.cut(_z_cyl(bearing_r - 6.0, plate_t + 2.0, -1.0))
+    # Spindle housing: a tower carrying two bearing seats, spacing apart.
+    tower_h = spacing + bw + 6.0
+    plate = plate.fuse(_z_cyl(housing_r, tower_h))
+
+    # Through bore, relieved between the seats so only the seats touch.
+    plate = plate.cut(_z_cyl(bore_r - 3.0, tower_h + 2.0, -1.0))
+    plate = plate.cut(_z_cyl(bore_r + 0.02, bw + 0.2, -0.1))            # lower seat
+    plate = plate.cut(_z_cyl(bore_r + 0.02, bw + 0.2, spacing - bw / 2.0))  # upper seat
+    plate = plate.cut(_z_cyl(bore_r - 1.0, spacing - bw, bw))            # relief
+
+    return plate
+
+
+def spindle_shaft():
+    """The rotating member — a tube through both 6810 inner races.
+
+    Carries the rotor plate on top. Printed for Phase 1; a length of 50 mm
+    aluminium tube is the upgrade if the printed seats show runout, and the
+    bearing seats are the only surfaces that matter for that.
+    """
+    bore = float(L.SPINDLE_BEARING_BORE) / 2.0
+    spacing = float(L.SPINDLE_SPACING)
+    bw = float(L.SPINDLE_BEARING_W)
+    total = spacing + bw + 22.0
+
+    shaft = _z_cyl(bore - 0.02, total)
+    # Waisted between the races — only the seats need to be on size.
+    shaft = shaft.cut(
+        _z_cyl(bore + 2.0, spacing - bw - 1.0, bw + 0.5).cut(_z_cyl(bore - 2.5, spacing, bw))
+    )
+    # Flange at the top for the rotor plate.
+    shaft = shaft.fuse(_z_cyl(bore + 12.0, 8.0, total - 8.0))
     for i in range(6):
         a = 2.0 * math.pi * i / 6.0
-        plate = plate.cut(
-            _z_cyl(2.2, plate_t + 2.0, -1.0, bearing_r * math.cos(a), bearing_r * math.sin(a))
+        shaft = shaft.cut(
+            _z_cyl(1.7, 12.0, total - 10.0, (bore + 6.0) * math.cos(a), (bore + 6.0) * math.sin(a))
         )
-    return plate
+    # Hollow through, so cabling can pass the rotation axis if ever needed.
+    shaft = shaft.cut(_z_cyl(bore - 9.0, total + 2.0, -1.0))
+    return shaft
 
 
 def radial_carriage():
@@ -603,6 +641,7 @@ PARTS = {
     "measuring_wheel": measuring_wheel,
     "spreader_plate": spreader_plate,
     "z_platform": z_platform,
+    "spindle_shaft": spindle_shaft,
     "radial_carriage": radial_carriage,
     "wrist_mount": wrist_mount,
     "camera_mount": camera_mount,
