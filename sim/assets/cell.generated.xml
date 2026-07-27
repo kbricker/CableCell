@@ -35,6 +35,8 @@
     <material name="mount_mat" rgba="0.34 0.38 0.44 1"/>
     <material name="pedestal_mat" rgba="0.18 0.40 0.56 1"/>
     <material name="clamp_mat" rgba="0.78 0.38 0.20 1"/>
+    <material name="extrusion_mat" rgba="0.58 0.61 0.66 1"/>
+    <material name="rail_mat" rgba="0.80 0.82 0.86 1"/>
     <material name="unknown_mat" rgba="0.52 0.52 0.54 0.55"/>
     <material name="zstage_mat" rgba="0.35 0.55 0.42 1"/>
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
@@ -69,6 +71,7 @@
     <mesh name="cross_slide_carrier_mesh" file="cross_slide_carrier.stl" scale="0.001 0.001 0.001"/>
     <mesh name="body_clamp_mesh" file="body_clamp.stl" scale="0.001 0.001 0.001"/>
     <mesh name="strip_die_mesh" file="strip_die.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="rotor_plate_mesh" file="rotor_plate.stl" scale="0.001 0.001 0.001"/>
   </asset>
 
   <worldbody>
@@ -400,10 +403,22 @@
           material="rotor_mat" contype="0" conaffinity="0"/>
 
         <body name="arm" pos="0 0 0.026">
+          <!-- THREE parts, not one. This was a single 230x60x25 box - the
+               largest object in the machine and the last greybox in it. Drawn
+               as one solid, the two BOUGHT parts here were invisible to the
+               BOM. Section dropped from 60x25 to stock 2020 extrusion: still
+               24 um of tip droop against a
+               300 um strip tolerance. -->
+          <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
+            pos="0 0 -0.014" material="arm_mat" contype="0" conaffinity="0"/>
           <geom name="arm_beam" type="box"
-            pos="0.115 0 0"
-            size="0.115 0.03 0.0125"
-            material="arm_mat" contype="0" conaffinity="0"/>
+            pos="0.13725 0 0"
+            size="0.09275 0.01 0.01"
+            material="extrusion_mat" contype="0" conaffinity="0"/>
+          <geom name="mgn12_rail" type="box"
+            pos="0.13725 0 0.014"
+            size="0.09275 0.006 0.004"
+            material="rail_mat" contype="0" conaffinity="0"/>
 
           <body name="radial" pos="0.12 0 0">
             <joint name="R" type="slide" axis="1 0 0"

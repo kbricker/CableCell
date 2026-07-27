@@ -57,6 +57,10 @@ COMB_ABOVE_ROTOR = (
 
 # Station display bodies are centred outboard of their work point, so the inner
 # face of the tooling lands on the bolt circle.
+# Beam starts outboard of the spindle housing rather than at the pivot —
+# the old slab ran straight through the rotating assembly.
+_BEAM_X0 = float(L.SPINDLE_HOUSING_OD) / 2.0 + 6.0
+
 STATION_BODY_DEPTH = 70.0
 STATION_BODY_HEIGHT = float(L.STATION_TOOLING_HEIGHT)
 
@@ -76,7 +80,7 @@ MESHES = (
     "measuring_wheel", "splitting_wedge", "spreader_plate", "z_platform",
     "spindle_shaft", "radial_carriage", "wrist_mount", "camera_mount",
     "drive_roller_block", "station_mount", "cross_slide_carrier",
-    "body_clamp", "strip_die",
+    "body_clamp", "strip_die", "rotor_plate",
 )
 
 
@@ -467,6 +471,8 @@ def build_mjcf() -> str:
     <material name="mount_mat" rgba="0.34 0.38 0.44 1"/>
     <material name="pedestal_mat" rgba="0.18 0.40 0.56 1"/>
     <material name="clamp_mat" rgba="0.78 0.38 0.20 1"/>
+    <material name="extrusion_mat" rgba="0.58 0.61 0.66 1"/>
+    <material name="rail_mat" rgba="0.80 0.82 0.86 1"/>
     <material name="unknown_mat" rgba="0.52 0.52 0.54 0.55"/>
     <material name="zstage_mat" rgba="0.35 0.55 0.42 1"/>
     <material name="rotor_mat" rgba="0.50 0.50 0.55 1"/>
@@ -540,10 +546,22 @@ def build_mjcf() -> str:
           material="rotor_mat" contype="0" conaffinity="0"/>
 
         <body name="arm" pos="0 0 {COMB_ABOVE_ROTOR * MM:.6g}">
+          <!-- THREE parts, not one. This was a single 230x60x25 box - the
+               largest object in the machine and the last greybox in it. Drawn
+               as one solid, the two BOUGHT parts here were invisible to the
+               BOM. Section dropped from 60x25 to stock 2020 extrusion: still
+               {L.arm_tip_deflection() * 1000:.0f} um of tip droop against a
+               300 um strip tolerance. -->
+          <geom name="rotor_plate" type="mesh" mesh="rotor_plate_mesh"
+            pos="0 0 -0.014" material="arm_mat" contype="0" conaffinity="0"/>
           <geom name="arm_beam" type="box"
-            pos="{arm_len / 2 * MM:.6g} 0 0"
-            size="{arm_len / 2 * MM:.6g} {float(L.ARM_WIDTH) / 2 * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
-            material="arm_mat" contype="0" conaffinity="0"/>
+            pos="{(_BEAM_X0 + arm_len) / 2 * MM:.6g} 0 0"
+            size="{(arm_len - _BEAM_X0) / 2 * MM:.6g} {float(L.ARM_WIDTH) / 2 * MM:.6g} {float(L.ARM_THICKNESS) / 2 * MM:.6g}"
+            material="extrusion_mat" contype="0" conaffinity="0"/>
+          <geom name="mgn12_rail" type="box"
+            pos="{(_BEAM_X0 + arm_len) / 2 * MM:.6g} 0 {(float(L.ARM_THICKNESS) / 2 + 4.0) * MM:.6g}"
+            size="{(arm_len - _BEAM_X0) / 2 * MM:.6g} 0.006 0.004"
+            material="rail_mat" contype="0" conaffinity="0"/>
 
           <body name="radial" pos="{r_retracted * MM:.6g} 0 0">
             <joint name="R" type="slide" axis="1 0 0"

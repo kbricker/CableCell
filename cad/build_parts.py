@@ -710,6 +710,67 @@ def _v_groove(y_c: float, depth: float, half_w: float, x0: float, length: float,
     return face.extrude(V(length, 0, 0))
 
 
+def rotor_plate():
+    """Joins the spindle shaft's flange to the arm beam.
+
+    The only PRINTED part of the arm — the beam is stock 2020 extrusion and the
+    rail is a bought MGN12. Splitting them out is what made that visible; drawn
+    as one slab, the BOM could not see two bought parts at all.
+
+    It is also the part that sets where the beam sits relative to the pivot, so
+    it carries the whole moment from a 200 mm cantilever into the spindle. Hence
+    the ribs: a flat disc here would be the softest link in a chain whose
+    stiffness we just spent effort justifying.
+    """
+    import math
+
+    bore = float(L.SPINDLE_BEARING_BORE) / 2.0
+    flange_r = bore + 12.0
+    plate_t = 8.0
+    beam_w = float(L.ARM_WIDTH)
+    beam_h = float(L.ARM_THICKNESS)
+
+    plate = _z_cyl(flange_r + 6.0, plate_t)
+
+    # Bolt circle matching spindle_shaft's flange.
+    for i in range(6):
+        a = 2.0 * math.pi * i / 6.0
+        plate = plate.cut(
+            _z_cyl(1.7, plate_t + 2.0, -1.0,
+                   (bore + 6.0) * math.cos(a), (bore + 6.0) * math.sin(a))
+        )
+    plate = plate.cut(_z_cyl(bore - 9.0, plate_t + 2.0, -1.0))
+
+    # Saddle the beam sits in, running out along +x.
+    saddle_l = flange_r + 30.0
+    plate = plate.fuse(
+        Part.makeBox(saddle_l, beam_w + 12.0, plate_t + beam_h * 0.6,
+                     V(0, -(beam_w + 12.0) / 2, 0))
+    )
+    plate = plate.cut(
+        Part.makeBox(saddle_l + 2.0, beam_w + 0.4, beam_h,
+                     V(-1.0, -(beam_w + 0.4) / 2, plate_t))
+    )
+    # Beam clamping bolts, through the saddle cheeks.
+    for x in (flange_r * 0.6, saddle_l - 12.0):
+        plate = plate.cut(
+            Part.makeCylinder(2.6, beam_w + 20.0,
+                              V(x, -(beam_w + 12.0) / 2 - 4, plate_t + beam_h * 0.3),
+                              V(0, 1, 0))
+        )
+    # Ribs from the flange out to the saddle.
+    for sign in (1.0, -1.0):
+        tri = Part.makePolygon([
+            V(0, sign * (beam_w / 2 + 5.0), plate_t),
+            V(flange_r + 4.0, sign * (beam_w / 2 + 5.0), plate_t),
+            V(0, sign * (beam_w / 2 + 5.0), plate_t + beam_h * 0.55),
+            V(0, sign * (beam_w / 2 + 5.0), plate_t),
+        ])
+        face = Part.Face(Part.Wire(tri))
+        plate = plate.fuse(face.extrude(V(0, sign * 4.0, 0)))
+    return plate
+
+
 def cross_slide_carrier():
     """Rides the MGN9 rail on top of the radial carriage; carries the wrist.
 
@@ -921,6 +982,7 @@ PARTS = {
     "spreader_plate": spreader_plate,
     "z_platform": z_platform,
     "spindle_shaft": spindle_shaft,
+    "rotor_plate": rotor_plate,
     "radial_carriage": radial_carriage,
     "cross_slide_carrier": cross_slide_carrier,
     "body_clamp": body_clamp,

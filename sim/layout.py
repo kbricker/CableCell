@@ -299,8 +299,46 @@ INSERT_DEPTH = _d(6.0, COMMITTED, "recipe SPOX-3P", "INSERT_DEPTH")
 PULLBACK = _d(1.5, COMMITTED, "recipe SPOX-3P", "PULLBACK")
 
 MAIN_BEARING_BORE = _d(50.0, COMMITTED, "6810 spindle bore", "MAIN_BEARING_BORE")
-ARM_THICKNESS = _d(25.0, ESTIMATED, "stiffness guess", "ARM_THICKNESS")
-ARM_WIDTH = _d(60.0, ESTIMATED, "MGN12 carriage width", "ARM_WIDTH")
+
+# THE ARM IS THREE THINGS, NOT ONE. It was drawn as a single 230 x 60 x 25 mm
+# box — the largest object in the machine and the last greybox in it, which is
+# exactly why Kyle spotted it on sight: "the arm seems huge, its a big white
+# piece, i'm not sure whats really going on at all with that."
+#
+#   rotor_plate   printed, joins the spindle flange to the beam
+#   beam          BOUGHT 2020 aluminium extrusion
+#   MGN12 rail    BOUGHT, on the beam's top face; the radial carriage rides it
+#
+# Drawn as one solid, two bought parts and one printed part read as a mystery
+# slab, and the BOM could not see them at all.
+#
+# The 60 x 25 section was also a guess, and a wildly conservative one — see
+# arm_tip_deflection(). 2020 extrusion is 12x inside the tolerance that
+# actually matters, at roughly a ninth of the cross-section.
+ARM_WIDTH = _d(20.0, COMMITTED, "2020 extrusion", "ARM_WIDTH")
+ARM_THICKNESS = _d(20.0, COMMITTED, "2020 extrusion", "ARM_THICKNESS")
+ARM_SECOND_MOMENT = _d(8000.0, ESTIMATED, "2020 extrusion Ix ~0.8 cm4", "ARM_SECOND_MOMENT")
+ARM_TIP_LOAD_N = _d(5.0, ESTIMATED, "carriage+comb+camera+wrist ~0.5 kg", "ARM_TIP_LOAD_N")
+ALU_E_MPA = _d(69000.0, COMMITTED, "aluminium 6063", "ALU_E_MPA")
+
+
+def arm_tip_deflection() -> float:
+    """Static tip droop of the beam under its own end load, mm.
+
+    Cantilever: d = F L^3 / (3 E I).
+
+    Worth stating what this is and is not. It is NOT a strength check — nothing
+    here is close to yielding. It is not even really an accuracy check, because
+    a CONSTANT droop is an offset the station Z table absorbs at commissioning.
+    It is a sanity bound: if this number were anywhere near the +/-0.3 mm strip
+    tolerance, the beam would be the thing to fix. At 24 um against 300 um it
+    plainly is not, which is what licenses dropping from a 60 x 25 slab to
+    stock 2020 extrusion.
+    """
+    return (
+        float(ARM_TIP_LOAD_N) * float(ARM_R0) ** 3
+        / (3.0 * float(ALU_E_MPA) * float(ARM_SECOND_MOMENT))
+    )
 
 
 # ---------------------------------------------------------------------------
