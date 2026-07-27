@@ -71,10 +71,10 @@ def _fmt(*vals: float) -> str:
 
 # Every printed part that build_parts.py produces, available as a mesh.
 MESHES = (
-    "comb", "spool", "spool_hanger", "dancer_arm", "guide_tube_mount",
+    "comb", "spool", "spool_hanger", "dancer_arm", "feed_head",
     "measuring_wheel", "splitting_wedge", "spreader_plate", "z_platform",
     "spindle_shaft", "radial_carriage", "wrist_mount", "camera_mount",
-    "drive_roller_block", "guillotine_holder", "station_mount",
+    "drive_roller_block", "station_mount",
 )
 
 
@@ -110,11 +110,11 @@ STATION_MOUNT_T = float(L.STATION_MOUNT_T)
 # Passage heights are NOT repeated here — they come from
 # layout.STATION_PART_PASSAGE, which build_parts.py also reads.
 STATION_PARTS: dict[str, tuple] = {
+    # S1's entire on-deck presence is now ONE part. The feeder that used to
+    # need 196 mm of radial run lives off the dial and connects through PTFE
+    # tube, which routes anywhere.
     "S1_FEED": (
-        ("drive_roller_block", 78.0, 0.0, True, None),
-        ("measuring_wheel", 56.0, 0.0, False, "1.5708 0 {t}"),
-        ("guide_tube_mount", 30.0, 0.0, True, None),
-        ("guillotine_holder", 8.0, 0.0, True, None),
+        ("feed_head", 10.0, 0.0, False, None),
     ),
     # S2's order was BACKWARDS. At S1 the ribbon is fed from outboard inward,
     # so upstream parts sit further out. At S2 the arm has already got the
@@ -123,8 +123,8 @@ STATION_PARTS: dict[str, tuple] = {
     # the opposite arrangement. Copying S1's ordering put the fan before the
     # splitter.
     "S2_SLIT": (
-        ("splitting_wedge", 30.0, 0.0, False, None),
-        ("spreader_plate", 72.0, 0.0, False, None),
+        ("splitting_wedge", 25.0, 0.0, False, None),
+        ("spreader_plate", 67.0, 0.0, False, None),
     ),
 }
 
@@ -313,10 +313,21 @@ def _z_posts(deck_top: float, z_stroke: float) -> str:
 
 
 def _spool_and_hanger() -> str:
-    """S1's printed spool + hanger, off-deck outboard of station 1.
+    """The feed module: spool, dancer, drive rollers and encoder wheel.
 
-    The ribbon ships as a loose roll, so the spool is our design: 8 mm bore to
-    match the Z-stage rod stock, sized to take a whole 50 ft roll.
+    Deliberately NOT a dial station. Kyle 2026-07-27: "we should do the
+    simplest thing possible, the smallest thing possible."
+
+    These four parts were originally laid out in a straight radial line on the
+    deck alongside the guillotine, which needed 196 mm of run against the 80 mm
+    the deck actually offers — and every consecutive pair interpenetrated. The
+    fix was not a bigger deck or a folded path. It was noticing that none of
+    these parts has any relationship to the dial: the ribbon reaches the
+    machine through PTFE tube, and tube routes anywhere.
+
+    So the feeder is a compact VERTICAL stack on one post outboard of S1.
+    Radial footprint ~60 mm instead of 196 mm, and it is free to move anywhere
+    the tube reaches if the bench layout ever wants it elsewhere.
     """
     deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
     theta = float(L.STATION_ANGLES["S1_FEED"])
@@ -372,11 +383,28 @@ def _spool_and_hanger() -> str:
         f'contype="0" conaffinity="0"/>'
     )
     # Dancer arm — passive tension, and its flag is the spool-empty detect.
-    dx, dy = _polar(r - 46.0, theta)
+    # Hangs below the spool on the same post.
     parts.append(
         f'    <geom name="dancer_arm" type="mesh" mesh="dancer_arm_mesh" '
-        f'pos="{_fmt(dx * MM, dy * MM, (deck_top + 70.0) * MM)}" '
+        f'pos="{_fmt(hx * MM, hy * MM, (deck_top + 96.0) * MM)}" '
         f'euler="0 0 {rot + math.pi:.6g}" material="hanger_mat" '
+        f'contype="0" conaffinity="0"/>'
+    )
+    # Drive rollers and the encoder wheel, stacked low on the same post. Their
+    # height is now arbitrary — the tube carries the ribbon to the feed head,
+    # so nothing here has to sit on the engagement plane. That is exactly what
+    # buys back the radial run.
+    parts.append(
+        f'    <geom name="drive_roller_block" type="mesh" mesh="drive_roller_block_mesh" '
+        f'pos="{_fmt(hx * MM, hy * MM, (deck_top + 6.0) * MM)}" '
+        f'euler="0 0 {rot + math.pi:.6g}" material="printed_mat" '
+        f'contype="0" conaffinity="0"/>'
+    )
+    wx, wy = _polar(r + 4.0, theta)
+    parts.append(
+        f'    <geom name="measuring_wheel" type="mesh" mesh="measuring_wheel_mesh" '
+        f'pos="{_fmt(wx * MM, wy * MM, (deck_top + 46.0) * MM)}" '
+        f'euler="1.5708 0 {rot:.6g}" material="printed_mat" '
         f'contype="0" conaffinity="0"/>'
     )
     return "\n".join(parts)

@@ -26,11 +26,11 @@ from sim import layout as L
 
 # Radial half-length of each part along the ribbon's direction of travel, from
 # the bounding boxes build_parts.py reports.
+# Only ON-DECK parts. The feeder (spool, dancer, drive rollers, encoder wheel)
+# is off the dial and reaches the machine through PTFE tube, so it has no
+# radial budget to blow and nothing here to clash with.
 HALF_LENGTH = {
-    "drive_roller_block": 28.0,
-    "measuring_wheel": float(L.MEASURING_WHEEL_DIA) / 2.0,
-    "guide_tube_mount": 17.0,
-    "guillotine_holder": 22.0,
+    "feed_head": 35.0,
     "splitting_wedge": 25.0,
     "spreader_plate": 12.5,
 }

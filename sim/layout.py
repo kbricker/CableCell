@@ -127,14 +127,25 @@ STATION_MOUNT_T = _d(10.0, COMMITTED, "station_mount base", "STATION_MOUNT_T")
 # How far each station part's RIBBON PASSAGE sits above that part's own base.
 # Read straight off the CAD in cad/build_parts.py, which imports these back so
 # the printed part and this table cannot disagree.
+# Only parts that sit ON the engagement plane belong here. The feeder (drive
+# rollers, encoder wheel, spool, dancer) deliberately does NOT — see
+# PRESENTATION_GAP below.
 STATION_PART_PASSAGE: dict[str, Dim] = {
-    "drive_roller_block": _d(29.3, COMMITTED, "nip line, build_parts", "PASS_rollers"),
-    "measuring_wheel": _d(15.9, COMMITTED, "= wheel radius", "PASS_wheel"),
-    "guide_tube_mount": _d(20.0, COMMITTED, "PTFE bore, build_parts", "PASS_tube"),
-    "guillotine_holder": _d(34.0, COMMITTED, "cut line, build_parts", "PASS_guillotine"),
+    "feed_head": _d(34.0, COMMITTED, "cut line, build_parts", "PASS_feedhead"),
     "splitting_wedge": _d(18.0, COMMITTED, "channel floor, build_parts", "PASS_wedge"),
     "spreader_plate": _d(4.0, COMMITTED, "mid-plate, build_parts", "PASS_spreader"),
 }
+
+# Tube exit to the cut line. Long enough that the blade and the tube are
+# separate features that can each be made properly; short enough that the
+# unsupported ribbon between them cannot buckle when the rollers push it out.
+#
+# This is now a MOULDED-IN dimension rather than an assembly tolerance, because
+# the tube bore and the blade guideway are features of one part (feed_head).
+# That matters more than it looks: the cut line is the datum every measured
+# length is taken from, so any play between tube and blade would land directly
+# on the machine's headline spec.
+PRESENTATION_GAP = _d(8.0, COMMITTED, "docs/stations.md 1", "PRESENTATION_GAP")
 
 
 def tallest_passage() -> float:

@@ -221,24 +221,72 @@ def comb():
     return body
 
 
-def guide_tube_mount():
-    """Holds the PTFE guide tube that sets S1's presentation point.
+def feed_head():
+    """S1's whole on-deck presence: guide the ribbon, present it, cut it square.
 
-    The presentation point has to be repeatable regardless of what the roll is
-    doing — this is the part that makes it so.
+    Replaces guide_tube_mount + guillotine_holder, which were two parts bolted
+    in line doing one job. Kyle 2026-07-27: "we should do the simplest thing
+    possible, the smallest thing possible."
+
+    Merging them is not just tidier, it is more accurate. The cut line is the
+    datum every measured length is taken from, so any play between the tube
+    exit and the blade lands straight on the machine's headline spec. As one
+    part, PRESENTATION_GAP is moulded in and cannot shift.
+
+    It is also what let the feeder come off the dial entirely. The drive
+    rollers, encoder wheel, spool and dancer connect to this part through PTFE
+    tube, and tube routes anywhere — so they no longer have to sit in a
+    196 mm radial line on an 80 mm deck.
+
+    Part frame: x = 0 is THE CUT LINE. +x is outboard, ribbon travels -x.
     """
-    tube_z = float(L.STATION_PART_PASSAGE["guide_tube_mount"])
-    base = Part.makeBox(34.0, 24.0, 8.0, V(-17, -12, 0))
-    boss = Part.makeCylinder(9.0, 26.0, V(-17, 0, tube_z), V(1, 0, 0))
-    part = base.fuse(boss)
-    part = part.fuse(Part.makeBox(10.0, 24.0, tube_z + 2.0, V(-5, -12, 0)))
-    # 4 mm OD PTFE tube, press fit.
-    part = part.cut(
-        Part.makeCylinder(2.05, 40.0, V(-20, 0, tube_z), V(1, 0, 0))
+    cut_z = float(L.STATION_PART_PASSAGE["feed_head"])
+    gap = float(L.PRESENTATION_GAP)
+    rib_w = float(L.RIBBON_WIDTH)
+    rib_t = float(L.RIBBON_THICKNESS)
+
+    x_in, x_out = -12.0, 58.0
+    body_y, body_z = 34.0, cut_z + 20.0
+    body = Part.makeBox(x_out - x_in, body_y, body_z, V(x_in, -body_y / 2, 0))
+
+    # PTFE tube, press fit, running from the outboard face to the presentation
+    # gap. 4 mm OD tube in a 4.1 mm bore.
+    body = body.cut(
+        Part.makeCylinder(2.05, x_out - gap + 4.0, V(gap, 0, cut_z), V(1, 0, 0))
     )
-    for x in (-12.0, 12.0):
-        part = part.cut(_z_cyl(1.7, 10.0, -1.0, x, 0.0))
-    return part
+    # Ribbon passage across the gap, and on through the anvil past the blade.
+    body = body.cut(
+        Part.makeBox(gap + 14.0, rib_w + 1.0, rib_t + 0.6,
+                     V(x_in - 2.0, -(rib_w + 1.0) / 2, cut_z - (rib_t + 0.6) / 2))
+    )
+    # Blade guideway. The close fit between this slot and the ribbon passage is
+    # what makes the blade SHEAR rather than crush — and a crushed end will not
+    # enter the comb channels, which stops the NEXT cycle rather than this one.
+    body = body.cut(
+        Part.makeBox(0.9, body_y + 4.0, body_z, V(-0.45, -body_y / 2 - 2, cut_z))
+    )
+    # Blade clamp pocket and its screw.
+    body = body.cut(Part.makeBox(9.0, 20.0, 16.0, V(-4.5, -10.0, body_z - 16.0)))
+    body = body.cut(
+        Part.makeCylinder(1.7, body_y + 4.0, V(0.0, -body_y / 2 - 2, body_z - 8.0),
+                          V(0, 1, 0))
+    )
+    # SDA20 cylinder mount on top, straddling the blade.
+    for sy in (-1, 1):
+        for sx in (-1, 1):
+            body = body.cut(
+                _z_cyl(2.2, 14.0, body_z - 13.0, sx * 13.0, sy * 13.0)
+            )
+    # Deck mounting on station_mount's 40 mm square pattern.
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            body = body.cut(_z_cyl(2.6, 14.0, -1.0, 23.0 + sx * 20.0, sy * 20.0))
+    return body
+
+
+# guide_tube_mount and guillotine_holder were merged into feed_head above. Two
+# parts bolted in line doing one job, with an assembly tolerance sitting on the
+# datum that every measured length is taken from.
 
 
 def measuring_wheel():
@@ -648,51 +696,6 @@ def drive_roller_block():
     return body
 
 
-def guillotine_holder():
-    """S1's cut station: a replaceable blade shearing against a close anvil.
-
-    Blade geometry matters more than force here. A crushed ribbon end will not
-    enter the comb channels — and that failure stops the NEXT cycle rather than
-    the current one, which is the expensive kind to diagnose.
-
-    Takes a standard replaceable chisel/utility blade so it can be swapped when
-    it dulls rather than resharpened.
-    """
-    body_x, body_y, body_z = 44.0, 34.0, 54.0
-    body = Part.makeBox(body_x, body_y, body_z, V(-body_x / 2, -body_y / 2, 0))
-
-    cut_z = float(L.STATION_PART_PASSAGE["guillotine_holder"])
-
-    # Ribbon passage through the anvil.
-    body = body.cut(
-        Part.makeBox(body_x + 4.0, float(L.RIBBON_WIDTH) + 1.0, float(L.RIBBON_THICKNESS) + 0.6,
-                     V(-body_x / 2 - 2, -(float(L.RIBBON_WIDTH) + 1.0) / 2, cut_z))
-    )
-
-    # Blade guideway — a close-fitting vertical slot. The tight clearance to the
-    # ribbon passage is what makes it shear instead of crush.
-    body = body.cut(
-        Part.makeBox(0.9, body_y + 4.0, 30.0, V(-0.45, -body_y / 2 - 2, cut_z))
-    )
-    # Blade clamp pocket + screw.
-    body = body.cut(Part.makeBox(9.0, 20.0, 16.0, V(-4.5, -10.0, body_z - 16.0)))
-    body = body.cut(
-        Part.makeCylinder(1.7, body_x + 4.0, V(-body_x / 2 - 2, 0, body_z - 8.0), V(1, 0, 0))
-    )
-
-    # Cylinder mount on top — SDA20 bolt pattern.
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            body = body.cut(
-                _z_cyl(2.2, 14.0, body_z - 13.0, sx * 13.0, sy * 13.0)
-            )
-
-    for x in (-16.0, 16.0):
-        for y in (-12.0, 12.0):
-            body = body.cut(_z_cyl(2.6, 12.0, -1.0, x, y))
-    return body
-
-
 def station_mount():
     """Generic station base — bolts a station to the deck on the bolt circle.
 
@@ -730,7 +733,7 @@ PARTS = {
     "spool_hanger": spool_hanger,
     "dancer_arm": dancer_arm,
     "comb": comb,
-    "guide_tube_mount": guide_tube_mount,
+    "feed_head": feed_head,
     "measuring_wheel": measuring_wheel,
     "splitting_wedge": splitting_wedge,
     "spreader_plate": spreader_plate,
@@ -740,7 +743,6 @@ PARTS = {
     "wrist_mount": wrist_mount,
     "camera_mount": camera_mount,
     "drive_roller_block": drive_roller_block,
-    "guillotine_holder": guillotine_holder,
     "station_mount": station_mount,
 }
 

@@ -54,7 +54,7 @@
     <mesh name="spool_mesh" file="spool.stl" scale="0.001 0.001 0.001"/>
     <mesh name="spool_hanger_mesh" file="spool_hanger.stl" scale="0.001 0.001 0.001"/>
     <mesh name="dancer_arm_mesh" file="dancer_arm.stl" scale="0.001 0.001 0.001"/>
-    <mesh name="guide_tube_mount_mesh" file="guide_tube_mount.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="feed_head_mesh" file="feed_head.stl" scale="0.001 0.001 0.001"/>
     <mesh name="measuring_wheel_mesh" file="measuring_wheel.stl" scale="0.001 0.001 0.001"/>
     <mesh name="splitting_wedge_mesh" file="splitting_wedge.stl" scale="0.001 0.001 0.001"/>
     <mesh name="spreader_plate_mesh" file="spreader_plate.stl" scale="0.001 0.001 0.001"/>
@@ -64,7 +64,6 @@
     <mesh name="wrist_mount_mesh" file="wrist_mount.stl" scale="0.001 0.001 0.001"/>
     <mesh name="camera_mount_mesh" file="camera_mount.stl" scale="0.001 0.001 0.001"/>
     <mesh name="drive_roller_block_mesh" file="drive_roller_block.stl" scale="0.001 0.001 0.001"/>
-    <mesh name="guillotine_holder_mesh" file="guillotine_holder.stl" scale="0.001 0.001 0.001"/>
     <mesh name="station_mount_mesh" file="station_mount.stl" scale="0.001 0.001 0.001"/>
   </asset>
 
@@ -113,20 +112,14 @@
       material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
 
     <geom name="s1_feed_mount" type="mesh" mesh="station_mount_mesh" pos="0.235 0 0.186" euler="0 0 0" material="mount_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_drive_roller_block" type="mesh" mesh="drive_roller_block_mesh" pos="0.278 0 0.2007" euler="0 0 3.14159" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_drive_roller_block_pedestal" type="box" pos="0.278 0 0.19835" size="0.02 0.02 0.00235" euler="0 0 3.14159" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_measuring_wheel" type="mesh" mesh="measuring_wheel_mesh" pos="0.256 0 0.2141" euler="1.5708 0 0" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_measuring_wheel_pedestal" type="box" pos="0.256 0 0.20505" size="0.02 0.02 0.00905" euler="1.5708 0 0" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_guide_tube_mount" type="mesh" mesh="guide_tube_mount_mesh" pos="0.23 0 0.21" euler="0 0 3.14159" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_guide_tube_mount_pedestal" type="box" pos="0.23 0 0.203" size="0.02 0.02 0.007" euler="0 0 3.14159" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s1_feed_guillotine_holder" type="mesh" mesh="guillotine_holder_mesh" pos="0.208 0 0.196" euler="0 0 3.14159" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="s1_feed_feed_head" type="mesh" mesh="feed_head_mesh" pos="0.21 0 0.196" euler="0 0 0" material="printed_mat" contype="0" conaffinity="0"/>
     <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s1_feed_wp" pos="0.2 0 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s2_slit_mount" type="mesh" mesh="station_mount_mesh" pos="0.19749 0.127369 0.186" euler="0 0 0.572811" material="mount_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.193288 0.124659 0.212" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.193288 0.124659 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.228584 0.147423 0.226" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
-    <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.228584 0.147423 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.189086 0.121949 0.212" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.189086 0.121949 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.224382 0.144713 0.226" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.224382 0.144713 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="0" conaffinity="0"/>
     <site name="s2_slit_wp" pos="0.168076 0.108399 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="0" conaffinity="0"/>
@@ -155,7 +148,9 @@
     <geom name="spool_ribbon" type="cylinder" pos="0.29 0 0.336" size="0.051 0.0115" euler="1.5708 0 0" material="ribbon_mat" contype="0" conaffinity="0"/>
     <geom name="spool_post" type="box" pos="0.324 0 0.093" size="0.015 0.015 0.093" material="frame_mat" contype="0" conaffinity="0"/>
     <geom name="spool_hanger" type="mesh" mesh="spool_hanger_mesh" pos="0.324 0 0.186" euler="0 0 1.5708" material="hanger_mat" contype="0" conaffinity="0"/>
-    <geom name="dancer_arm" type="mesh" mesh="dancer_arm_mesh" pos="0.244 0 0.256" euler="0 0 3.14159" material="hanger_mat" contype="0" conaffinity="0"/>
+    <geom name="dancer_arm" type="mesh" mesh="dancer_arm_mesh" pos="0.324 0 0.282" euler="0 0 3.14159" material="hanger_mat" contype="0" conaffinity="0"/>
+    <geom name="drive_roller_block" type="mesh" mesh="drive_roller_block_mesh" pos="0.324 0 0.192" euler="0 0 3.14159" material="printed_mat" contype="0" conaffinity="0"/>
+    <geom name="measuring_wheel" type="mesh" mesh="measuring_wheel_mesh" pos="0.294 0 0.232" euler="1.5708 0 0" material="printed_mat" contype="0" conaffinity="0"/>
 
     <!-- Z stage: platform on three guide posts, driven by ONE OFF-AXIS
          leadscrew. The off-axis screw is the whole trick — it leaves the
