@@ -43,8 +43,19 @@ re-run both.
 
 ## Print notes
 
-**Material.** PETG over PLA for anything that sees sustained load or warmth —
-the hanger and the comb especially. PLA is fine for the dancer arm and the spool.
+**Material.** *PETG where sustained load, creep or impact dominates; PLA+ where
+dimensional accuracy or fine features dominate.* PLA creeps under constant
+room-temperature stress in a way PETG does not, so anything permanently loaded is
+PETG — `z_platform`, `station_mount`, `spindle_shaft`, `spool_hanger`,
+`guillotine_holder`, `drive_roller_block`, `radial_carriage`, `wrist_mount`.
+
+Everything else is PLA+, including — **revised** — the **comb**. An earlier note
+here put the comb in PETG for toughness. That was the wrong call: its 1.8 mm
+channels are the functional fit, sharper features beat toughness, and the load is
+guide-only. Same reasoning puts `measuring_wheel` and `spreader_plate` in PLA+.
+
+Per-part table and quantities in [`bom/bom-phase1.md`](../bom/bom-phase1.md) §7.
+One 1 kg spool of each covers the build: ~720 g PETG, ~139 g PLA+.
 
 **The comb is the part to be careful with.** Its channels are nominally
 1.8 mm for a 1.4 mm conductor: only 0.2 mm clearance per side, and **FDM will

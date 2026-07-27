@@ -20,17 +20,18 @@ Sourcing rationale per category is in [`docs/sourcing-index.md`](../docs/sourcin
 
 | Module | Cost | Sourced |
 |---|---|---|
-| §1 Cell infrastructure | ~$264 | 6 of 9 ✅ |
+| §1 Cell infrastructure | ~$239 | 6 of 8 ✅ |
 | §2 Pneumatics | ~$359 | 10 of 12 ✅ |
 | §3 Main arm | ~$222 | 7 of 9 ✅ |
 | §4 Station 1 — feed / measure / cut | ~$65 | 3 of 6 ✅ |
 | §5 Station 2 — slit + fan | ~$32 | 0 of 3 ⓘ |
 | §6 Station 3 — strip | ~$32 | 1 of 2 ✅ |
-| §7 Printed parts (filament) | ~$40 | n/a |
+| §7 Printed parts — filament | **$28** | 2 of 2 ✅ |
+| §7c Consumables — ribbon, reference cables | **$28** | 4 of 4 ✅ |
 | §7b Arm camera | ~$20 | camera owned |
-| **Phase 1 total** | **~$1,034** | **~27 of 43 lines priced live** |
+| **Phase 1 total** | **~$1,025** | **~33 of 48 lines priced live** |
 
-Roughly **80% of the cost** now sits on lines priced off a real page, up from
+Roughly **83% of the cost** now sits on lines priced off a real page, up from
 about 20% before this pass. The remaining ⓘ lines are small consumables plus the
 two station tooling sections, which depend on geometry not yet fixed.
 
@@ -52,12 +53,12 @@ Excluded because already owned or on `bom-v1.md`: NUC supervisor ($0), the ribbo
 | 1.3 | 24 V / 350 W PSU | [MEAN WELL LRS-350-24](https://www.amazon.com/dp/B07VRK86SP) `B07VRK86SP` | ✅ **$35.97** | 1 | Steppers, valve coils, sensors |
 | 1.4 | 3030 extrusion, 500 mm ×4 | [3030 T-slot 4-pack](https://www.amazon.com/dp/B0DP28NX2D) `B0DP28NX2D` | ✅ **$39.99** | 1 | Frame and deck supports |
 | 1.5 | Extrusion hardware | corner brackets, T-nuts, M5 cap screws | ⓘ ~$30 | 1 | **Unsourced** — depends on the frame design |
-| 1.6 | Deck plate, 560 mm dia | 12 mm ply or acrylic | ⓘ ~$25 | 1 | **Unsourced, local cut.** Deliberately *not* aluminium tooling plate — see §8 |
+| 1.6 | Deck plate | **Kyle supplies and cuts.** 1/2" plywood, **22-1/16" OD**, 7" centre hole, 15-3/4" bolt circle | **$0** | 1 | Full imperial spec + drilling template: [`docs/deck-cut-sheet.md`](../docs/deck-cut-sheet.md). Deliberately *not* aluminium tooling plate — see §8 |
 | 1.7 | E-stop, hard-wired | [22 mm mushroom, 1NC latching](https://www.amazon.com/dp/B09YD2PNC5) `B09YD2PNC5` | ✅ **$8.99** | 1 | Cuts 24 V to motors and valves directly, not via software |
 | 1.8 | Drag chain | [10×20 mm, 1 m open type](https://www.amazon.com/dp/B0BGKC1BPZ) `B0BGKC1BPZ` | ✅ **$12.99** | 1 | Must take the ±135° sweep **and** the Z stroke |
 | 1.9 | Wiring, connectors, ferrules | 18–22 AWG, JST-XH, heatshrink | ⓘ ~$30 | 1 | **Unsourced** |
 
-**Subtotal ~$264** · 6 of 9 priced live
+**Subtotal ~$239** · 6 of 8 priced live (deck supplied by Kyle)
 
 ---
 
@@ -197,33 +198,59 @@ is why **R needs ≥50 N thrust** and therefore a leadscrew, not a belt.)*
 
 ---
 
-## 7. Printed parts
+## 7. Printed parts — and which filament each takes
 
 Fifteen modelled. Generate with `freecadcmd cad/build_parts.py` — FCStd + STEP +
 STL from the same `sim/layout.py` dimensions the simulation uses.
 
-| Part | Size (mm) | Volume | Module |
-|---|---|---|---|
-| `spool` | 110 × 110 × 31 | 116.6 cm³ | S1 |
-| `spool_hanger` | 70 × 44 × 150 | 81.0 cm³ | S1 |
-| `dancer_arm` | 82 × 12 × 20 | 6.2 cm³ | S1 |
-| `guide_tube_mount` | 34 × 24 × 29 | 14.4 cm³ | S1 |
-| `measuring_wheel` | 31.8 × 31.8 × 9 | 5.3 cm³ | S1 |
-| `drive_roller_block` | 56 × 30 × 46 | 67.0 cm³ | S1 |
-| `guillotine_holder` | 44 × 34 × 54 | 75.1 cm³ | S1 |
-| `spreader_plate` | 25 × 32 × 8 | 6.0 cm³ | S2 |
-| `comb` | 26 × 32 × 12 | 9.3 cm³ | arm |
-| `z_platform` | 165 × 165 × 63 | 268.9 cm³ | arm |
-| `spindle_shaft` | 74 × 74 × 79 | 94.1 cm³ | arm |
-| `radial_carriage` | 52 × 45 × 22 | 21.2 cm³ | arm |
-| `wrist_mount` | 50 × 32 × 26 | 12.0 cm³ | arm |
-| `camera_mount` | 60 × 48 × 34 | 29.5 cm³ | arm |
-| `station_mount` × 7 | 76 × 60 × 40 | 46.6 cm³ ea | all |
+**The split rule:** *PETG where sustained load, creep or impact dominates. PLA+
+where dimensional accuracy or fine features dominate.*
 
-**~1,133 cm³ ≈ 1.4 kg of filament, $35–45** in PLA/PETG. Print notes and
-orientations in [`cad/README.md`](../cad/README.md).
+PLA creeps under constant room-temperature stress in a way PETG does not, so
+anything permanently loaded is PETG. But PLA+ holds sharper features and better
+dimensional accuracy, which matters more than toughness on the parts whose *fit*
+is the functional requirement.
 
-Still to model: slug chute, body-clamp mount, cross-slide carrier.
+| Part | Filament | Vol cm³ | Qty | Why this material |
+|---|---|---|---|---|
+| `z_platform` | **PETG** | 268.9 | 1 | Carries the entire rotating assembly, permanently loaded |
+| `station_mount` | **PETG** | 46.6 | 7 | Structural, permanently loaded |
+| `spindle_shaft` | **PETG** | 94.1 | 1 | Bearing seats under constant load |
+| `spool_hanger` | **PETG** | 81.0 | 1 | 150 mm upright under constant dancer tension — the classic PLA creep case |
+| `guillotine_holder` | **PETG** | 75.1 | 1 | Repeated impact from the blade stroke |
+| `drive_roller_block` | **PETG** | 67.0 | 1 | Constant spring preload at the nip |
+| `radial_carriage` | **PETG** | 21.2 | 1 | Takes the ~50 N pull-off thrust |
+| `wrist_mount` | **PETG** | 12.0 | 1 | Repeated flip loads and hard-stop impact |
+| `spool` | PLA+ | 116.6 | 1 | Light, intermittent load; big flat print where PLA+ warps less |
+| `camera_mount` | PLA+ | 29.5 | 1 | Light; slotted for adjustment |
+| `guide_tube_mount` | PLA+ | 14.4 | 1 | Light; press-fit bore wants accuracy |
+| `comb` | PLA+ | 9.3 | 1 | **1.8 mm channels are the functional fit** — sharper features beat toughness here, and load is guide-only |
+| `dancer_arm` | PLA+ | 6.2 | 1 | Light |
+| `spreader_plate` | PLA+ | 6.0 | 1 | Finest features in the build — 1.45 → 8 mm diverging slots |
+| `measuring_wheel` | PLA+ | 5.3 | 1 | **Concentricity is everything** — PLA+ is the more dimensionally stable choice |
+
+### Filament quantity
+
+At ~60% effective density (walls plus ~40% infill):
+
+| Material | Solid cm³ | With infill | Grams | Spools |
+|---|---|---|---|---|
+| **PETG** | 945.5 | 567 | **~720 g** | 0.72 |
+| **PLA+** | 187.3 | 112 | **~139 g** | 0.14 |
+
+**One 1 kg spool of each covers the whole build with margin** — and PETG is the
+one you will actually consume, since `z_platform` and seven `station_mount`s are
+62% of the total volume between them.
+
+| # | Item | Pick | Price | Qty | Notes |
+|---|---|---|---|---|---|
+| 7.1 | PETG, 1 kg | [eSUN PETG 1.75 mm](https://www.amazon.com/dp/B07FXVGYKL) `B07FXVGYKL` | ✅ **$12.99** | 1 | Cheaper eSUN PETG line. Alt [`B0BN4Y1G2S`](https://www.amazon.com/dp/B0BN4Y1G2S) $21.99 |
+| 7.2 | PLA+, 1 kg | [eSUN PLA+ 1.75 mm](https://www.amazon.com/dp/B07FQDKR28) `B07FQDKR28` | ✅ **$15.29** | 1 | The PLA+ you already run |
+
+**Filament subtotal ~$28.**
+
+Print notes and orientations in [`cad/README.md`](../cad/README.md). Still to
+model: slug chute, body-clamp mount, cross-slide carrier.
 
 ## 7b. Arm camera
 
@@ -233,6 +260,27 @@ Still to model: slug chute, body-clamp mount, cross-slide carrier.
 | 7b.2 | AprilTags | tag36h11, 25 mm, printed | — | 7 | Arm measures actual pose vs commanded at each stop |
 | 7b.3 | Ring light | small LED ring or bar | ⓘ ~$12 | 1 | **Unsourced.** Tag detection needs consistent illumination more than brightness |
 | 7b.4 | USB cable | 2 m, through the drag chain | ⓘ ~$8 | 1 | **Unsourced.** Must survive ±135° sweep plus Z stroke |
+
+---
+
+## 7c. Consumables — ribbon and reference cables
+
+Carried over from `bom-v1.md`; these are Phase 1 items and belong here too.
+**Re-verified live 2026-07-27.**
+
+| # | Item | Pick | Price | Qty | Notes |
+|---|---|---|---|---|---|
+| 7c.1 | **Ribbon stock** | [YXQ 22 AWG servo cable, 50 ft](https://www.amazon.com/dp/B0CQ1V38RF) `B0CQ1V38RF` | ✅ **$9.30** | 2 | ⚠️ **Only 11 left in stock.** 22 AWG, 60 cores × 0.08 mm, black/red/white JR, 1.4 mm OD. One spool dev scrap, one for real cables |
+| 7c.2 | Ribbon — alternate | [OliYin 50 ft 22 AWG 3-pin](https://www.amazon.com/dp/B071VN9DF1) `B071VN9DF1` | ✅ **$14.80** | — | **In Stock**, no quantity warning. Same 60-core spec. Use if 7c.1 sells out |
+| 7c.3 | Ribbon — alternate 2 | [22 AWG servo extension, 50 ft](https://www.amazon.com/dp/B0F3D3SBBP) `B0F3D3SBBP` | ✅ **$14.99** | — | 20 left |
+| 7c.4 | **Reference cables** | [waveshare 5264-3PIN, 6 pcs](https://www.amazon.com/dp/B0GVDFXF7Q) `B0GVDFXF7Q` | ✅ **$9.99** | 1 | **The factory-crimp yardstick.** True 5264 3-pin — the exact target connector. Measure its crimp height and pull force before cutting a single terminal |
+
+**Consumables subtotal ~$28** (2× ribbon + reference cables).
+
+**Buy the ribbon now.** It is the one Phase 1 line with a stock warning, it is
+cheap, and **every station's tooling geometry depends on measuring its real
+cross-section** — the ~1.45 mm conductor pitch that S2's blades depend on is
+currently derived, not measured.
 
 ---
 
@@ -277,7 +325,7 @@ total needs to come down:
 
 ## 10. Sourcing status
 
-**~27 of 43 lines priced off a live page**, covering roughly 80% of the cost.
+**~33 of 49 lines priced off a live page**, covering roughly 83% of the cost.
 
 Still ⓘ **unsourced**, and why:
 
