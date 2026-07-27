@@ -121,33 +121,33 @@
     <geom name="s1_feed_mount" type="mesh" mesh="station_mount_mesh" pos="0.235 0 0.186" euler="0 0 0" material="mount_mat" contype="0" conaffinity="0"/>
     <geom name="s1_feed_feed_head" type="mesh" mesh="feed_head_mesh" pos="0.21 0 0.196" euler="0 0 0" material="printed_mat" contype="0" conaffinity="0"/>
     <geom name="s1_feed_tag" type="box" pos="0.197 0 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s1_feed_wp" pos="0.2 0 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <site name="s1_feed_wp" pos="0.2 0 0.288" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s2_slit_mount" type="mesh" mesh="station_mount_mesh" pos="0.19749 0.127369 0.186" euler="0 0 0.572811" material="mount_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_splitting_wedge" type="mesh" mesh="splitting_wedge_mesh" pos="0.189086 0.121949 0.212" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_splitting_wedge_pedestal" type="box" pos="0.189086 0.121949 0.204" size="0.02 0.02 0.008" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_spreader_plate" type="mesh" mesh="spreader_plate_mesh" pos="0.224382 0.144713 0.226" euler="0 0 0.572811" material="printed_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_spreader_plate_pedestal" type="box" pos="0.224382 0.144713 0.211" size="0.02 0.02 0.015" euler="0 0 0.572811" material="pedestal_mat" contype="0" conaffinity="0"/>
     <geom name="s2_slit_tag" type="box" pos="0.165555 0.106773 0.24" size="0.0015 0.0125 0.0125" euler="0 0 0.572811" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s2_slit_wp" pos="0.168076 0.108399 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <site name="s2_slit_wp" pos="0.168076 0.108399 0.288" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s3_strip_mount" type="mesh" mesh="station_mount_mesh" pos="0.0969329 0.214077 0.186" euler="0 0 1.14562" material="mount_mat" contype="0" conaffinity="0"/>
     <geom name="s3_strip_strip_die" type="mesh" mesh="strip_die_mesh" pos="0.0915706 0.202235 0.196" euler="0 0 1.14562" material="printed_mat" contype="0" conaffinity="0"/>
     <geom name="s3_strip_tag" type="box" pos="0.0812586 0.17946 0.24" size="0.0015 0.0125 0.0125" euler="0 0 1.14562" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s3_strip_wp" pos="0.082496 0.182193 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <site name="s3_strip_wp" pos="0.082496 0.182193 0.288" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s5_insert_mount" type="mesh" mesh="station_mount_mesh" pos="-0.232444 0.0345685 0.186" euler="0 0 2.99396" material="mount_mat" contype="0" conaffinity="0"/>
     <!-- S5_INSERT: greybox - out of Phase 1 scope -->
     <geom name="s5_insert" type="box" pos="-0.232444 0.0345685 0.224" size="0.035 0.04 0.028" euler="0 0 2.99396" material="unknown_mat" contype="0" conaffinity="0"/>
     <geom name="s5_insert_tag" type="box" pos="-0.194857 0.0289787 0.24" size="0.0015 0.0125 0.0125" euler="0 0 2.99396" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s5_insert_wp" pos="-0.197824 0.02942 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <site name="s5_insert_wp" pos="-0.197824 0.02942 0.288" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s6_drop_mount" type="mesh" mesh="station_mount_mesh" pos="-0.214077 -0.0969329 0.186" euler="0 0 3.56677" material="mount_mat" contype="0" conaffinity="0"/>
     <!-- S6_DROP: greybox - chute not designed -->
     <geom name="s6_drop" type="box" pos="-0.214077 -0.0969329 0.224" size="0.035 0.04 0.028" euler="0 0 3.56677" material="unknown_mat" contype="0" conaffinity="0"/>
     <geom name="s6_drop_tag" type="box" pos="-0.17946 -0.0812586 0.24" size="0.0015 0.0125 0.0125" euler="0 0 3.56677" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s6_drop_wp" pos="-0.182193 -0.082496 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <site name="s6_drop_wp" pos="-0.182193 -0.082496 0.288" size="0.004" rgba="1 0.85 0.2 1"/>
     <geom name="s6_reject_mount" type="mesh" mesh="station_mount_mesh" pos="-0.127369 -0.19749 0.186" euler="0 0 4.13958" material="mount_mat" contype="0" conaffinity="0"/>
     <!-- S6_REJECT: greybox - chute not designed -->
     <geom name="s6_reject" type="box" pos="-0.127369 -0.19749 0.224" size="0.035 0.04 0.028" euler="0 0 4.13958" material="reject_mat" contype="0" conaffinity="0"/>
     <geom name="s6_reject_tag" type="box" pos="-0.106773 -0.165555 0.24" size="0.0015 0.0125 0.0125" euler="0 0 4.13958" material="tag_mat" contype="0" conaffinity="0"/>
-    <site name="s6_reject_wp" pos="-0.108399 -0.168076 0.212" size="0.004" rgba="1 0.85 0.2 1"/>
+    <site name="s6_reject_wp" pos="-0.108399 -0.168076 0.288" size="0.004" rgba="1 0.85 0.2 1"/>
 
     <!-- S1's spool + hanger + dancer, off-deck outboard of station 1. -->
     <geom name="spool" type="mesh" mesh="spool_mesh" pos="0.29 0.0155 0.336" euler="1.5708 0 0" material="spool_mat" contype="0" conaffinity="0"/>
@@ -163,11 +163,11 @@
          rotary axis at the platform centre unobstructed, which a single
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
-    <geom name="z_post_0" type="cylinder" pos="3.45963e-18 0.0565 0.226" size="0.004 0.04" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_1" type="cylinder" pos="-0.0489304 -0.02825 0.226" size="0.004 0.04" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_post_2" type="cylinder" pos="0.0489304 -0.02825 0.226" size="0.004 0.04" material="zstage_mat" contype="0" conaffinity="0"/>
-    <geom name="z_leadscrew" type="cylinder" pos="-1.03789e-17 -0.0565 0.226" size="0.005 0.04" material="screw_mat" contype="0" conaffinity="0"/>
-    <geom name="z_motor" type="box" pos="-1.03789e-17 -0.0565 0.164" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_0" type="cylinder" pos="3.45963e-18 0.0565 0.102" size="0.004 0.082" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_1" type="cylinder" pos="-0.0489304 -0.02825 0.102" size="0.004 0.082" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_post_2" type="cylinder" pos="0.0489304 -0.02825 0.102" size="0.004 0.082" material="zstage_mat" contype="0" conaffinity="0"/>
+    <geom name="z_leadscrew" type="cylinder" pos="-1.03789e-17 -0.0565 0.102" size="0.005 0.082" material="screw_mat" contype="0" conaffinity="0"/>
+    <geom name="z_motor" type="box" pos="-1.03789e-17 -0.0565 -0.002" size="0.021 0.021 0.020" material="motor_mat" contype="0" conaffinity="0"/>
 
     <!-- ===== the ribbon =====
          Three conductors joined by two webs, which is what flat servo
@@ -382,13 +382,13 @@
     </body>
 
     <!-- ============ the moving assembly ============ -->
-    <body name="z_carriage" pos="0 0 0.186">
+    <body name="z_carriage" pos="0 0 0.1">
       <joint name="Z" type="slide" axis="0 0 1" range="0 0.05"
         damping="40"/>
       <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
-      <body name="rotor" pos="0 0 0.018">
+      <body name="rotor" pos="0 0 0.028">
         <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
              from there, so the range is 0..SWEEP_ARC. It was previously
              +/-SWEEP_ARC/2, which put four of the seven stops outside the
@@ -402,7 +402,7 @@
         <geom name="spindle" type="mesh" mesh="spindle_shaft_mesh" pos="0 0 -0.018"
           material="rotor_mat" contype="0" conaffinity="0"/>
 
-        <body name="arm" pos="0 0 0.026">
+        <body name="arm" pos="0 0 0.102">
           <!-- THREE parts, not one. This was a single 230x60x25 box - the
                largest object in the machine and the last greybox in it. Drawn
                as one solid, the two BOUGHT parts here were invisible to the

@@ -50,7 +50,10 @@ ROTOR_SEAT_T = 18.0
 # and rotor stack underneath — putting the comb 28 mm above where every station
 # expects to meet the ribbon. Derive it instead.
 _DECK_TOP = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
-_ROTOR_BASE = _DECK_TOP + ROTOR_SEAT_T
+# The platform rides BELOW the deck, through its 7" centre hole, so the rotor
+# base is measured from the platform rather than from the deck.
+_PLATFORM_BASE = float(L.Z_PLATFORM_BASE)
+_ROTOR_BASE = _PLATFORM_BASE + float(L.Z_PLATFORM_T) + ROTOR_SEAT_T
 COMB_ABOVE_ROTOR = (
     float(L.DECK_ABOVE_BENCH) + min(float(v) for v in L.STATION_Z.values()) - _ROTOR_BASE
 )
@@ -296,33 +299,39 @@ def _press_body() -> str:
 Z_POST_RADIUS = float(L.Z_POST_CIRCLE_R)
 
 
-def _z_posts(deck_top: float, z_stroke: float) -> str:
-    """Three guide posts plus one off-axis leadscrew.
+def _z_posts() -> str:
+    """Three guide posts plus one off-axis leadscrew, ALL BELOW THE DECK.
 
     A single coaxial rail cannot work — the rotary axis needs the space the
     rail wants. Moving the screw off-axis and guiding on posts leaves the
-    platform centre clear.
+    platform centre clear for the spindle.
+
+    They live under the deck because they have to keep guiding the platform at
+    the top of its travel, and standing that proud of the deck put them
+    straight through the arm's sweep. See clearance_check.
     """
-    top = deck_top + z_stroke + 30.0
+    base = 20.0                      # off the bench on the frame
+    top = L.z_post_top()
+    mid, half = (base + top) / 2.0, (top - base) / 2.0
     parts: list[str] = []
     for i, angle in enumerate((90.0, 210.0, 330.0)):
         px, py = _polar(Z_POST_RADIUS, angle)
         parts.append(
             f'    <geom name="z_post_{i}" type="cylinder" '
-            f'pos="{_fmt(px * MM, py * MM, (deck_top + (top - deck_top) / 2) * MM)}" '
-            f'size="0.004 {(top - deck_top) / 2 * MM:.6g}" '
+            f'pos="{_fmt(px * MM, py * MM, mid * MM)}" '
+            f'size="{float(L.Z_POST_DIA) / 2 * MM:.6g} {half * MM:.6g}" '
             f'material="zstage_mat" contype="0" conaffinity="0"/>'
         )
     sx, sy = _polar(Z_POST_RADIUS, 270.0)
     parts.append(
         f'    <geom name="z_leadscrew" type="cylinder" '
-        f'pos="{_fmt(sx * MM, sy * MM, (deck_top + (top - deck_top) / 2) * MM)}" '
-        f'size="0.005 {(top - deck_top) / 2 * MM:.6g}" '
+        f'pos="{_fmt(sx * MM, sy * MM, mid * MM)}" '
+        f'size="0.005 {half * MM:.6g}" '
         f'material="screw_mat" contype="0" conaffinity="0"/>'
     )
     parts.append(
         f'    <geom name="z_motor" type="box" '
-        f'pos="{_fmt(sx * MM, sy * MM, (deck_top - 22) * MM)}" '
+        f'pos="{_fmt(sx * MM, sy * MM, (base - 22) * MM)}" '
         f'size="0.021 0.021 0.020" material="motor_mat" '
         f'contype="0" conaffinity="0"/>'
     )
@@ -520,18 +529,18 @@ def build_mjcf() -> str:
          rotary axis at the platform centre unobstructed, which a single
          coaxial rail cannot do. T8 trapezoidal, so it self-locks and an
          E-stop will not drop the arm. -->
-{_z_posts(deck_top, z_stroke)}
+{_z_posts()}
 
 {_ribbon_bodies()}
 
     <!-- ============ the moving assembly ============ -->
-    <body name="z_carriage" pos="0 0 {deck_top * MM:.6g}">
+    <body name="z_carriage" pos="0 0 {_PLATFORM_BASE * MM:.6g}">
       <joint name="Z" type="slide" axis="0 0 1" range="0 {z_stroke * MM:.6g}"
         damping="40"/>
       <geom name="z_platform" type="mesh" mesh="z_platform_mesh" pos="0 0 0"
         material="zstage_mat" contype="0" conaffinity="0"/>
 
-      <body name="rotor" pos="0 0 0.018">
+      <body name="rotor" pos="0 0 {(float(L.Z_PLATFORM_T) + ROTOR_SEAT_T) * MM:.6g}">
         <!-- theta = 0 is S1 by definition and the arm sweeps counter-clockwise
              from there, so the range is 0..SWEEP_ARC. It was previously
              +/-SWEEP_ARC/2, which put four of the seven stops outside the

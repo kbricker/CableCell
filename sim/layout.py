@@ -283,6 +283,38 @@ STATION_Z: dict[str, Dim] = {
 # from the arm's sweep path.
 Z_CLEAR_MARGIN = _d(15.0, ESTIMATED, "handling clearance", "Z_CLEAR_MARGIN")
 
+# ---------------------------------------------------------------------------
+# Z stage sits UNDER the deck, not on it
+# ---------------------------------------------------------------------------
+# The platform was originally mounted on top of the deck. That forced the guide
+# posts to stand ~80 mm proud of the deck — because they have to keep guiding
+# the platform at the top of its travel — and the arm swept straight through
+# them. Kyle found it in the viewer in about ten seconds: "how can the arm just
+# travel trough them?"
+#
+# The deck already has a 7" centre clearance hole cut for the platform to pass
+# THROUGH; the scene simply was not using it. Dropping the platform below the
+# deck puts the whole guide system underneath, and the arm sweeps over the lot.
+#
+# Second benefit, and the reason this is a better design rather than just a
+# fix: it gives the spindle room to be TALL, so the two 6810s can sit further
+# apart. Bearing spacing is the lever arm that turns the cantilever moment into
+# a couple — the entire reason paired bearings replaced a slew ring. 50 -> 75 mm
+# is a 1.5x cut in bearing load for free.
+Z_PLATFORM_BASE = _d(100.0, COMMITTED, "under the deck, clears the arm", "Z_PLATFORM_BASE")
+Z_PLATFORM_T = _d(10.0, COMMITTED, "z_platform plate thickness", "Z_PLATFORM_T")
+
+
+def z_post_top() -> float:
+    """Height the guide posts must reach, mm above bench.
+
+    They have to still be guiding the platform's bearings when it is at the top
+    of its travel — that requirement is what pushed them into the arm before.
+    """
+    return (
+        float(Z_PLATFORM_BASE) + z_stage_choice() + float(LM8UU_LEN) + 10.0
+    )
+
 
 # ---------------------------------------------------------------------------
 # 4. The arm
@@ -538,7 +570,7 @@ SPINDLE_BEARING_W = _d(7.0, COMMITTED, "6810 standard", "SPINDLE_BEARING_W")
 SPINDLE_BEARING_STATIC_N = _d(6200.0, COMMITTED, "NSK 6810 datasheet", "SPINDLE_BEARING_STATIC_N")
 
 # Centre-to-centre. Bigger spacing = lower bearing load, taller spindle.
-SPINDLE_SPACING = _d(50.0, ESTIMATED, "load vs height", "SPINDLE_SPACING")
+SPINDLE_SPACING = _d(75.0, ESTIMATED, "load vs height", "SPINDLE_SPACING")
 SPINDLE_HOUSING_WALL = _d(6.0, ESTIMATED, "printed wall", "SPINDLE_HOUSING_WALL")
 SPINDLE_HOUSING_OD = _d(
     float(SPINDLE_BEARING_OD) + 2.0 * float(SPINDLE_HOUSING_WALL),

@@ -39,15 +39,19 @@ def swept_annulus() -> tuple[float, float]:
 
 def z_band() -> tuple[float, float]:
     """Height band the arm occupies across its whole Z travel, mm above bench."""
-    deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
-    low = deck_top + B.ROTOR_SEAT_T + B.COMB_ABOVE_ROTOR
+    # From the PLATFORM, which is where the rotating assembly actually stands —
+    # not from the deck, which it now passes through.
+    low = B._ROTOR_BASE + B.COMB_ABOVE_ROTOR
     return low - float(L.ARM_THICKNESS) / 2.0, low + L.z_stage_choice() + float(L.ARM_THICKNESS) / 2.0
 
 
 def obstacles() -> list[tuple[str, float, float, float]]:
     """(name, radius from pivot, top height, note) for fixed structure."""
-    deck_top = float(L.DECK_ABOVE_BENCH) + float(L.DECK_THICKNESS)
-    post_top = deck_top + L.z_stage_choice() + 30.0
+    # Read from layout, NOT recomputed here. An earlier version of this
+    # function carried its own copy of the post-top formula and kept reporting
+    # the pre-fix height after the posts had moved — a check quietly grading a
+    # machine that no longer existed.
+    post_top = L.z_post_top()
     r = float(L.Z_POST_CIRCLE_R)
     return [
         ("Z guide post x3", r, post_top, "LM8UU rides these; must outlast the travel"),
