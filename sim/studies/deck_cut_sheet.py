@@ -103,16 +103,17 @@ def report() -> str:
     out.append("  The printed station mounts are slotted radially, so a little")
     out.append("  drift is absorbed at assembly.")
     out.append("")
-    out.append("S6 DROP AND REJECT HOLES - 2 of them, and they are NOT on the bolt circle")
+    out.append("S6 DROP HOLE - NOT on the bolt circle")
     ri, ro, dw = s["drop_r_in"], s["drop_r_out"], s["drop_w"]
     ln_mm = ro[0] - ri[0]
-    out.append(f"  At the S6 drop ({float(L.STATION_ANGLES['S6_DROP']):.1f} deg) and S6 reject "
-               f"({float(L.STATION_ANGLES['S6_REJECT']):.1f} deg) angles.")
+    out.append(f"  At the S6 drop angle ({float(L.STATION_ANGLES['S6_DROP']):.1f} deg).")
+    out.append("  A reject chute is DEFERRED - if it comes back it is a second")
+    out.append("  slot of the same size at its own angle.")
     out.append(f"  Slot {frac(ln_mm / MM_PER_IN)} radial x {frac(dw[1])} tangential "
                f"({ln_mm:.0f} x {dw[0]:.0f} mm),")
     out.append(f"  running from {frac(ri[1])} to {frac(ro[1])} from centre "
                f"({ri[0]:.0f} to {ro[0]:.0f} mm).")
-    out.append("  These stops get NO station mount - the mount would roof over")
+    out.append("  This stop gets NO station mount - the mount would roof over")
     out.append("  the hole. The printed collar bolts around each slot instead.")
     out.append("  Inboard edge is set by the Z platform's CORNERS passing")
     out.append(f"  underneath at {L.z_platform_corner_r():.0f} mm - the platform is square,")

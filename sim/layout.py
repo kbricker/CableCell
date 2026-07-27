@@ -255,7 +255,16 @@ ARM_STROKE = _d(40.0, ESTIMATED, "longest working motion = SPLIT_LENGTH + approa
 
 
 # Station identifiers, in cycle order.
-STATIONS = ("S1_FEED", "S2_SLIT", "S3_STRIP", "S4_CRIMP", "S5_INSERT", "S6_DROP", "S6_REJECT")
+# S6_REJECT IS DEFERRED, NOT DELETED. Kyle 2026-07-27: "we only need one drop
+# chute for now, this is an early prototype design, but you can retain the
+# concept of a reject chute for later."
+#
+# The concept survives in full: station_radius/station_width already handle a
+# chute at its own radius, drop_chute is one part serving any number of holes,
+# and the cycle's fault path is written. Adding the stop back is one entry here
+# and one angle. What it costs to keep is arc and a second hole in the deck, and
+# a prototype does not need either yet.
+STATIONS = ("S1_FEED", "S2_SLIT", "S3_STRIP", "S4_CRIMP", "S5_INSERT", "S6_DROP")
 
 # Angular positions. S1 is 0 by definition; S4 (crimp) is anchored by where the
 # press physically goes; the rest are spread across the remaining arc.
@@ -267,7 +276,6 @@ STATION_ANGLES: dict[str, Dim] = {
     "S4_CRIMP": _d(135.0, PLACEHOLDER, "press placement not fixed", "theta_S4"),
     "S5_INSERT": _d(200.0, PLACEHOLDER, "even spread", "theta_S5"),
     "S6_DROP": _d(240.0, PLACEHOLDER, "even spread", "theta_S6"),
-    "S6_REJECT": _d(265.0, PLACEHOLDER, "even spread", "theta_S6r"),
 }
 
 # Per-station engagement heights above Datum A. These are still CONFIG — each
@@ -1143,7 +1151,8 @@ def clamp_grip_radius() -> float:
 # off-centre. The Z-travel saving survives, for a better reason than the one I
 # gave: there is no rim to lift over because the bin is under the deck.
 #
-# The same part serves S6_DROP and S6_REJECT. One part number, two holes.
+# One part per chute hole. S6_REJECT is deferred (see STATIONS) but the part
+# and the placement logic already serve any number of them.
 
 Z_PLATFORM_HALF = _d(82.5, COMMITTED, "build_parts.z_platform", "Z_PLATFORM_HALF")
 
@@ -1232,11 +1241,170 @@ DECK_RADIUS = _d(
 
 
 # ---------------------------------------------------------------------------
+# 6b. THE FRAME, as members that get cut rather than a grey cylinder
+# ---------------------------------------------------------------------------
+# Kyle 2026-07-27, looking at the viewer: "the bar and all framing attached to
+# it, its mostly all white. I want to see the geometry for the metal part(s) of
+# this that will be cut from the stock in the bom."
+#
+# There was nothing to see. The frame was ONE translucent cylinder — a greybox
+# standing in for a structure, drawn at the deck's radius and 40 mm in from it,
+# with no members, no lengths and no joints. It could not be cut from anything
+# because it was not made of anything.
+#
+# It is now eight 3030 members with derived lengths, which is what cut_list.py
+# reads. A square is the right shape even though the deck is round: extrusion is
+# cut square, corner brackets are square, and the deck overhangs the corners by
+# design so its rim is unsupported nowhere that matters.
+
+FRAME_SPAN = _d(400.0, ESTIMATED, "legs just outside the deck rim", "FRAME_SPAN")
+
+
+def frame_leg_len() -> float:
+    """Bench top to the deck's underside. The deck sits ON the top rails, so a
+    leg is the whole height and the rails add nothing to it."""
+    return float(DECK_ABOVE_BENCH) - float(EXTRUSION)
+
+
+def frame_rail_len() -> float:
+    """Rails fit BETWEEN the legs, so each is short by two profile widths.
+    Getting this wrong is the classic extrusion-frame cut error and it costs a
+    whole bar."""
+    return float(FRAME_SPAN) - 2.0 * float(EXTRUSION)
+
+
+# The two cross rails that carry the deck's middle and the Z stage's top. They
+# have to straddle the Z platform, which passes THROUGH the deck.
+FRAME_CROSS_Y = _d(110.0, COMMITTED, "clears the Z platform", "FRAME_CROSS_Y")
+
+# The Z posts stand on a plate on the bottom rails rather than on the bench.
+Z_POST_BASE = _d(
+    float(EXTRUSION) + 5.0, COMMITTED, "on the bottom rails + base plate", "Z_POST_BASE"
+)
+
+
+def frame_members() -> list[tuple[str, int, float, str]]:
+    """(what, qty, cut length mm, why). The cut list, and the scene, read this.
+
+    One source. A frame drawn in the scene at lengths that disagree with the
+    ones being cut is exactly the class of thing this project keeps finding.
+    """
+    return [
+        ("leg", 4, frame_leg_len(), "corner uprights, bench to deck underside"),
+        ("top rail", 4, frame_rail_len(), "perimeter under the deck"),
+        ("top cross rail", 2, frame_rail_len(), f"straddle the Z platform at y=+/-{float(FRAME_CROSS_Y):.0f}"),
+        ("bottom rail", 4, frame_rail_len(), "perimeter on the bench, ties the legs"),
+        ("bottom cross rail", 2, frame_rail_len(), "carries the Z stage base plate"),
+        ("spool post", 1, float(SPOOL_AXLE_HEIGHT) + 40.0, "off-deck, outboard of S1"),
+    ]
+
+
+# Stock bar lengths, as sold. Used to turn a cut list into a buy list.
+STOCK_BAR = {
+    "3030 extrusion": 1000.0,
+    "2020 extrusion": 1000.0,
+    "8 mm ground rod": 500.0,
+    "T8 leadscrew": 400.0,
+    "MGN12 rail": 400.0,
+    "MGN9 rail": 200.0,
+}
+
+
+def cut_stock() -> list[tuple[str, str, int, float, str]]:
+    """EVERYTHING THAT GETS CUT TO LENGTH: (stock, part, qty, mm, why).
+
+    The answer to "which bits are metal and where do they come from". Every
+    length is derived from the layout, so moving R0 or the deck height moves the
+    cut list with it.
+
+    Deliberately NOT here: printed parts (they have no stock), the plywood deck
+    (its own cut sheet, in inches, because it is made on a woodworking bench),
+    and anything bought at a fixed size.
+    """
+    rows: list[tuple[str, str, int, float, str]] = []
+    for what, qty, length, why in frame_members():
+        rows.append(("3030 extrusion", what, qty, length, why))
+
+    rows.append((
+        "2020 extrusion", "arm beam", 1,
+        arm_beam_tip() - (float(SPINDLE_HOUSING_OD) / 2.0 + 6.0),
+        "the rotating beam; the rail lands on its top face",
+    ))
+    rows.append((
+        "MGN12 rail", "R axis rail", 1,
+        arm_beam_tip() - (float(SPINDLE_HOUSING_OD) / 2.0 + 6.0),
+        "full length of the beam, so the carriage is supported at both ends",
+    ))
+    rows.append((
+        "MGN9 rail", "S axis rail", 1,
+        float(CROSS_SLIDE_STROKE) + float(MGN9_CARRIAGE_W),
+        "stroke plus one block",
+    ))
+    rows.append((
+        "8 mm ground rod", "Z guide post", 3,
+        z_post_top() - float(Z_POST_BASE),
+        "LM8UU rides these the whole travel",
+    ))
+    rows.append((
+        "8 mm ground rod", "wrist shaft", 1,
+        float(CROSS_PLATE_LEN) / 2.0 + arm_tool_train(),
+        "cheek to comb, carrying the whole wrist train",
+    ))
+    rows.append((
+        "T8 leadscrew", "Z screw", 1,
+        z_post_top() - float(Z_POST_BASE),
+        "off-axis, so the spindle can use the centre",
+    ))
+    rows.append((
+        "T8 leadscrew", "R screw", 1,
+        float(ARM_STROKE) + 60.0,
+        "stroke plus nut and bearing block",
+    ))
+    return rows
+
+
+def stock_totals() -> dict[str, tuple[float, int]]:
+    """Per stock type: total mm needed, and bars to buy."""
+    out: dict[str, tuple[float, int]] = {}
+    for stock, _what, qty, length, _why in cut_stock():
+        total = out.get(stock, (0.0, 0))[0] + qty * length
+        bar = STOCK_BAR.get(stock, 1000.0)
+        out[stock] = (total, int(math.ceil(total / bar)))
+    return out
+
+
+def check_frame() -> list[str]:
+    bad: list[str] = []
+    inner = float(FRAME_CROSS_Y) - float(EXTRUSION) / 2.0
+    if inner <= float(Z_PLATFORM_HALF):
+        bad.append(
+            f"cross rails reach in to {inner:.1f}, into the Z platform at "
+            f"{float(Z_PLATFORM_HALF):.1f}"
+        )
+    if float(FRAME_CROSS_Y) > float(FRAME_SPAN) / 2.0 - float(EXTRUSION):
+        bad.append(
+            f"cross rails at {float(FRAME_CROSS_Y):.0f} fall outside the frame's "
+            f"own perimeter"
+        )
+    corner = float(FRAME_SPAN) / 2.0 * math.sqrt(2.0)
+    if corner < float(DECK_RADIUS) - 40.0:
+        bad.append(
+            f"frame corners at R={corner:.0f} leave the deck rim "
+            f"({float(DECK_RADIUS):.0f}) unsupported by more than 40 mm"
+        )
+    if float(Z_POST_BASE) < float(EXTRUSION):
+        bad.append(
+            f"Z posts start at {float(Z_POST_BASE):.0f}, inside the bottom rails"
+        )
+    return bad
+
+
+# ---------------------------------------------------------------------------
 # Derived geometry
 # ---------------------------------------------------------------------------
 
 
-CHUTE_STATIONS = ("S6_DROP", "S6_REJECT")
+CHUTE_STATIONS = ("S6_DROP",)
 
 
 def station_radius(name: str) -> float:
@@ -1442,7 +1610,7 @@ apply_derived_station_angles()
 # the two S6 collars overlapped by 12 mm because the derivation measured every
 # stop at R0 while the chutes sit 43 mm inside it. A derived value is only as
 # good as the assumption underneath it, so the assumption gets checked too.
-_SPACING_FAILURES = check_station_spacing()
+_SPACING_FAILURES = check_station_spacing() + check_frame()
 if _SPACING_FAILURES:
     raise AssertionError(
         "stations overlap on the dial:\n  " + "\n  ".join(_SPACING_FAILURES)

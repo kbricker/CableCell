@@ -163,7 +163,6 @@ UNMODELLED = {
 # sharing a bin would silently defeat the point of having a reject angle.
 CHUTE_STOPS = {
     "S6_DROP": ("collect", "collect_bin_mat"),
-    "S6_REJECT": ("reject", "reject_mat"),
 }
 
 
@@ -215,6 +214,58 @@ def _ribbon_bodies() -> str:
     engage = float(L.DECK_ABOVE_BENCH) + float(L.STATION_Z["S1_FEED"])
     cut_x = float(L.ARM_R0) + 10.0
     return RIB.bodies(engage, cut_x, float(L.STATION_ANGLES["S1_FEED"]))
+
+
+def _frame_members() -> str:
+    """The frame as EIGHTEEN CUT MEMBERS, not one translucent cylinder.
+
+    It was a single grey cylinder at the deck's radius — a structure implied
+    rather than drawn, with no members, no lengths and no joints. Kyle: "I want
+    to see the geometry for the metal part(s) of this that will be cut from the
+    stock in the bom." There was nothing there to cut.
+
+    Every length here comes from layout.frame_members(), which cut_list.py also
+    reads, so the frame you see and the frame you saw are the same frame.
+    """
+    e = float(L.EXTRUSION)
+    half = float(L.FRAME_SPAN) / 2.0 - e / 2.0     # centreline of a leg
+    rail = L.frame_rail_len()
+    leg = L.frame_leg_len()
+    cross_y = float(L.FRAME_CROSS_Y)
+    deck_under = float(L.DECK_ABOVE_BENCH)
+
+    out: list[str] = []
+
+    def bar(name: str, pos: tuple[float, float, float],
+            size: tuple[float, float, float]) -> None:
+        out.append(
+            f'    <geom name="{name}" type="box" '
+            f'pos="{_fmt(pos[0] * MM, pos[1] * MM, pos[2] * MM)}" '
+            f'size="{_fmt(size[0] / 2 * MM, size[1] / 2 * MM, size[2] / 2 * MM)}" '
+            f'material="extrusion_mat" contype="0" conaffinity="0"/>'
+        )
+
+    # Legs, bench top to the deck's underside minus the top rail.
+    for i, (sx, sy) in enumerate(((-1, -1), (-1, 1), (1, -1), (1, 1))):
+        bar(f"frame_leg_{i}", (sx * half, sy * half, e + leg / 2.0), (e, e, leg))
+
+    # Bottom perimeter, on the bench. Two run in x, two in y.
+    for i, sy in enumerate((-1, 1)):
+        bar(f"frame_bot_x_{i}", (0.0, sy * half, e / 2.0), (rail, e, e))
+        bar(f"frame_bot_y_{i}", (sy * half, 0.0, e / 2.0), (e, rail, e))
+
+    # Top perimeter, directly under the deck.
+    top_z = deck_under - e / 2.0
+    for i, sy in enumerate((-1, 1)):
+        bar(f"frame_top_x_{i}", (0.0, sy * half, top_z), (rail, e, e))
+        bar(f"frame_top_y_{i}", (sy * half, 0.0, top_z), (e, rail, e))
+
+    # Cross rails, top and bottom, straddling the Z platform.
+    for i, sy in enumerate((-1, 1)):
+        bar(f"frame_cross_top_{i}", (0.0, sy * cross_y, top_z), (rail, e, e))
+        bar(f"frame_cross_bot_{i}", (0.0, sy * cross_y, e / 2.0), (rail, e, e))
+
+    return "\n".join(out)
 
 
 def _chute_body(name: str, theta: float, rot: float, deck_top: float) -> str:
@@ -319,7 +370,7 @@ def _station_bodies() -> str:
             r = float(L.ARM_R0) + STATION_BODY_DEPTH / 2.0
             x, y = _polar(r, theta)
             z = deck_top + STATION_MOUNT_T + STATION_BODY_HEIGHT / 2.0
-            mat = "reject_mat" if name == "S6_REJECT" else "unknown_mat"
+            mat = "unknown_mat"
             out.append(
                 f'    <!-- {name}: greybox - {UNMODELLED[name]} -->\n'
                 f'    <geom name="{name.lower()}" type="box" '
@@ -412,7 +463,7 @@ def _z_posts() -> str:
     the top of its travel, and standing that proud of the deck put them
     straight through the arm's sweep. See clearance_check.
     """
-    base = 20.0                      # off the bench on the frame
+    base = float(L.Z_POST_BASE)      # on a plate on the bottom cross rails
     top = L.z_post_top()
     mid, half = (base + top) / 2.0, (top - base) / 2.0
     parts: list[str] = []
@@ -630,10 +681,7 @@ def build_mjcf() -> str:
       material="deck_mat" contype="0" conaffinity="0"/>
     </body>
     <body name="frame_body">
-    <geom name="frame_ring" type="cylinder"
-      pos="0 0 {deck_z / 2 * MM:.6g}"
-      size="{(float(L.DECK_RADIUS) - 40) * MM:.6g} {deck_z / 2 * MM:.6g}"
-      material="frame_mat" rgba="0.42 0.45 0.50 0.25" contype="0" conaffinity="0"/>
+{_frame_members()}
     </body>
 
 {_station_bodies()}
@@ -834,6 +882,73 @@ def write() -> pathlib.Path:
     ASSETS.mkdir(parents=True, exist_ok=True)
     MJCF_PATH.write_text(build_mjcf(), encoding="utf-8")
     return MJCF_PATH
+
+
+MAKE_PATH = ASSETS / "cell.make.xml"
+
+# How a part is made, by geom-name prefix. Checked in order; first match wins.
+# Anything unmatched is a printed mesh, because that is what everything else in
+# this machine is.
+MAKE_RULES = (
+    ("stock", ("frame_", "arm_beam", "mgn12_rail", "mgn9_rail", "z_post_", "z_leadscrew")),
+    # NOT "spindle" — spindle_shaft is one of ours, printed. It was in this
+    # list for one render and came out the colour of a bought part, which is
+    # the exact confusion this palette exists to remove.
+    ("bought", ("press_", "applicator", "z_motor", "mgn12_block")),
+    ("sheet", ("deck",)),
+    ("workpiece", ("rib_", "stock_")),
+    ("marker", ("_tag", "_bin", "_pedestal")),
+    ("scene", ("bench",)),
+)
+
+MAKE_MATERIALS = """
+    <material name="make_stock" rgba="0.62 0.66 0.72 1"/>
+    <material name="make_printed" rgba="0.90 0.42 0.20 1"/>
+    <material name="make_sheet" rgba="0.76 0.62 0.42 1"/>
+    <material name="make_bought" rgba="0.24 0.26 0.30 1"/>
+    <material name="make_workpiece" rgba="0.95 0.85 0.15 1"/>
+    <material name="make_marker" rgba="0.55 0.57 0.60 0.35"/>
+    <material name="make_scene" rgba="0.30 0.32 0.36 1"/>"""
+
+
+def _make_method(geom_name: str) -> str:
+    for method, keys in MAKE_RULES:
+        if any(k in geom_name for k in keys):
+            return method
+    return "printed"
+
+
+def write_make() -> pathlib.Path:
+    """The same scene coloured by HOW EACH PART IS MADE, not by what it does.
+
+    Kyle 2026-07-27: "I want to understand if all these other housing/framing
+    things are printed parts? the yellow part the orange part etc, those are all
+    printed?"
+
+    They are — and there was no way to tell by looking, because the display
+    palette encodes FUNCTION. Station tooling is blue because it is tooling, the
+    comb is yellow because it is the comb. Two parts made completely differently
+    can be the same colour and two identical processes can be four colours.
+
+    So this is a second palette over the same geometry: metal you cut, plastic
+    you print, sheet you saw, parts you buy. Same scene, one question.
+    """
+    import re
+
+    xml = build_mjcf()
+    xml = xml.replace("</asset>", MAKE_MATERIALS + "\n  </asset>")
+
+    def swap(m: re.Match) -> str:
+        head, name, mid, _mat, tail = m.groups()
+        return f'{head}{name}{mid}material="make_{_make_method(name)}"{tail}'
+
+    xml = re.sub(
+        r'(<geom name=")([^"]+)("[^>]*?)material="([^"]+)"([^>]*?/>)',
+        swap, xml, flags=re.S,
+    )
+    ASSETS.mkdir(parents=True, exist_ok=True)
+    MAKE_PATH.write_text(xml, encoding="utf-8")
+    return MAKE_PATH
 
 
 COLLIDE_PATH = ASSETS / "cell.collide.xml"
